@@ -1,10 +1,9 @@
 
-from flask_restful import Api, Resource, url_for, abort
-from app import app
-from models import *
+from flask_restful import Api, Resource, abort
 from playhouse.shortcuts import model_to_dict
 
-api = Api(app)
+from app import app
+from models import Task, Result
 
 class TaskResource(Resource):
     def get(self, task_id):
@@ -28,6 +27,7 @@ class ResultList(Resource):
     def get(self):
         return [model_to_dict(r) for r in Result.select(Result.id)]
 
+api = Api(app)
 api.add_resource(TaskResource, '/tasks/<int:task_id>')
 api.add_resource(TaskList, '/tasks')
 api.add_resource(ResultResource, '/results/<int:result_id>')
