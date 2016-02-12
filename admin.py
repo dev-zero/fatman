@@ -7,10 +7,13 @@ from models import *
 
 admin = Admin(app, name='Pseudo-Tests DB', template_mode='bootstrap3')
 
-admin.add_view(ModelView(Structure))
-#admin.add_view(ModelView(Method))
-admin.add_view(ModelView(Test))
-admin.add_view(ModelView(TestStructure))
-admin.add_view(ModelView(TaskStatus))
-admin.add_view(ModelView(Task))
-admin.add_view(ModelView(Result))
+class BaseView(ModelView):
+    # I want the id to be displayed by default
+    column_display_pk = True
+
+admin.add_view(BaseView(Structure))
+#admin.add_view(BaseView(Method))
+admin.add_view(BaseView(Test))
+admin.add_view(BaseView(TestStructure))
+admin.add_view(BaseView(Task))
+admin.add_view(BaseView(Result))
