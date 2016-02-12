@@ -11,8 +11,12 @@ class BaseView(ModelView):
     # I want the id to be displayed by default
     column_display_pk = True
 
+class MethodView(BaseView):
+    # wtf-peewee does not know about BSJONField (yet)
+    form_excluded_columns = ('settings')
+
 admin.add_view(BaseView(Structure))
-#admin.add_view(BaseView(Method))
+admin.add_view(MethodView(Method))
 admin.add_view(BaseView(Test))
 admin.add_view(BaseView(TestStructure))
 admin.add_view(BaseView(Task))
