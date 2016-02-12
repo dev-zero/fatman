@@ -13,6 +13,9 @@ class Structure(BaseModel):
     class Meta:
         order_by = ('name',)
 
+    def __str__(self):
+        return self.name
+
 class Method(BaseModel):
     # proper database design would demand introduction of
     # separate entities for the following fields, but let's make it easy
@@ -24,12 +27,21 @@ class Method(BaseModel):
     class Meta:
         order_by = ('code',)
 
+    def __str__(self):
+        return "code: {}, pseudopotential: {}, basis set: {}".format(
+                self.code,
+                self.pseudopotential,
+                self.basis_set)
+
 class Test(BaseModel):
     name = CharField(unique=True, null=False)
     description = TextField(null=True)
 
     class Meta:
         order_by = ('name',)
+
+    def __str__(self):
+        return self.name
 
 class TestStructure(BaseModel):
     structure = ForeignKeyField(Structure, related_name='tests')
@@ -41,6 +53,9 @@ class TaskStatus(BaseModel):
     class Meta:
         order_by = ('name',)
 
+    def __str__(self):
+        return self.name
+
 class Task(BaseModel):
     structure = ForeignKeyField(Structure, related_name='tasks')
     method = ForeignKeyField(Method, related_name='tasks')
@@ -48,6 +63,12 @@ class Task(BaseModel):
     ctime = DateTimeField()
     mtime = DateTimeField()
     machine = CharField()
+
+    def __str__(self):
+        return "id: {}, structure: {}, status: {}".format(
+                self.id,
+                self.structure,
+                self.status)
 
 class Result(BaseModel):
     energy = DoubleField()
