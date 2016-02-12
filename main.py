@@ -5,7 +5,7 @@ from app import app, db
 from models import *
 
 def create_tables():
-    db.create_tables([Structure, Method, Test, TestStructure, TaskStatus, Task, Results], safe=True)
+    db.create_tables([Structure, Method, Test, TestStructure, TaskStatus, Task, Result], safe=True)
 
 def initialize_tables():
     for name in ['new', 'pending', 'running', 'done', 'error']:
