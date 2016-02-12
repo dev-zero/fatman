@@ -36,7 +36,7 @@ class TestStructure(BaseModel):
     test = ForeignKeyField(Test, related_name='structures')
 
 class TaskStatus(BaseModel):
-    name = CharField()
+    name = CharField(unique=True, null=False)
 
     class Meta:
         order_by = ('name',)
