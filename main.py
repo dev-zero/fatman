@@ -2,8 +2,9 @@
 
 from app import app, db
 
-from models import *
+from admin import admin
 from api import *
+from models import *
 
 def create_tables():
     db.create_tables([Structure, Method, Test, TestStructure, TaskStatus, Task, Result], safe=True)
