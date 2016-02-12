@@ -3,6 +3,7 @@
 from app import app, db
 
 from models import *
+from api import *
 
 def create_tables():
     db.create_tables([Structure, Method, Test, TestStructure, TaskStatus, Task, Result], safe=True)
