@@ -1,6 +1,7 @@
 
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with
 from playhouse.shortcuts import model_to_dict
+from datetime import datetime
 
 from app import app
 from models import *
@@ -22,6 +23,30 @@ class TaskResource(Resource):
             return Task.get(Task.id == task_id)
         except DoesNotExist:
             abort(404, message="Task {} does not exist".format(task_id))
+
+    @marshal_with(task_resource_fields)
+    def put(self, task_id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('status', type=str, required=True)
+        args = parser.parse_args()
+
+        try:
+            task = Task.get(Task.id == task_id)
+        except DoesNotExist:
+            abort(404, message="Task {} does not exist".format(task_id))
+
+        try:
+            status_id = TaskStatus.get(TaskStatus.name == args['status']).id
+        except DoesNotExist:
+            abort(404, message="Invalid status {}".format(args['status']))
+
+        # update the status and reset the modification time
+        task.status = status_id
+        task.mtime = datetime.now()
+        task.save()
+
+        return task
+
 
 class TaskList(Resource):
     def get(self):
