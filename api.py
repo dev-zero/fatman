@@ -1,20 +1,46 @@
 
-from flask_restful import Api, Resource, abort
+from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with
 from playhouse.shortcuts import model_to_dict
 
 from app import app
-from models import Task, Result
+from models import *
+
+task_resource_fields = {
+        'id': fields.Raw,
+        'ctime': fields.String,
+        'mtime': fields.String,
+        'machine': fields.Raw,
+        'status': fields.String,
+        'method': fields.String,
+        'structure': fields.String,
+        }
 
 class TaskResource(Resource):
+    @marshal_with(task_resource_fields)
     def get(self, task_id):
         try:
-            return model_to_dict(Task.get(Task.id == task_id))
+            return Task.get(Task.id == task_id)
         except DoesNotExist:
             abort(404, message="Task {} does not exist".format(task_id))
 
 class TaskList(Resource):
     def get(self):
-        return [model_to_dict(t) for t in Task.select(Task.id, Task.status)]
+        return {
+            t.id: {
+                'ctime': str(t.ctime),
+                'mtime': str(t.mtime),
+                'machine': t.machine,
+                'status': str(t.status),
+                'method': str(t.method),
+                'structure': str(t.structure),
+                }
+            for t in Task.select()
+            .join(TaskStatus).switch(Task)
+            .join(Method).switch(Task)
+            .join(Structure).switch(Task)
+            .order_by(Task.id.desc())
+            }
+
 
 class ResultResource(Resource):
     def get(self, result_id):
