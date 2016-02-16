@@ -20,8 +20,11 @@ source venv/bin/activate
 # Install required packages
 pip install -r requirements.txt
 
-# Create a secret
-python -c "import os; import binascii; print('SECRET_KEY = {}'.format(binascii.hexlify(os.urandom(24))));" > fatman.cfg
+# Create an initial configuration (including a custom secret key for the session cookies, will overwrite an existing `fatman.cfg` in your current directory)
+./manage.py createconfig
+
+# Initialize the database (this is idempotent)
+./manage.py initdb
 
 # Run the (development) server
 FATMAN_SETTINGS=$PWD/fatman.cfg ./manage.py runserver
