@@ -2,9 +2,12 @@
 from flask import Flask
 from playhouse.postgres_ext import PostgresqlExtDatabase
 
-DATABASE = 'fatman'
-SECRET_KEY = '06ff31da-fc90-4dc6-b177-26dd0018d2d7'
-
 app = Flask(__name__)
-app.config.from_object(__name__)
+app.config.from_object('fatman.default_settings')
+app.config.from_envvar('FATMAN_SETTINGS', silent=True)
+
 db = PostgresqlExtDatabase(app.config['DATABASE'], register_hstore=False)
+
+import fatman.admin
+import fatman.api
+import fatman.models

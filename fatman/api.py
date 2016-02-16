@@ -3,8 +3,8 @@ from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with
 from playhouse.shortcuts import model_to_dict
 from datetime import datetime
 
-from app import app
-from models import *
+from fatman import app
+from fatman.models import *
 
 task_resource_fields = {
         'id': fields.Raw,

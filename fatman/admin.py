@@ -2,8 +2,8 @@
 from flask_admin import Admin
 from flask_admin.contrib.peewee import ModelView
 
-from app import app
-from models import *
+from fatman import app
+from fatman.models import *
 
 admin = Admin(app, name='Pseudo-Tests DB', template_mode='bootstrap3')
 
