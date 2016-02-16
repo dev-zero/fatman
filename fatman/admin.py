@@ -5,7 +5,7 @@ from flask_admin.contrib.peewee import ModelView
 from fatman import app
 from fatman.models import *
 
-admin = Admin(app, name='Pseudo-Tests DB', template_mode='bootstrap3')
+admin = Admin(app, name='FATMAN', template_mode='bootstrap3')
 
 class BaseView(ModelView):
     # I want the id to be displayed by default
