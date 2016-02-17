@@ -6,15 +6,27 @@ from datetime import datetime
 from fatman import app
 from fatman.models import *
 
+method_resource_fields = {
+    'id': fields.Raw,
+    'code': fields.Raw,
+    'pseudopotential': fields.Raw,
+    'basis_set': fields.Raw,
+    }
+
+structure_resource_fields = {
+    'id': fields.Raw,
+    'name': fields.Raw,
+}
+
 task_resource_fields = {
-        'id': fields.Raw,
-        'ctime': fields.String,
-        'mtime': fields.String,
-        'machine': fields.Raw,
-        'status': fields.String,
-        'method': fields.String,
-        'structure': fields.String,
-        }
+    'id': fields.Raw,
+    'ctime': fields.String,
+    'mtime': fields.String,
+    'machine': fields.Raw,
+    'status': fields.String,
+    'method': fields.Nested(method_resource_fields),
+    'structure': fields.Nested(structure_resource_fields),
+    }
 
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
@@ -57,7 +69,7 @@ class TaskList(Resource):
 result_resource_fields = {
         'id': fields.Raw,
         'energy': fields.Float,
-        'task': fields.String,
+        'task': fields.Nested(task_resource_fields),
         }
 
 class ResultResource(Resource):
