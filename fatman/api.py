@@ -83,8 +83,12 @@ class ResultList(Resource):
 
 # Catch common exceptions in the REST dispatcher
 errors = {
-        'DoesNotExist': {
-            'message': "A resource with that ID does not exist.",
+        'TaskDoesNotExist': {
+            'message': "Task with the specified ID does not exist.",
+            'status': 404,
+            },
+        'ResultDoesNotExist': {
+            'message': "Result with the specified ID does not exist.",
             'status': 404,
             },
         }
