@@ -1,11 +1,14 @@
 
-from flask_admin import Admin
+from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.peewee import ModelView
 
 from fatman import app
 from fatman.models import *
 
-admin = Admin(app, name='FATMAN', template_mode='bootstrap3')
+admin = Admin(app,
+              name='FATMAN', template_mode='bootstrap3',
+              index_view=AdminIndexView(url=app.config["APPLICATION_ROOT"] + '/admin')
+             )
 
 class BaseView(ModelView):
     # I want the id to be displayed by default

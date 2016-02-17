@@ -78,7 +78,7 @@ class ResultList(Resource):
     def get(self):
         return [model_to_dict(r) for r in Result.select(Result.id)]
 
-api = Api(app)
+api = Api(app, prefix=app.config['APPLICATION_ROOT'])
 api.add_resource(TaskResource, '/tasks/<int:task_id>')
 api.add_resource(TaskList, '/tasks')
 api.add_resource(ResultResource, '/results/<int:result_id>')
