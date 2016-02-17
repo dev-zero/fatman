@@ -19,10 +19,7 @@ task_resource_fields = {
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
     def get(self, task_id):
-        try:
-            return Task.get(Task.id == task_id)
-        except DoesNotExist:
-            abort(404, message="Task {} does not exist".format(task_id))
+        return Task.get(Task.id == task_id)
 
     @marshal_with(task_resource_fields)
     def put(self, task_id):
@@ -30,10 +27,7 @@ class TaskResource(Resource):
         parser.add_argument('status', type=str, required=True)
         args = parser.parse_args()
 
-        try:
-            task = Task.get(Task.id == task_id)
-        except DoesNotExist:
-            abort(404, message="Task {} does not exist".format(task_id))
+        task = Task.get(Task.id == task_id)
 
         try:
             status_id = TaskStatus.get(TaskStatus.name == args['status']).id
@@ -69,16 +63,21 @@ result_resource_fields = {
 class ResultResource(Resource):
     @marshal_with(result_resource_fields)
     def get(self, result_id):
-        try:
-            return model_to_dict(Result.get(Result.id == result_id))
-        except DoesNotExist:
-            abort(404, message="Result {} does not exist".format(result_id))
+        return Result.get(Result.id == result_id)
 
 class ResultList(Resource):
     def get(self):
         return [marshal(r, result_resource_fields) for r in Result.select().join(Task)]
 
-api = Api(app, prefix=app.config['APPLICATION_ROOT'])
+# Catch common exceptions in the REST dispatcher
+errors = {
+        'DoesNotExist': {
+            'message': "A resource with that ID does not exist.",
+            'status': 404,
+            },
+        }
+
+api = Api(app, prefix=app.config['APPLICATION_ROOT'], errors=errors)
 api.add_resource(TaskResource, '/tasks/<int:task_id>')
 api.add_resource(TaskList, '/tasks')
 api.add_resource(ResultResource, '/results/<int:result_id>')
