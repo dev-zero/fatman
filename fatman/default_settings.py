@@ -1,4 +1,4 @@
 
 DATABASE = 'fatman'
 APPLICATION_ROOT = ''
-DEBUG = None
+DEBUG = False
