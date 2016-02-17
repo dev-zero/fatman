@@ -1,2 +1,3 @@
 
 DATABASE = 'fatman'
+APPLICATION_ROOT = ''
