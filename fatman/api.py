@@ -22,7 +22,7 @@ class TaskResource(Resource):
         return Task.get(Task.id == task_id)
 
     @marshal_with(task_resource_fields)
-    def put(self, task_id):
+    def patch(self, task_id):
         parser = reqparse.RequestParser()
         parser.add_argument('status', type=str, required=True)
         args = parser.parse_args()
