@@ -1,5 +1,5 @@
 
-from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with
+from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
 from playhouse.shortcuts import model_to_dict
 from datetime import datetime
 
@@ -50,24 +50,24 @@ class TaskResource(Resource):
 
 class TaskList(Resource):
     def get(self):
-        return {
-            t.id: {
-                'ctime': str(t.ctime),
-                'mtime': str(t.mtime),
-                'machine': t.machine,
-                'status': str(t.status),
-                'method': str(t.method),
-                'structure': str(t.structure),
-                }
+        return [
+            marshal(t, task_resource_fields)
             for t in Task.select()
             .join(TaskStatus).switch(Task)
             .join(Method).switch(Task)
             .join(Structure).switch(Task)
             .order_by(Task.id.desc())
-            }
+            ]
 
+
+result_resource_fields = {
+        'id': fields.Raw,
+        'energy': fields.Float,
+        'task': fields.String,
+        }
 
 class ResultResource(Resource):
+    @marshal_with(result_resource_fields)
     def get(self, result_id):
         try:
             return model_to_dict(Result.get(Result.id == result_id))
@@ -76,7 +76,7 @@ class ResultResource(Resource):
 
 class ResultList(Resource):
     def get(self):
-        return [model_to_dict(r) for r in Result.select(Result.id)]
+        return [marshal(r, result_resource_fields) for r in Result.select().join(Task)]
 
 api = Api(app, prefix=app.config['APPLICATION_ROOT'])
 api.add_resource(TaskResource, '/tasks/<int:task_id>')
