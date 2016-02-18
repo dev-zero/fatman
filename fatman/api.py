@@ -1,39 +1,46 @@
 
-from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with
+from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
 from playhouse.shortcuts import model_to_dict
 from datetime import datetime
 
 from fatman import app
 from fatman.models import *
 
+method_resource_fields = {
+    'id': fields.Raw,
+    'code': fields.Raw,
+    'pseudopotential': fields.Raw,
+    'basis_set': fields.Raw,
+    }
+
+structure_resource_fields = {
+    'id': fields.Raw,
+    'name': fields.Raw,
+    }
+
 task_resource_fields = {
-        'id': fields.Raw,
-        'ctime': fields.String,
-        'mtime': fields.String,
-        'machine': fields.Raw,
-        'status': fields.String,
-        'method': fields.String,
-        'structure': fields.String,
-        }
+    'id': fields.Integer,
+    'ctime': fields.String,
+    'mtime': fields.String,
+    'machine': fields.Raw,
+    'status': fields.String,
+    'method': fields.Nested(method_resource_fields),
+    'structure': fields.Nested(structure_resource_fields),
+    '_links': { 'self': fields.Url('taskresource') },
+    }
 
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
-    def get(self, task_id):
-        try:
-            return Task.get(Task.id == task_id)
-        except DoesNotExist:
-            abort(404, message="Task {} does not exist".format(task_id))
+    def get(self, id):
+        return model_to_dict(Task.get(Task.id == id))
 
     @marshal_with(task_resource_fields)
-    def put(self, task_id):
+    def patch(self, id):
         parser = reqparse.RequestParser()
         parser.add_argument('status', type=str, required=True)
         args = parser.parse_args()
 
-        try:
-            task = Task.get(Task.id == task_id)
-        except DoesNotExist:
-            abort(404, message="Task {} does not exist".format(task_id))
+        task = Task.get(Task.id == id)
 
         try:
             status_id = TaskStatus.get(TaskStatus.name == args['status']).id
@@ -50,36 +57,47 @@ class TaskResource(Resource):
 
 class TaskList(Resource):
     def get(self):
-        return {
-            t.id: {
-                'ctime': str(t.ctime),
-                'mtime': str(t.mtime),
-                'machine': t.machine,
-                'status': str(t.status),
-                'method': str(t.method),
-                'structure': str(t.structure),
-                }
+        return [
+            marshal(model_to_dict(t), task_resource_fields)
             for t in Task.select()
             .join(TaskStatus).switch(Task)
             .join(Method).switch(Task)
             .join(Structure).switch(Task)
             .order_by(Task.id.desc())
-            }
+            ]
 
+
+result_resource_fields = {
+   'id': fields.Raw,
+   'energy': fields.Float,
+   'task': fields.Nested(task_resource_fields),
+   '_links': { 'self': fields.Url('resultresource') },
+   }
 
 class ResultResource(Resource):
-    def get(self, result_id):
-        try:
-            return model_to_dict(Result.get(Result.id == result_id))
-        except DoesNotExist:
-            abort(404, message="Result {} does not exist".format(result_id))
+    @marshal_with(result_resource_fields)
+    def get(self, id):
+        return model_to_dict(Result.get(Result.id == id))
 
 class ResultList(Resource):
     def get(self):
-        return [model_to_dict(r) for r in Result.select(Result.id)]
+        return [marshal(model_to_dict(r), result_resource_fields) for r in Result.select().join(Task)]
 
-api = Api(app, prefix=app.config['APPLICATION_ROOT'])
-api.add_resource(TaskResource, '/tasks/<int:task_id>')
+# Catch common exceptions in the REST dispatcher
+errors = {
+        'TaskDoesNotExist': {
+            'message': "Task with the specified ID does not exist.",
+            'status': 404,
+            },
+        'ResultDoesNotExist': {
+            'message': "Result with the specified ID does not exist.",
+            'status': 404,
+            },
+        }
+
+api = Api(app, prefix=app.config['APPLICATION_ROOT'], errors=errors)
+
+api.add_resource(TaskResource, '/tasks/<int:id>')
 api.add_resource(TaskList, '/tasks')
-api.add_resource(ResultResource, '/results/<int:result_id>')
+api.add_resource(ResultResource, '/results/<int:id>')
 api.add_resource(ResultList, '/results')
