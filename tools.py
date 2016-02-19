@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 def Atoms2Json(structure, additional_information={}):
     """Serialize an ASE Structure definition to JSON and return it as a string"""
