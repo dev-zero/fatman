@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from ase.test.tasks import dcdft
-from ase.db import connect
 from ase import io
 from string import find
 import os
@@ -13,9 +11,6 @@ from fatman.models import Structure, Test, TestStructure
 
 def main():
     """Add all the structures and associated tests for the 29 subsets of the GMTKN30 database"""
-    #con = connect("postgresql:///fatman")
-    con = connect("./foo.json")
-
     os.chdir("gmtkn30")
 
     #some default values for cell sizes for the various subdatabases
@@ -50,15 +45,16 @@ def main():
                     #load the xyz and assign a cubic cell based on the volume above
                     mystruc = io.read(fn)
                     mystruc.set_cell([volumes[db_id]]*3,scale_atoms=False)
-
+                    
                     #serialize to json using a derivative of the native ASE methods.
                     #more elegantly one should probably extend the Atoms object with its own routine to output json.
                     ase_structure = Atoms2Json(mystruc,
                                                additional_information = {"dataset":"gmtkn30", "identifier":"gmtkn30_{}_{}".format(db_id,struct_id),"multiplicity":multiplicity, "charge":charge })
-                    
+
                     #assumes the ase_structure field to be of type STRING/VARCHAR/...
                     struct, created = Structure.create_or_get(name="gmtkn30_{}_{}".format(db_id,struct_id),ase_structure=ase_structure)
                     teststructure, created = TestStructure.create_or_get(structure = struct.id, test = test.id)
 
 
-main()
+if __name__=="__main__":
+    main()

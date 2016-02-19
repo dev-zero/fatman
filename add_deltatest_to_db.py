@@ -5,6 +5,7 @@ from ase.db import connect
 
 from fatman import db
 from fatman.models import Structure, Test, TestStructure
+from tools import Atoms2Json
 
 def main():
     """Add all the structures and associated tests for the DELTATEST framework to the database"""
@@ -24,9 +25,9 @@ def main():
             
             struct = data.copy()
             struct.set_cell(eq_cell*strain, scale_atoms=True)
-            con.write(struct, dataset="deltatest", identifier="deltatest_{}_{:4.2f}".format(el,strain))
-            row = con.get(identifier="deltatest_{}_{:4.2f}".format(el,strain))
-            ase_structure = row.id
+
+            ase_structure = Atoms2Json(struct, 
+                                       additional_information={"dataset":"deltatest","identifier":"deltatest_{}_{:4.2f}".format(el,strain)})
 
             struct, created = Structure.create_or_get(name="deltatest_{}_{:4.2f}".format(el,strain),ase_structure=ase_structure)
             teststructure, created = TestStructure.create_or_get(structure = struct.id, test = test.id)
