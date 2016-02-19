@@ -31,6 +31,28 @@ def cleardb():
 
 
 @manager.command
+def migration():
+    """Do schema migration"""
+
+    # the following is merely an example since it isn't idempotent
+    # peewee does not have automated schema versioning/introspection
+    from fatman import db
+    from playhouse.migrate import PostgresqlMigrator, migrate
+    from peewee import IntegerField
+    # see http://docs.peewee-orm.com/en/latest/peewee/playhouse.html#schema-migrations
+    migrator = PostgresqlMigrator(db)
+    with db.transaction():
+        migrate(
+            # if a new field is to be not-NULL, a default must be provided,
+            # the uniqueness constraint will get ignored here
+            migrator.add_column('structure', 'ase_structure',
+                                IntegerField(null=False, unique=True, default=0)),
+            # ... and must be added manually via an index
+            migrator.add_index('structure', ('ase_structure',), True),
+        )
+
+
+@manager.command
 def createconfig():
     """Create initial configuration file"""
 
