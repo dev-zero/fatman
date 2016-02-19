@@ -10,7 +10,7 @@ class BaseModel(Model):
 
 class Structure(BaseModel):
     name = CharField(unique=True, null=False)
-    ase_structure = IntegerField(unique=True, null=False)
+    ase_structure = TextField(null=False)
     class Meta:
         order_by = ('name',)
 
