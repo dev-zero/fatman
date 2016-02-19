@@ -17,6 +17,19 @@ def initdb():
     for name in ['new', 'pending', 'running', 'done', 'error']:
         TaskStatus.create_or_get(name=name)
 
+
+@manager.command
+def cleardb():
+    """Delete all the data in the Structure, Test, TestStructure, and Task databases. 
+       The Result and Method tables remain intact."""
+
+    from fatman import db
+    from fatman.models import Structure, Test, TestStructure, Task
+    for table in [Structure, TestStructure, Test, Task]:
+        q = table.delete()
+        q.execute()
+
+
 @manager.command
 def createconfig():
     """Create initial configuration file"""
