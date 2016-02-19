@@ -61,5 +61,11 @@ def createconfig():
     with open('fatman.cfg', 'w') as cfg:
         cfg.write("SECRET_KEY = {}\n".format(urandom(24)))
 
+@manager.shell
+def make_shell_context():
+    from fatman import db
+    import fatman.models
+    return dict(app=app, db=db, models=fatman.models)
+
 if __name__ == '__main__':
     manager.run()
