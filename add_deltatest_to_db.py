@@ -21,11 +21,12 @@ def main():
      "Hg": (24,24,28), "Tl": (32,32,18), "Pb": (20,20,20), "Bi": (26,26,8 ), "Po": (30,30,30), "Rn": (14,14,14)   }
 
     deltastructures = dcdft.DeltaCodesDFTCollection()
-    element_list = kpts.keys()
+    element_list = deltastructures.keys()
     
     con = connect("postgresql:///fatman")
 
     for el in element_list:
+        if el not in kpts.keys(): continue
         test, created = Test.create_or_get(name="deltatest_{}".format(el), description="Deltatest for element {}".format(el))
 
         for strain in [0.98, 0.99, 1.00, 1.01, 1.02]:
@@ -41,7 +42,6 @@ def main():
 
             struct, created = Structure.create_or_get(name="deltatest_{}_{:4.2f}".format(el,strain),ase_structure=ase_structure)
             teststructure, created = TestStructure.create_or_get(structure = struct.id, test = test.id)
-
 
 if __name__=="__main__":
     main()
