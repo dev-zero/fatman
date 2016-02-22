@@ -23,7 +23,7 @@ task_resource_fields = {
     'ctime': fields.String,
     'mtime': fields.String,
     'machine': fields.Raw,
-    'status': fields.String,
+    'status': fields.String(attribute='status.name'),
     'method': fields.Nested(method_resource_fields),
     'structure': fields.Nested(structure_resource_fields),
     '_links': { 'self': fields.Url('taskresource') },
@@ -52,7 +52,7 @@ class TaskResource(Resource):
         task.mtime = datetime.now()
         task.save()
 
-        return task
+        return model_to_dict(task)
 
 
 class TaskList(Resource):
