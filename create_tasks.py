@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from datetime import datetime
 from fatman import db
 from fatman.models import Task, Test, TestStructure, Method, TaskStatus
