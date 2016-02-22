@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import requests
+from fatman.models import Structure, Task, TestStructure, Test
 from tools import Json2Atoms
+from codehandling import HandlerFactory
 
 SERVER = 'http://localhost'
 TASKS_URL = SERVER + '/fatman/tasks'
@@ -22,15 +24,25 @@ def main():
     req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending'})
     req.raise_for_status()
     task = req.json()
-
-    #which structure?
     print task
 
-    #which code to use?
+    #which structure?
+    struct_id = task['structure']['id']
+    struct_json = Structure.get(Structure.id == struct_id).ase_structure
+    struct = Json2Atoms(struct_json)
+
+    #which code to use with which settings?
+    mymethod = task['method']
+    if "kpoints" in struct.info["key_value_pairs"].keys():
+        mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
+
+
+    print mymethod
 
     #which settings for the code?
+    codehandler = HandlerFactory(struct, mymethod)
 
-
+    codehandler.runOne()
 
     #run the code
 
