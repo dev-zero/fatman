@@ -18,6 +18,7 @@ method_resource_fields = {
 structure_resource_fields = {
     'id': fields.Raw,
     'name': fields.Raw,
+    'ase_structure' : fields.Raw, 
     }
 
 task_resource_fields = {
