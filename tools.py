@@ -46,7 +46,7 @@ def test1():
     assert (newstructure.get_pbc()            == teststructure.get_pbc()).all()
     assert  newstructure.info["key_value_pairs"]["abc"] == "def"  
 
-    print "apparently no issue"
+    print("apparently no issue")
 
 if __name__=="__main__":
     #if called execute "unit" tests
