@@ -74,4 +74,4 @@ class Task(BaseModel):
 class Result(BaseModel):
     energy = DoubleField()
     task = ForeignKeyField(Task, related_name='results')
-
+    filename = CharField()
