@@ -12,6 +12,7 @@ method_resource_fields = {
     'code': fields.Raw,
     'pseudopotential': fields.Raw,
     'basis_set': fields.Raw,
+    'settings': fields.Raw,
     }
 
 structure_resource_fields = {
