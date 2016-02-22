@@ -3,8 +3,8 @@
 import requests
 from tools import Json2Atoms
 
-SERVER = 'http://localhost:5000'
-TASKS_URL = SERVER + '/tasks'
+SERVER = 'http://localhost'
+TASKS_URL = SERVER + '/fatman/tasks'
 
 def main():
     """The fatman client queries the DB for new tasks and runs them until none are left"""
@@ -24,6 +24,7 @@ def main():
     task = req.json()
 
     #which structure?
+    print task
 
     #which code to use?
 
