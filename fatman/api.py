@@ -40,15 +40,9 @@ class TaskResource(Resource):
         parser.add_argument('status', type=str, required=True)
         args = parser.parse_args()
 
-        task = Task.get(Task.id == id)
-
-        try:
-            status_id = TaskStatus.get(TaskStatus.name == args['status']).id
-        except DoesNotExist:
-            abort(404, message="Invalid status {}".format(args['status']))
-
         # update the status and reset the modification time
-        task.status = status_id
+        task = Task.get(Task.id == id)
+        task.status = TaskStatus.get(TaskStatus.name == args['status']).id
         task.mtime = datetime.now()
         task.save()
 
@@ -85,6 +79,10 @@ class ResultList(Resource):
 
 # Catch common exceptions in the REST dispatcher
 errors = {
+        'TaskStatusDoesNotExist': {
+            'message': "Invalid status specified.",
+            'status': 404,
+            },
         'TaskDoesNotExist': {
             'message': "Task with the specified ID does not exist.",
             'status': 404,
