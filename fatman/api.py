@@ -52,14 +52,25 @@ class TaskResource(Resource):
 
 class TaskList(Resource):
     def get(self):
-        return [
-            marshal(model_to_dict(t), task_resource_fields)
-            for t in Task.select()
-            .join(TaskStatus).switch(Task)
-            .join(Method).switch(Task)
-            .join(Structure).switch(Task)
+        parser = reqparse.RequestParser()
+        parser.add_argument('status', type=str)
+        parser.add_argument('limit', type=int)
+        args = parser.parse_args()
+
+        q = Task.select() \
+            .join(TaskStatus).switch(Task) \
+            .join(Method).switch(Task) \
+            .join(Structure).switch(Task) \
             .order_by(Task.id.desc())
-            ]
+
+        if args['status'] is not None:
+            status = TaskStatus.get(TaskStatus.name == args['status'])
+            q = q.where(Task.status == status)
+
+        if args['limit'] is not None:
+            q = q.limit(args['limit'])
+
+        return [marshal(model_to_dict(t), task_resource_fields) for t in q]
 
 
 result_resource_fields = {
