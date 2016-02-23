@@ -44,12 +44,15 @@ class TaskResource(Resource):
     def patch(self, id):
         parser = reqparse.RequestParser()
         parser.add_argument('status', type=str, required=True)
+        parser.add_argument('machine', type=str, required=False)
         args = parser.parse_args()
 
         # update the status and reset the modification time
         task = Task.get(Task.id == id)
         task.status = TaskStatus.get(TaskStatus.name == args['status']).id
         task.mtime = datetime.now()
+        if 'machine' in args.keys():
+            task.machine = args['machine']
         task.save()
 
         return model_to_dict(task)
