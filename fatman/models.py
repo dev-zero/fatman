@@ -42,7 +42,7 @@ class BasisSet(BaseModel):
     basis = TextField(null=False)
 
     class Meta:
-        order_by = ('name',)
+        order_by = ('family',)
 
     def __str__(self):
         return self.name
@@ -53,7 +53,7 @@ class Pseudopotential(BaseModel):
     pseudo = TextField(null=False)
 
     class Meta:
-        order_by = ('name',)
+        order_by = ('family',)
 
     def __str__(self):
         return self.name
