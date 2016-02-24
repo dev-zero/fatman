@@ -1,4 +1,4 @@
-#!/usr/bin/env/python
+#!/usr/bin/env python
 
 from fatman.models import Pseudopotential, BasisSet, PseudopotentialFamily, BasissetFamily, Method
 
