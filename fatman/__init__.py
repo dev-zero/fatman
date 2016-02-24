@@ -6,6 +6,7 @@ from flask.ext.uploads import UploadSet, configure_uploads
 app = Flask(__name__)
 app.config.from_object('fatman.default_settings')
 app.config.from_envvar('FATMAN_SETTINGS', silent=True)
+app.debug = True
 
 db = PostgresqlExtDatabase(
     app.config['DATABASE'],
