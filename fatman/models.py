@@ -21,8 +21,8 @@ class Method(BaseModel):
     # proper database design would demand introduction of
     # separate entities for the following fields, but let's make it easy
     code = CharField()
-    pseudopotential = CharField()
-    basis_set = CharField()
+    pseudopotential = ForeignKeyField(Pseudopotential, related_name = 'method')
+    basis_set = ForeignKeyField(BasisSet, related_name = 'method')
     settings = BinaryJSONField(null=True)
 
     class Meta:
@@ -74,4 +74,47 @@ class Task(BaseModel):
 class Result(BaseModel):
     energy = DoubleField()
     task = ForeignKeyField(Task, related_name='results')
+    filename = CharField()
 
+
+
+class BasissetFamily(BaseModel):
+    name = CharField(unique=True, null=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+class PseudopotentialFamily(BaseModel):
+    name = CharField(unique=True, null=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+
+class BasisSet(BaseModel):
+    family = ForeignKeyField(BasissetFamily, related_name='basisset')
+    element = CharField(null=False)
+    basis = TextField(null=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+class Pseudopotential(BaseModel):
+    family = ForeignKeyField(PseudopotentialFamily, related_name='pseudopotential')
+    element = CharField(null=False)
+    pseudo = TextField(null=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name

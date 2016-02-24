@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 import requests
-from fatman.models import Structure, Task, TestStructure, Test
 from tools import Json2Atoms
 from codehandling import HandlerFactory
 
-SERVER = 'http://localhost'
+SERVER = 'http://172.23.64.223'
 TASKS_URL = SERVER + '/fatman/tasks'
 
 def main():
@@ -27,8 +26,7 @@ def main():
     print task
 
     #which structure?
-    struct_id = task['structure']['id']
-    struct_json = Structure.get(Structure.id == struct_id).ase_structure
+    struct_json = task['structure']['ase_structure']
     struct = Json2Atoms(struct_json)
 
     #which code to use with which settings?

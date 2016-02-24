@@ -1,9 +1,12 @@
 
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
 from playhouse.shortcuts import model_to_dict
+from werkzeug.datastructures import FileStorage
+from werkzeug.wrappers import Response
+
 from datetime import datetime
 
-from fatman import app
+from fatman import app, resultfiles
 from fatman.models import *
 from fatman.utils import route_from
 
@@ -41,12 +44,15 @@ class TaskResource(Resource):
     def patch(self, id):
         parser = reqparse.RequestParser()
         parser.add_argument('status', type=str, required=True)
+        parser.add_argument('machine', type=str, required=False)
         args = parser.parse_args()
 
         # update the status and reset the modification time
         task = Task.get(Task.id == id)
         task.status = TaskStatus.get(TaskStatus.name == args['status']).id
         task.mtime = datetime.now()
+        if 'machine' in args.keys():
+            task.machine = args['machine']
         task.save()
 
         return model_to_dict(task)
@@ -87,6 +93,23 @@ class ResultResource(Resource):
     def get(self, id):
         return model_to_dict(Result.get(Result.id == id))
 
+class ResultFileResource(Resource):
+    def post(self, id):
+        result = Result.get(Result.id == id)
+
+        if result.filename is not None:
+            abort(400, message="Data is already uploaded for this result")
+
+        parser = reqparse.RequestParser()
+        parser.add_argument('file', type=FileStorage, location='files', required=True)
+        args = parser.parse_args()
+        filename = resultfiles.save(args['file'], folder=str(result.id))
+
+        result.filename = filename
+        result.save()
+
+        # use a raw werkzeug Response object to return 201 status code without a body
+        return Response(status=201)
 
 class ResultList(Resource):
     def get(self):
@@ -138,4 +161,5 @@ api = Api(app, prefix=app.config['APPLICATION_ROOT'], errors=errors)
 api.add_resource(TaskResource, '/tasks/<int:id>')
 api.add_resource(TaskList, '/tasks')
 api.add_resource(ResultResource, '/results/<int:id>')
+api.add_resource(ResultFileResource, '/results/<int:id>/file')
 api.add_resource(ResultList, '/results')
