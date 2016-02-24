@@ -17,10 +17,10 @@ def initdb():
     for name in ['new', 'pending', 'running', 'done', 'error']:
         TaskStatus.create_or_get(name=name)
 
-    for name in ['SZV-GTH', 'DZV-GTH', 'DZVP-GTH', 'TZVP-GTH', 'TZV2P-GTH', 'QZV2P-GTH', 'QZV3P-GTH', 'aug-DZVP-GTH', 'aug-TZVP-GTH', 'aug-TZV2P-GTH', 'aug-QZV2P-GTH', 'aug-QZV3P-GTH', 'aug-QZV3P-GTH-i01', 'SADLEJ', 'DZ-ANO', '6-31G*', '6-311ppG3f2d', '6-31ppG3f2d', 'TZVP-pob']:
+    for name in ['SZV-GTH', 'DZV-GTH', 'DZVP-GTH', 'TZVP-GTH', 'TZV2P-GTH', 'QZV2P-GTH', 'QZV3P-GTH', 'aug-DZVP-GTH', 'aug-TZVP-GTH', 'aug-TZV2P-GTH', 'aug-QZV2P-GTH', 'aug-QZV3P-GTH', '6-31G*', '6-311ppG3f2d', '6-31ppG3f2d', 'TZVP-pob', 'DZVP-MOLOPT-SR-GTH', 'DZVP-MOLOPT-GTH']:
         BasissetFamily.create_or_get(name=name)
 
-    for name in ['GTH-PBE', 'GTH-PBE-NLCC', 'GTH-PBE-NLCC2015', 'ALL']:
+    for name in ['GTH-PBE', 'GTH-NLCC-PBE', 'GTH-NLCC2015-PBE', 'ALL']:
         PseudopotentialFamily.create_or_get(name=name)
 
 
