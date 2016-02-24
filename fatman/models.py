@@ -17,6 +17,47 @@ class Structure(BaseModel):
     def __str__(self):
         return self.name
 
+class BasissetFamily(BaseModel):
+    name = CharField(unique=True, null=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+class PseudopotentialFamily(BaseModel):
+    name = CharField(unique=True, null=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+
+class BasisSet(BaseModel):
+    family = ForeignKeyField(BasissetFamily, related_name='basisset')
+    element = CharField(null=False)
+    basis = TextField(null=False)
+
+    class Meta:
+        order_by = ('family',)
+
+    def __str__(self):
+        return self.name
+
+class Pseudopotential(BaseModel):
+    family = ForeignKeyField(PseudopotentialFamily, related_name='pseudopotential')
+    element = CharField(null=False)
+    pseudo = TextField(null=False)
+
+    class Meta:
+        order_by = ('family',)
+
+    def __str__(self):
+        return self.name
+
 class Method(BaseModel):
     # proper database design would demand introduction of
     # separate entities for the following fields, but let's make it easy
@@ -78,43 +119,3 @@ class Result(BaseModel):
 
 
 
-class BasissetFamily(BaseModel):
-    name = CharField(unique=True, null=False)
-
-    class Meta:
-        order_by = ('name',)
-
-    def __str__(self):
-        return self.name
-
-class PseudopotentialFamily(BaseModel):
-    name = CharField(unique=True, null=False)
-
-    class Meta:
-        order_by = ('name',)
-
-    def __str__(self):
-        return self.name
-
-
-class BasisSet(BaseModel):
-    family = ForeignKeyField(BasissetFamily, related_name='basisset')
-    element = CharField(null=False)
-    basis = TextField(null=False)
-
-    class Meta:
-        order_by = ('name',)
-
-    def __str__(self):
-        return self.name
-
-class Pseudopotential(BaseModel):
-    family = ForeignKeyField(PseudopotentialFamily, related_name='pseudopotential')
-    element = CharField(null=False)
-    pseudo = TextField(null=False)
-
-    class Meta:
-        order_by = ('name',)
-
-    def __str__(self):
-        return self.name
