@@ -35,6 +35,7 @@ task_resource_fields = {
     '_links': { 'self': fields.Url('taskresource') },
     }
 
+
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
     def get(self, id):
@@ -140,6 +141,25 @@ class ResultList(Resource):
         return model_to_dict(result), 201, {'Location': api.url_for(ResultResource, id=result.id)}
 
 
+class Basissets(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('family', type=str)
+        parser.add_argument('elements', type=str, action="append")
+        args = parser.parse_args()
+
+        ret = {}
+        for element in args['elements']:
+            basis = BasisSet.get(family==args['family'] and element==element)
+            ret[element] = basis.basis
+
+        return ret
+
+class Pseudopotentials(Resource):
+    def get(self):
+        
+        return range(3)
+
 # Catch common exceptions in the REST dispatcher
 errors = {
         'TaskStatusDoesNotExist': {
@@ -163,3 +183,5 @@ api.add_resource(TaskList, '/tasks')
 api.add_resource(ResultResource, '/results/<int:id>')
 api.add_resource(ResultFileResource, '/results/<int:id>/file')
 api.add_resource(ResultList, '/results')
+api.add_resource(Basissets, '/basis')
+api.add_resource(PseudopotentialList, '/pseudo')
