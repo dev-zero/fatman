@@ -7,7 +7,22 @@ app = Flask(__name__)
 app.config.from_object('fatman.default_settings')
 app.config.from_envvar('FATMAN_SETTINGS', silent=True)
 
-db = PostgresqlExtDatabase(app.config['DATABASE'], register_hstore=False)
+db = PostgresqlExtDatabase(
+    app.config['DATABASE'],
+    autorollback=True, # automatically rollback when a query failed to avoid dead threads
+    register_hstore=False)
+
+# Explicitly connect
+@app.before_request
+def _db_connect():
+    db.connect()
+
+# Explicitly disconnect
+@app.teardown_request
+def _db_close(exc):
+    if not db.is_closed():
+        db.close()
+
 
 resultfiles = UploadSet('results')
 configure_uploads(app, (resultfiles,))
