@@ -17,7 +17,7 @@ basisset_resource_fields = {
 method_resource_fields = {
     'id': fields.Raw,
     'code': fields.Raw,
-    'pseudopotential': fields.String(attribute='pseudopotential.name'),
+    'pseudopotential': fields.String(attribute='pseudopotential.family'),
     'basis_set': fields.Nested(basisset_resource_fields),
     'settings': fields.Raw,
     }
