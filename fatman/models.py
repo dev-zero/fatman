@@ -17,23 +17,6 @@ class Structure(BaseModel):
     def __str__(self):
         return self.name
 
-class Method(BaseModel):
-    # proper database design would demand introduction of
-    # separate entities for the following fields, but let's make it easy
-    code = CharField()
-    pseudopotential = ForeignKeyField(Pseudopotential, related_name = 'method')
-    basis_set = ForeignKeyField(BasisSet, related_name = 'method')
-    settings = BinaryJSONField(null=True)
-
-    class Meta:
-        order_by = ('code',)
-
-    def __str__(self):
-        return "code: {}, pseudopotential: {}, basis set: {}".format(
-                self.code,
-                self.pseudopotential,
-                self.basis_set)
-
 class Test(BaseModel):
     name = CharField(unique=True, null=False)
     description = TextField(null=True)
@@ -118,3 +101,21 @@ class Pseudopotential(BaseModel):
 
     def __str__(self):
         return self.name
+
+class Method(BaseModel):
+    # proper database design would demand introduction of
+    # separate entities for the following fields, but let's make it easy
+    code = CharField()
+    pseudopotential = ForeignKeyField(Pseudopotential, related_name = 'method')
+    basis_set = ForeignKeyField(BasisSet, related_name = 'method')
+    settings = BinaryJSONField(null=True)
+
+    class Meta:
+        order_by = ('code',)
+
+    def __str__(self):
+        return "code: {}, pseudopotential: {}, basis set: {}".format(
+                self.code,
+                self.pseudopotential,
+                self.basis_set)
+
