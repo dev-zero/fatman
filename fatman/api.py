@@ -145,11 +145,11 @@ class Basissets(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('family', type=str)
-        parser.add_argument('elements', type=str, action="append")
+        parser.add_argument('element', type=str, action="append")
         args = parser.parse_args()
 
         ret = {}
-        for element in args['elements']:
+        for element in args['element']:
             basis = BasisSet.get(BasisSet.family==args['family'] and BasisSet.element==element)
             ret[element] = basis.basis
 
@@ -157,8 +157,18 @@ class Basissets(Resource):
 
 class Pseudopotentials(Resource):
     def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('family', type=str)
+        parser.add_argument('element', type=str, action="append")
+        args = parser.parse_args()
+
+        ret = {}
+        for element in args['element']:
+            pseudo = Pseudopotential.get(Pseudopotential.family==args['family'] and Pseudopotential.element==element)
+            ret[element] = pseudo.pseudo
+
+        return ret
         
-        return [1,2,3]
 
 # Catch common exceptions in the REST dispatcher
 errors = {
