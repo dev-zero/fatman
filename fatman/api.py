@@ -53,7 +53,7 @@ class TaskResource(Resource):
         task.status = TaskStatus.get(TaskStatus.name == args['status']).id
         task.mtime = datetime.now()
         if 'machine' in args.keys():
-            task.machine = args['machine']
+            task.machine = args['machine'] 
         task.save()
 
         return model_to_dict(task)
@@ -150,7 +150,7 @@ class Basissets(Resource):
 
         ret = {}
         for element in args['element']:
-            basis = BasisSet.get(BasisSet.family==args['family'] and BasisSet.element==element)
+            basis = BasisSet.get(BasisSet.family==args['family'],BasisSet.element==element)
             ret[element] = basis.basis
 
         return ret
