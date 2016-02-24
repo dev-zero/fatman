@@ -62,8 +62,8 @@ class Method(BaseModel):
     # proper database design would demand introduction of
     # separate entities for the following fields, but let's make it easy
     code = CharField()
-    pseudopotential = ForeignKeyField(Pseudopotential, related_name = 'method')
-    basis_set = ForeignKeyField(BasisSet, related_name = 'method')
+    pseudopotential = ForeignKeyField(Pseudopotential, related_name = 'method_pp')
+    basis_set = ForeignKeyField(BasisSet, related_name = 'method_bs')
     settings = BinaryJSONField(null=True)
 
     class Meta:
