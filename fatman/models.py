@@ -70,10 +70,17 @@ class Method(BaseModel):
         order_by = ('code',)
 
     def __str__(self):
-        return "code: {}, pseudopotential: {}, basis set: {}".format(
+        if "cutoff_rho" in self.settings.keys():
+            settings_info = ", cutoff: {:.1f}".format(self.settings['cutoff_rho']/13.605692)
+        else:
+            settings_info = ""
+
+        return "code: {}, pseudopotential: {}, basis set: {} {}".format(
                 self.code,
                 self.pseudopotential,
-                self.basis_set)
+                self.basis_set,
+                settings_info
+                )
 
 class Test(BaseModel):
     name = CharField(unique=True, null=False)
