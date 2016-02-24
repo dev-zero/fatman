@@ -10,15 +10,11 @@ from fatman import app, resultfiles
 from fatman.models import *
 from fatman.utils import route_from
 
-basisset_resource_fields = {
-    'family': fields.String
-    }
-
 method_resource_fields = {
     'id': fields.Raw,
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.family.name'),
-    'basis_set': fields.Nested(basisset_resource_fields),
+    'basis_set': fields.String(attribute='basisset.family.name'),
     'settings': fields.Raw,
     }
 
