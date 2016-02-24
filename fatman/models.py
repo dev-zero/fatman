@@ -45,7 +45,7 @@ class BasisSet(BaseModel):
         order_by = ('family',)
 
     def __str__(self):
-        return self.element
+        return self.family.name
 
 class Pseudopotential(BaseModel):
     family = ForeignKeyField(PseudopotentialFamily, related_name='pseudopotential')
@@ -56,7 +56,7 @@ class Pseudopotential(BaseModel):
         order_by = ('family',)
 
     def __str__(self):
-        return self.element
+        return self.family.name
 
 class Method(BaseModel):
     # proper database design would demand introduction of
