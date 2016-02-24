@@ -70,10 +70,11 @@ class Method(BaseModel):
         order_by = ('code',)
 
     def __str__(self):
-        return "code: {}, pseudopotential: {}, basis set: {}".format(
-                self.code,
-                self.pseudopotential,
-                self.basis_set)
+        return "foo"
+       #return "code: {}, pseudopotential: {}, basis set: {}".format(
+       #        self.code,
+       #        self.pseudopotential,
+       #        self.basis_set)
 
 class Test(BaseModel):
     name = CharField(unique=True, null=False)
