@@ -158,7 +158,7 @@ class Basissets(Resource):
 class Pseudopotentials(Resource):
     def get(self):
         
-        return range(3)
+        return [1,2,3]
 
 # Catch common exceptions in the REST dispatcher
 errors = {
