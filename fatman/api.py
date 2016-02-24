@@ -150,7 +150,7 @@ class Basissets(Resource):
 
         ret = {}
         for element in args['element']:
-            basis = BasisSet.get(BasisSet.family==BasissetFamily.get(name==args['family']),BasisSet.element==element)
+            basis = BasisSet.get(BasisSet.family==BasissetFamily.get(BasissetFamily.name==args['family']),BasisSet.element==element)
             ret[element] = basis.basis
 
         return ret
