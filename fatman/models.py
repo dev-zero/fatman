@@ -17,50 +17,6 @@ class Structure(BaseModel):
     def __str__(self):
         return self.name
 
-class Test(BaseModel):
-    name = CharField(unique=True, null=False)
-    description = TextField(null=True)
-
-    class Meta:
-        order_by = ('name',)
-
-    def __str__(self):
-        return self.name
-
-class TestStructure(BaseModel):
-    structure = ForeignKeyField(Structure, related_name='tests')
-    test = ForeignKeyField(Test, related_name='structures')
-
-class TaskStatus(BaseModel):
-    name = CharField(unique=True, null=False)
-
-    class Meta:
-        order_by = ('name',)
-
-    def __str__(self):
-        return self.name
-
-class Task(BaseModel):
-    structure = ForeignKeyField(Structure, related_name='tasks')
-    method = ForeignKeyField(Method, related_name='tasks')
-    status = ForeignKeyField(TaskStatus)
-    ctime = DateTimeField()
-    mtime = DateTimeField()
-    machine = CharField()
-
-    def __str__(self):
-        return "id: {}, structure: {}, status: {}".format(
-                self.id,
-                self.structure,
-                self.status)
-
-class Result(BaseModel):
-    energy = DoubleField()
-    task = ForeignKeyField(Task, related_name='results')
-    filename = CharField()
-
-
-
 class BasissetFamily(BaseModel):
     name = CharField(unique=True, null=False)
 
@@ -118,4 +74,48 @@ class Method(BaseModel):
                 self.code,
                 self.pseudopotential,
                 self.basis_set)
+
+class Test(BaseModel):
+    name = CharField(unique=True, null=False)
+    description = TextField(null=True)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+class TestStructure(BaseModel):
+    structure = ForeignKeyField(Structure, related_name='tests')
+    test = ForeignKeyField(Test, related_name='structures')
+
+class TaskStatus(BaseModel):
+    name = CharField(unique=True, null=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+class Task(BaseModel):
+    structure = ForeignKeyField(Structure, related_name='tasks')
+    method = ForeignKeyField(Method, related_name='tasks')
+    status = ForeignKeyField(TaskStatus)
+    ctime = DateTimeField()
+    mtime = DateTimeField()
+    machine = CharField()
+
+    def __str__(self):
+        return "id: {}, structure: {}, status: {}".format(
+                self.id,
+                self.structure,
+                self.status)
+
+class Result(BaseModel):
+    energy = DoubleField()
+    task = ForeignKeyField(Task, related_name='results')
+    filename = CharField()
+
+
 
