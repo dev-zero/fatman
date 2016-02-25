@@ -14,7 +14,7 @@ def initdb():
     from fatman.models import Structure, Method, Test, TestStructure, TaskStatus, Task, Result, BasissetFamily, PseudopotentialFamily, BasisSet, Pseudopotential
     db.create_tables([Structure, Method, Test, TestStructure, TaskStatus, Task, Result, BasissetFamily, PseudopotentialFamily, BasisSet, Pseudopotential], safe=True)
 
-    for name in ['new', 'pending', 'running', 'done', 'error']:
+    for name in ['new', 'pending', 'running', 'done', 'error', 'resting']:
         TaskStatus.create_or_get(name=name)
 
     for name in ['SZV-GTH', 'DZV-GTH', 'DZVP-GTH', 'TZVP-GTH', 'TZV2P-GTH', 'QZV2P-GTH', 'QZV3P-GTH', 'aug-DZVP-GTH', 'aug-TZVP-GTH', 'aug-TZV2P-GTH', 'aug-QZV2P-GTH', 'aug-QZV3P-GTH', '6-31G*', '6-311ppG3f2d', '6-31ppG3f2d', 'TZVP-pob', 'DZVP-MOLOPT-SR-GTH', 'DZVP-MOLOPT-GTH']:
