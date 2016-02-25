@@ -109,6 +109,7 @@ class Task(BaseModel):
     structure = ForeignKeyField(Structure, related_name='tasks')
     method = ForeignKeyField(Method, related_name='tasks')
     status = ForeignKeyField(TaskStatus)
+    test = ForeignKeyField(Test, related_name='tasks')
     ctime = DateTimeField()
     mtime = DateTimeField()
     machine = CharField()
