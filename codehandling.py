@@ -87,12 +87,6 @@ class cp2kHandler():
                       EXTRAPOLATION USE_GUESS
                       EPS_DEFAULT 1.0E-10
                    &END QS
-                   &KPOINTS
-                        FULL_GRID .TRUE.
-                        SYMMETRY .FALSE.
-                        SCHEME MACDONALD {kpts1:d} {kpts2:d} {kpts3:d} 0.5 0.5 0.5
-                        PARALLEL_GROUP_SIZE 2
-                   &END KPOINTS
                    &MGRID
                         REL_CUTOFF [Ry] 100
                    &END MGRID
@@ -123,42 +117,39 @@ class cp2kHandler():
         Set the required environment variables to run CP2K (unless already set).
         Return a calculator object with all required parameters set to high accuracy
         """
-        pps = self.settings["pseudopotential"]
-        basis = self.settings["basis_set"]
         ecut  = self.settings["settings"]["cutoff_rho"]
-        kpts  = self.settings["kpoints"]
+        kind_settings = self.settings["kind_settings"]
+
+        print self.settings
+        if "kpoints" in self.settings.keys():
+            kpoints  = list(self.settings["kpoints"])
+            if "kpoint_shift" in self.settings["settings"].keys():     #apply k-point origin shift
+                kpoints.extend(self.settings["settings"]["kpoint_shift"])
+        else:
+            kpoints  = None
 
         magmoms = self.structure.get_initial_magnetic_moments()
 
         #an ugly hack because the cp2k ase calculator can't set these parameters, we have to do a search/replace in an input template
-        formatparams = {"kpts1":kpts[0],"kpts2": kpts[1],"kpts3": kpts[2], "do_gapw": "FALSE"}
-
-        if pps=="GTH-PBE":
-            pp_file = "/users/ralph/cp2k/cp2k-code/data/GTH_POTENTIALS"
-        elif pps=="GTH-NLCC-PBE":
-            pp_file = "/users/ralph/cp2k/cp2k-code/data/NLCC_POTENTIALS"
-        elif pps=="GTH-NLCC2015-PBE":
-            pp_file = "/users/ralph/cp2k/cp2k-code/data/NLCC2015_POTENTIALS"
-        elif pps=="ALL":
-            #deal with GAPW calculations
-            pp_file = "/users/ralph/cp2k/cp2k-code/data/POTENTIAL"
-            formatparams["do_gapw"] = "TRUE"
+        #formatparams = {"kpts1":kpts[0],"kpts2": kpts[1],"kpts3": kpts[2], "do_gapw": "FALSE"}
+        formatparams = {"do_gapw": "FALSE"}
 
         inp_template = self.input_template.format(**formatparams)
 
         calc = CP2K (
                 label          = "test",
-                command        = "module load gcc-suite; mpirun -np 4 /users/ralph/cp2k/cp2k-code/exe/Linux-x86-64-gfortran-local/cp2k_shell.popt",
-                basis_set_file = "/users/ralph/cp2k/cp2k-code/data/BASIS_SETS_inc_MOLOPT",
-                potential_file = pp_file,
-                basis_set      = basis,
-                pseudo_potential = pps,
+                command        = "module load gcc-suite/5.3.0; mpirun -np 4 /users/ralph/cp2k/cp2k-code/exe/Linux-x86-64-gfortran-local/cp2k_shell.popt",
+                kind_settings  = kind_settings,
+                basis_set_file = False,
+                potential_file = False,
+                basis_set      = False,
+                pseudo_potential = False,
+                kpoints        = kpoints,
                 xc             ="PBE",
                 cutoff         = ecut,
                 max_scf        = 200,
                 inp            = inp_template,
                 uks            = magmoms.any(),
-                debug=True,
                 )
 
         return calc
@@ -169,27 +160,21 @@ class cp2kHandler():
         identifier = struct.info["key_value_pairs"]["identifier"]
 
         workdir = os.path.join(self.workdir_prefix, "method_{:04d}/{:s}".format(self.settings["id"], identifier))
-        print workdir
-#       try:
-#           os.makedirs(workdir)
-#       except OSError:
-#           pass
 
-#       os.chdir(workdir)
+        try:
+            os.makedirs(workdir)
+        except OSError:
+            pass
+
+        os.chdir(workdir)
 
         deltacalc = self.getCalculator()
 
-
         struct.set_calculator(deltacalc)
 
-        print deltacalc._generate_input()
-
-#       try:
-#           e = struct.get_potential_energy()
-#       except RuntimeError:
-#           return 0,0.
-
-        return 0
+        e = struct.get_potential_energy()
+        
+        return e, os.path.join(workdir, "test.out")
 
 def HandlerFactory(structure, methodsettings = {"code":"cp2k"}):
     if methodsettings["code"] =="abinit":
