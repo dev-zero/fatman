@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from fatman.models import PseudopotentialFamily,Pseudopotential
 
 def main(args):
