@@ -13,8 +13,8 @@ from fatman.utils import route_from
 method_resource_fields = {
     'id': fields.Raw,
     'code': fields.Raw,
-    'pseudopotential': fields.String(attribute='pseudopotential.family.name'),
-    'basis_set': fields.String(attribute='basis_set.family.name'),
+    'pseudopotential': fields.String(attribute='pseudopotential.name'),
+    'basis_set': fields.String(attribute='basis_set.name'),
     'settings': fields.Raw,
     }
 
@@ -70,7 +70,7 @@ class TaskList(Resource):
             .join(TaskStatus).switch(Task) \
             .join(Method).switch(Task) \
             .join(Structure).switch(Task) \
-            .order_by(Task.id.desc())
+            .order_by(Task.id.asc())
 
         if args['status'] is not None:
             status = TaskStatus.get(TaskStatus.name == args['status'])
