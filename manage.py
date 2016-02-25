@@ -30,8 +30,8 @@ def cleardb():
        The Result and Method tables remain intact."""
 
     from fatman import db
-    from fatman.models import Structure, Test, TestStructure, Task
-    for table in [Structure, TestStructure, Test, Task]:
+    from fatman.models import Structure, Test, TestStructure, Task, BasisSet, BasissetFamily, Pseudopotential, PseudopotentialFamily
+    for table in [Structure, Test, TestStructure, Task, BasisSet, BasissetFamily, Pseudopotential, PseudopotentialFamily]:
         q = table.delete()
         q.execute()
 
