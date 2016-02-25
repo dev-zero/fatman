@@ -70,7 +70,7 @@ class TaskList(Resource):
             .join(TaskStatus).switch(Task) \
             .join(Method).switch(Task) \
             .join(Structure).switch(Task) \
-            .order_by(Task.id.desc())
+            .order_by(Task.id.asc())
 
         if args['status'] is not None:
             status = TaskStatus.get(TaskStatus.name == args['status'])
