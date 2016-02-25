@@ -3,6 +3,7 @@
 import requests, os
 from tools import Json2Atoms
 from codehandling import HandlerFactory
+import os
 
 SERVER = 'http://172.23.64.223'
 TASKS_URL = SERVER + '/fatman/tasks'
@@ -68,7 +69,8 @@ def main():
             done_task = req.json()
             
             #REMOTE: upload the output file
-            with open(output_file_path) as f:
+            os.system ("bzip2 {}".format(output_file_path))
+            with open(output_file_path + ".bz2") as f:
                 req = requests.post(SERVER + done_task["_links"]["self"]+'/file', files={'file':f})
                 req.raise_for_status()
 

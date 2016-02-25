@@ -120,7 +120,6 @@ class cp2kHandler():
         ecut  = self.settings["settings"]["cutoff_rho"]
         kind_settings = self.settings["kind_settings"]
 
-        print self.settings
         if "kpoints" in self.settings.keys():
             kpoints  = list(self.settings["kpoints"])
             if "kpoint_shift" in self.settings["settings"].keys():     #apply k-point origin shift
