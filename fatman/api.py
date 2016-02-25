@@ -52,7 +52,7 @@ class TaskResource(Resource):
         task = Task.get(Task.id == id)
         task.status = TaskStatus.get(TaskStatus.name == args['status']).id
         task.mtime = datetime.now()
-        if 'machine' in args.keys():
+        if 'machine' in args.keys() and args['machine'] is not None:
             task.machine = args['machine'] 
         task.save()
 
