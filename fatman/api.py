@@ -14,7 +14,7 @@ method_resource_fields = {
     'id': fields.Raw,
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
-    'basis_set': fields.String(attribute='basisset.name'),
+    'basis_set': fields.String(attribute='basis_set.name'),
     'settings': fields.Raw,
     }
 
