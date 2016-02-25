@@ -13,8 +13,8 @@ from fatman.utils import route_from
 method_resource_fields = {
     'id': fields.Raw,
     'code': fields.Raw,
-    'pseudopotential': fields.String(attribute='pseudopotentialfamily.name'),
-    'basis_set': fields.String(attribute='basissetfamily.name'),
+    'pseudopotential': fields.String(attribute='pseudopotential.name'),
+    'basis_set': fields.String(attribute='basisset.name'),
     'settings': fields.Raw,
     }
 
