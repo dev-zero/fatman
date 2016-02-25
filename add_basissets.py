@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from fatman.models import BasissetFamily, BasisSet
 
 def main(args):
