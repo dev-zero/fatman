@@ -65,28 +65,10 @@ class cp2kHandler():
         self.settings = settings
         self.structure = structure
         self.input_template = """
-            @SET DO_GAPW {do_gapw:s}
             &GLOBAL
             &END GLOBAL
             &FORCE_EVAL
                &DFT
-                   &QS
-                    @IF ${{DO_GAPW}}==TRUE
-                      METHOD       GAPW
-                     !EPS_GVG      1.0E-8
-                     !EPS_PGF_ORB  1.0E-8
-                     !QUADRATURE   GC_LOG
-                     !EPSFIT       1.E-4
-                     !EPSISO       1.0E-12
-                     !EPSRHO0      1.E-8
-                     !LMAXN0       2
-                     !LMAXN1       6
-                     !ALPHA0_H     10
-                    @ENDIF
-             
-                      EXTRAPOLATION USE_GUESS
-                      EPS_DEFAULT 1.0E-10
-                   &END QS
                    &MGRID
                         REL_CUTOFF [Ry] 100
                    &END MGRID
@@ -127,13 +109,17 @@ class cp2kHandler():
         else:
             kpoints  = None
 
+        if "qs_settings" in self.settings["settings"].keys():
+            qs_settings = self.settings["settings"]["qs_settings"]
+        else:
+            qs_settings = {}
+
         magmoms = self.structure.get_initial_magnetic_moments()
 
         #an ugly hack because the cp2k ase calculator can't set these parameters, we have to do a search/replace in an input template
         #formatparams = {"kpts1":kpts[0],"kpts2": kpts[1],"kpts3": kpts[2], "do_gapw": "FALSE"}
-        formatparams = {"do_gapw": "FALSE"}
 
-        inp_template = self.input_template.format(**formatparams)
+        inp_template = self.input_template
 
         calc = CP2K (
                 label          = "test",
@@ -149,6 +135,7 @@ class cp2kHandler():
                 max_scf        = 200,
                 inp            = inp_template,
                 uks            = magmoms.any(),
+                qs_settings    = qs_settings,
                 )
 
         return calc
