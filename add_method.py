@@ -16,6 +16,7 @@ Method.create_or_get(basis_set        = basis,
                                             "kpoint_shift": [0.5,0.5,0.5],
                                             "qs_settings" : {"method":"GAPW",
                                                              "extrapolation": "USE_GUESS",
-                                                             "eps_default": "1.0E-10"},
+                                                             "eps_default": "1.0E-10",
+                                                             "epsiso"     : "1.0E-10"},
                                          }
                      )
