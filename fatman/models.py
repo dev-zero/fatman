@@ -128,6 +128,6 @@ class Result(BaseModel):
 class TestResult(BaseModel):
     ctime = DateTimeField()
     test = ForeignKeyField(Test, related_name='testresult')
-    method = ForeignKeyField(Method, related_name='tasks')
+    method = ForeignKeyField(Method, related_name='testresult')
     result_data = BinaryJSONField(null=True)
 
