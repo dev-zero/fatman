@@ -11,8 +11,8 @@ def initdb():
     """Initialize the database (structure and initial data)"""
 
     from fatman import db
-    from fatman.models import Structure, Method, Test, TestStructure, TaskStatus, Task, Result, BasissetFamily, PseudopotentialFamily, BasisSet, Pseudopotential
-    db.create_tables([Structure, Method, Test, TestStructure, TaskStatus, Task, Result, BasissetFamily, PseudopotentialFamily, BasisSet, Pseudopotential], safe=True)
+    from fatman.models import Structure, Method, Test, TestStructure, TaskStatus, Task, Result, BasissetFamily, PseudopotentialFamily, BasisSet, Pseudopotential, TestResult
+    db.create_tables([Structure, Method, Test, TestStructure, TaskStatus, Task, Result, BasissetFamily, PseudopotentialFamily, BasisSet, Pseudopotential, TestResult], safe=True)
 
     for name in ['new', 'pending', 'running', 'done', 'error', 'resting']:
         TaskStatus.create_or_get(name=name)

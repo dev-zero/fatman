@@ -125,5 +125,9 @@ class Result(BaseModel):
     task = ForeignKeyField(Task, related_name='results')
     filename = CharField(null=True)
 
-
+class TestResult(BaseModel):
+    ctime = DateTimeField()
+    test = ForeignKeyField(Test, related_name='testresult')
+    method = ForeignKeyField(Method, related_name='tasks')
+    result_data = BinaryJSONField(null=True)
 
