@@ -170,6 +170,65 @@ class Pseudopotentials(Resource):
         return ret
         
 
+class MachineStatus(Resource):
+    """Return a dictionary with the number of running and total tasks per machine:
+              MACHINE   RUN   TOTAL
+       e.g.   machine1   4    124
+              machine2   5    24
+              machine3   0    242
+     """
+    def get(self):
+        ret = {}
+
+        q = Task.select(Task.machine,fn.Count(Task.machine).alias('count')).where(Task.status==TaskStatus.get(TaskStatus.name=="running")).group_by(Task.machine)
+        for x in q:
+            ret[x.machine] = [x.count]
+
+        q = Task.select(Task.machine,fn.Count(Task.machine).alias('count')).group_by(Task.machine)
+        for x in q:
+            if x.machine in ret.keys():
+                ret[x.machine] = [ret[x.machine][0],x.count]
+            else:
+                ret[x.machine] = [0,x.count]
+        
+        return ret
+
+class CalcStatus(Resource):
+    """Return a dictionary of task statuses and the number of tasks with that status
+       e.g.   running   7
+              error     2
+              total    124
+    """
+    def get(self):
+        q = TaskStatus.select().annotate(Task)
+        ret = dict([(x.name,x.count) for x in q])
+        
+        return ret
+
+class Comparison(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('method1', type=int, required=True)
+        parser.add_argument('method2', type=int, required=True)
+        parser.add_argument('test', type=str, action="append")
+        args = parser.parse_args()
+
+        method1 = Method.get(Method.id==args["method1"])
+        method2 = Method.get(Method.id==args["method2"])
+
+        ret={"1": args["test"], "2": method1.code, "3":method2.code}
+        for testname in args["test"]:
+            test = Test.get(Test.name==testname)
+
+            r1 = TestResult.select().where((TestResult.method==method1) & (TestResult.test==test))
+            r1.execute()
+            r2 = TestResult.select().where((TestResult.method==method2) & (TestResult.test==test))
+
+            #if len(r1)==1 and len(r2)==1:
+            ret[testname] = r1.result_data
+
+        return ret
+
 # Catch common exceptions in the REST dispatcher
 errors = {
         'TaskStatusDoesNotExist': {
@@ -195,3 +254,6 @@ api.add_resource(ResultFileResource, '/results/<int:id>/file')
 api.add_resource(ResultList, '/results')
 api.add_resource(Basissets, '/basis')
 api.add_resource(Pseudopotentials, '/pseudo')
+api.add_resource(CalcStatus, '/calcstatus')
+api.add_resource(MachineStatus, '/machinestatus')
+api.add_resource(Comparison, '/compare')
