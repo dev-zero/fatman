@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
 from playhouse.shortcuts import model_to_dict
@@ -9,6 +10,9 @@ from datetime import datetime
 from fatman import app, resultfiles
 from fatman.models import *
 from fatman.utils import route_from
+from tools import calcDelta
+
+import numpy as np
 
 method_resource_fields = {
     'id': fields.Raw,
@@ -205,6 +209,24 @@ class CalcStatus(Resource):
         
         return ret
 
+class TestResult(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('method', type=int, required=True)
+        parser.add_argument('test', type=str, required=True)
+        args = parser.parse_args()
+
+        method1 = Method.get(Method.id==args["method"])
+        test1 = Test.get(Test.name==args["test"])
+
+        try:
+            r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
+            ret={"test": r.test.name, "method": r.method.id, "testresult": r.result_data}
+        except:
+            ret={"test": test.name, "method": method.id, "_error": "resource not found"}
+
+        return ret
+
 class Comparison(Resource):
     def get(self):
         parser = reqparse.RequestParser()
@@ -216,17 +238,27 @@ class Comparison(Resource):
         method1 = Method.get(Method.id==args["method1"])
         method2 = Method.get(Method.id==args["method2"])
 
-        ret={"1": args["test"], "2": method1.code, "3":method2.code}
+        ret={"test": {}, "methods": [method1.id, method2.id]}
+        all_delta = []
         for testname in args["test"]:
             test = Test.get(Test.name==testname)
 
-            r1 = TestResult.select().where((TestResult.method==method1) & (TestResult.test==test))
-            r1.execute()
-            r2 = TestResult.select().where((TestResult.method==method2) & (TestResult.test==test))
+            try:
+                r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))
+                r2 = TestResult.get((TestResult.method==method2) & (TestResult.test==test))
 
-            #if len(r1)==1 and len(r2)==1:
-            ret[testname] = r1.result_data
+                data_f = [r1.result_data["V"], r1.result_data["B0"], r1.result_data["B1"]]
+                data_w = [r2.result_data["V"], r2.result_data["B0"], r2.result_data["B1"]]
+                
+                delta = calcDelta(data_f, data_w)
+                ret["test"][test.name] = delta 
+                all_delta.append(delta)
 
+            except:
+                ret["test"][test.name] = "N/A"
+            
+        all_delta = np.array(all_delta)
+        ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
         return ret
 
 # Catch common exceptions in the REST dispatcher
@@ -256,4 +288,5 @@ api.add_resource(Basissets, '/basis')
 api.add_resource(Pseudopotentials, '/pseudo')
 api.add_resource(CalcStatus, '/calcstatus')
 api.add_resource(MachineStatus, '/machinestatus')
+api.add_resource(TestResult, '/testresult')
 api.add_resource(Comparison, '/compare')
