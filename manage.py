@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from flask.ext.script import Manager
+from flask.ext.script.commands import ShowUrls, Clean
 
 from fatman import app, db, models
 
@@ -79,6 +80,10 @@ def createconfig():
 
     with open('fatman.cfg', 'w') as cfg:
         cfg.write("SECRET_KEY = {}\n".format(urandom(24)))
+
+# add predefined commands from flask.script
+manager.add_command("show_urls", ShowUrls())
+manager.add_command("clean", Clean())
 
 @manager.shell
 def make_shell_context():
