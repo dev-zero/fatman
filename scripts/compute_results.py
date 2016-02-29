@@ -2,7 +2,7 @@
 
 from fatman.models import *
 from datetime import datetime
-from tools import Json2Atoms
+from fatman.tools import Json2Atoms
 from ase.test.tasks import dcdft
 from ase.units import kJ, Ry
 

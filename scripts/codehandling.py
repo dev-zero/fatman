@@ -173,5 +173,5 @@ def HandlerFactory(structure, methodsettings = {"code":"cp2k"}):
         raise RuntimeError ("Asked for unknown code")
 
 if __name__=="__main__":
-    print "DONT RUN ME!"
+    print("DONT RUN ME!")
 

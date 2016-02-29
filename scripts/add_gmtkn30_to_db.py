@@ -4,7 +4,7 @@ from ase import io
 from string import find
 import os
 
-from tools import Atoms2Json, Json2Atoms
+from fatman.tools import Atoms2Json, Json2Atoms
 
 from fatman import db
 from fatman.models import Structure, Test, TestStructure

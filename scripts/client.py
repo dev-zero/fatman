@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import requests, os
-from tools import Json2Atoms
+from fatman.tools import Json2Atoms
 from codehandling import HandlerFactory
 import os
 

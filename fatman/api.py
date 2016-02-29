@@ -10,7 +10,7 @@ from datetime import datetime
 from fatman import app, resultfiles
 from fatman.models import *
 from fatman.utils import route_from
-from tools import calcDelta
+from fatman.tools import calcDelta
 
 import numpy as np
 

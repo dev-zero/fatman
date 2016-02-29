@@ -5,7 +5,7 @@ from ase.db import connect
 
 from fatman import db
 from fatman.models import Structure, Test, TestStructure
-from tools import Atoms2Json
+from fatman.tools import Atoms2Json
 
 def main():
     """Add all the structures and associated tests for the DELTATEST framework to the database"""
