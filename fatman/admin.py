@@ -1,6 +1,7 @@
 
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.peewee import ModelView
+from flask.ext.security import current_user
 
 # Wire-up JSONB fields from peewee-playhouse to WTForms
 from flask_admin.contrib.peewee.form import CustomModelConverter
@@ -16,23 +17,34 @@ admin = Admin(app,
               index_view=AdminIndexView(url='/admin')
              )
 
-class BaseView(ModelView):
+class BaseDataView(ModelView):
     # I want the id to be displayed by default
     column_display_pk = True
     # permit CSV export everywhere
     can_export = True
 
-admin.add_view(BaseView(User))
-admin.add_view(BaseView(Role))
-admin.add_view(BaseView(UserRole))
-admin.add_view(BaseView(Structure))
-admin.add_view(BaseView(Method))
-admin.add_view(BaseView(BasisSet))
-admin.add_view(BaseView(BasissetFamily))
-admin.add_view(BaseView(Pseudopotential))
-admin.add_view(BaseView(PseudopotentialFamily))
-admin.add_view(BaseView(Test))
-admin.add_view(BaseView(TestStructure))
-admin.add_view(BaseView(Task))
-admin.add_view(BaseView(Result))
-admin.add_view(BaseView(TestResult))
+class BaseManagementView(ModelView):
+    """
+    Base View for non-data models
+    """
+    def is_accessible(self):
+        """
+        Make them only accessible to users with the admin role
+        """
+        return current_user.has_role('admin')
+
+admin.add_view(BaseManagementView(User))
+admin.add_view(BaseManagementView(Role))
+admin.add_view(BaseManagementView(UserRole))
+
+admin.add_view(BaseDataView(Structure))
+admin.add_view(BaseDataView(Method))
+admin.add_view(BaseDataView(BasisSet))
+admin.add_view(BaseDataView(BasissetFamily))
+admin.add_view(BaseDataView(Pseudopotential))
+admin.add_view(BaseDataView(PseudopotentialFamily))
+admin.add_view(BaseDataView(Test))
+admin.add_view(BaseDataView(TestStructure))
+admin.add_view(BaseDataView(Task))
+admin.add_view(BaseDataView(Result))
+admin.add_view(BaseDataView(TestResult))
