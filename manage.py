@@ -6,7 +6,7 @@ from flask.ext.security.script import \
         AddRoleCommand, RemoveRoleCommand, \
         CreateUserCommand, ActivateUserCommand, DeactivateUserCommand
 
-from fatman import app, db, models
+from fatman import app, db, models, user_datastore
 
 manager = Manager(app)
 
@@ -57,6 +57,8 @@ def initdb():
 
     for name in ['GTH-PBE', 'GTH-NLCC-PBE', 'GTH-NLCC2015-PBE', 'ALL']:
         models.PseudopotentialFamily.create_or_get(name=name)
+
+    user_datastore.find_or_create_role(name='admin', description='Administrator')
 
 
 @manager.command
