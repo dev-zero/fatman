@@ -2,7 +2,7 @@
 
 from flask.ext.script import Manager
 
-from fatman import app
+from fatman import app, db, models
 
 manager = Manager(app)
 
@@ -10,25 +10,25 @@ manager = Manager(app)
 def initdb():
     """Initialize the database (structure and initial data)"""
 
-    from fatman import db
-    from fatman.models import Structure, Method, Test, TestStructure, TaskStatus, Task, Result
-    from fatman.models import BasissetFamily, PseudopotentialFamily, BasisSet, Pseudopotential, TestResult
-    db.create_tables([Structure,
-                      Method,
-                      Test,
-                      TestStructure,
-                      TaskStatus,
-                      Task,
-                      Result,
-                      BasissetFamily,
-                      PseudopotentialFamily,
-                      BasisSet,
-                      Pseudopotential,
-                      TestResult,
+    db.create_tables([models.Role,
+                      models.User,
+                      models.UserRole,
+                      models.Structure,
+                      models.Method,
+                      models.Test,
+                      models.TestStructure,
+                      models.TaskStatus,
+                      models.Task,
+                      models.Result,
+                      models.BasissetFamily,
+                      models.PseudopotentialFamily,
+                      models.BasisSet,
+                      models.Pseudopotential,
+                      models.TestResult,
                      ], safe=True)
 
     for name in ['new', 'pending', 'running', 'done', 'error', 'resting']:
-        TaskStatus.create_or_get(name=name)
+        models.TaskStatus.create_or_get(name=name)
 
     for name in ['SZV-GTH',
                  'DZV-GTH',
@@ -49,10 +49,10 @@ def initdb():
                  'DZVP-MOLOPT-SR-GTH',
                  'DZVP-MOLOPT-GTH',
                 ]:
-        BasissetFamily.create_or_get(name=name)
+        models.BasissetFamily.create_or_get(name=name)
 
     for name in ['GTH-PBE', 'GTH-NLCC-PBE', 'GTH-NLCC2015-PBE', 'ALL']:
-        PseudopotentialFamily.create_or_get(name=name)
+        models.PseudopotentialFamily.create_or_get(name=name)
 
 
 @manager.command
@@ -60,20 +60,16 @@ def cleardb():
     """Delete all the data in the Structure, Test, TestStructure, and Task databases.
        The Result and Method tables remain intact."""
 
-    from fatman import db
-    from fatman.models import Structure, Test, TestStructure, Task, BasisSet
-    from fatman.models import BasissetFamily, Pseudopotential, PseudopotentialFamily
-    for table in [Structure,
-                  Test,
-                  TestStructure,
-                  Task,
-                  BasisSet,
-                  BasissetFamily,
-                  Pseudopotential,
-                  PseudopotentialFamily,
+    for table in [models.Structure,
+                  models.Test,
+                  models.TestStructure,
+                  models.Task,
+                  models.BasisSet,
+                  models.BasissetFamily,
+                  models.Pseudopotential,
+                  models.PseudopotentialFamily,
                  ]:
         table.delete().execute()
-
 
 @manager.command
 def createconfig():
@@ -86,9 +82,8 @@ def createconfig():
 
 @manager.shell
 def make_shell_context():
-    from fatman import db
-    import fatman.models
-    return dict(app=app, db=db, models=fatman.models)
+    """Automatically load our app, db and models in the shell started by `manage.py shell`"""
+    return dict(app=app, db=db, models=models)
 
 if __name__ == '__main__':
     manager.run()
