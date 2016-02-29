@@ -13,7 +13,7 @@ from fatman.models import *
 
 admin = Admin(app,
               name='FATMAN', template_mode='bootstrap3',
-              index_view=AdminIndexView(url=app.config["APPLICATION_ROOT"] + '/admin')
+              index_view=AdminIndexView(url='/admin')
              )
 
 class BaseView(ModelView):

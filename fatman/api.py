@@ -277,7 +277,7 @@ errors = {
             },
         }
 
-api = Api(app, prefix=app.config['APPLICATION_ROOT'], errors=errors)
+api = Api(app, errors=errors)
 
 api.add_resource(TaskResource, '/tasks/<int:id>')
 api.add_resource(TaskList, '/tasks')
