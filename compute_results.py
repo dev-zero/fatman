@@ -28,19 +28,15 @@ def main():
             q = Result.select().join(Task).where((Task.test == t)&(Task.method==m))
 
             if len(q)>0:   #it can happen that a particular no data is available for a particular method 
-                testresult = ResultFactory(list(q))
+                testresult = store_test_result(list(q))
             else:
                 testresult = None
             
-            if isinstance(testresult, TestResult):
-                print testresult
-                testresult.create_or_get()
-
             
 
-def ResultFactory(testset):
+def store_test_result(testset):
     """Take a list of 'result' rows and process them according to the type of test that was performed.
-       Return a Row object for the TestResults table"""
+       Store a Row object in the TestResults table"""
 
     testname = testset[0].task.test.name
 
@@ -75,18 +71,17 @@ def ResultFactory(testset):
                            "B1"      : B1,
                            "R"       : R }
         
-        testresult = TestResult(test=test, 
-                                method=method,
-                                result_data = result_data,
-                                ctime = ctime)
+        TestResult.create_or_get(test=test, 
+                                 method=method,
+                                 result_data = result_data,
+                                 ctime = ctime)
+
 
     else:
         raise RuntimeError("Can't generate a Result entry for test %s" % testname)
 
 
-
-    return testresult
-
+    return 0
 
 def ev_curve(volumes,energies):                                                                                                                                                                   
     structuredata = dcdft.DeltaCodesDFTCollection()                                                                                                                                                     
