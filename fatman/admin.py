@@ -22,6 +22,9 @@ class BaseView(ModelView):
     # permit CSV export everywhere
     can_export = True
 
+admin.add_view(BaseView(User))
+admin.add_view(BaseView(Role))
+admin.add_view(BaseView(UserRole))
 admin.add_view(BaseView(Structure))
 admin.add_view(BaseView(Method))
 admin.add_view(BaseView(BasisSet))

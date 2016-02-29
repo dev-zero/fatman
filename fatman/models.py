@@ -1,12 +1,35 @@
 
 from peewee import *
 from playhouse.postgres_ext import BinaryJSONField
+from flask.ext.security import UserMixin, RoleMixin
 
 from fatman import db
 
 class BaseModel(Model):
     class Meta:
         database = db
+
+class Role(BaseModel, RoleMixin):
+    name = CharField(unique=True)
+    description = TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
+class User(BaseModel, UserMixin):
+    email = CharField(unique=True)
+    password = TextField()
+    active = BooleanField(default=False, null=False)
+    confirmed_at = DateTimeField(null=True)
+
+    def __str__(self):
+        return self.email
+
+class UserRole(BaseModel):
+    user = ForeignKeyField(User, related_name='roles')
+    role = ForeignKeyField(Role, related_name='users')
+    name = property(lambda self: self.role.name)
+    description = property(lambda self: self.role.description)
 
 class Structure(BaseModel):
     name = CharField(unique=True, null=False)

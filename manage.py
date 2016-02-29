@@ -2,6 +2,9 @@
 
 from flask.ext.script import Manager
 from flask.ext.script.commands import ShowUrls, Clean
+from flask.ext.security.script import \
+        AddRoleCommand, RemoveRoleCommand, \
+        CreateUserCommand, ActivateUserCommand, DeactivateUserCommand
 
 from fatman import app, db, models
 
@@ -80,6 +83,13 @@ def createconfig():
 
     with open('fatman.cfg', 'w') as cfg:
         cfg.write("SECRET_KEY = {}\n".format(urandom(24)))
+
+# add commands from flask.security
+manager.add_command("create_user", CreateUserCommand())
+manager.add_command("add_role", AddRoleCommand())
+manager.add_command("remove_role", RemoveRoleCommand())
+manager.add_command("deactivate_user", DeactivateUserCommand())
+manager.add_command("activate_user", ActivateUserCommand())
 
 # add predefined commands from flask.script
 manager.add_command("show_urls", ShowUrls())

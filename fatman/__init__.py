@@ -2,6 +2,7 @@
 from flask import Flask
 from playhouse.postgres_ext import PostgresqlExtDatabase
 from flask.ext.uploads import UploadSet, configure_uploads
+from flask.ext.security import Security, PeeweeUserDatastore
 
 app = Flask(__name__)
 app.config.from_object('fatman.default_settings')
@@ -30,3 +31,7 @@ configure_uploads(app, (resultfiles,))
 import fatman.admin
 import fatman.api
 import fatman.models
+
+from fatman.models import User, Role, UserRole
+user_datastore = PeeweeUserDatastore(db, User, Role, UserRole)
+security = Security(app, user_datastore)
