@@ -209,7 +209,7 @@ class CalcStatus(Resource):
         
         return ret
 
-class TestResult(Resource):
+class TestResultResource(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('method', type=int, required=True)
@@ -223,7 +223,7 @@ class TestResult(Resource):
             r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
             ret={"test": r.test.name, "method": r.method.id, "testresult": r.result_data}
         except:
-            ret={"test": test.name, "method": method.id, "_error": "resource not found"}
+            ret={"test": test1.name, "method": method1.id, "_error": "resource not found"}
 
         return ret
 
@@ -288,5 +288,5 @@ api.add_resource(Basissets, '/basis')
 api.add_resource(Pseudopotentials, '/pseudo')
 api.add_resource(CalcStatus, '/calcstatus')
 api.add_resource(MachineStatus, '/machinestatus')
-api.add_resource(TestResult, '/testresult')
+api.add_resource(TestResultResource, '/testresult')
 api.add_resource(Comparison, '/compare')
