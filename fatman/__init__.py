@@ -20,10 +20,9 @@ def _db_connect():
 
 # Explicitly disconnect
 @app.teardown_request
-def _db_close(exc):
+def _db_close(_):
     if not db.is_closed():
         db.close()
-
 
 resultfiles = UploadSet('results')
 configure_uploads(app, (resultfiles,))
