@@ -80,7 +80,7 @@ def main():
             req.raise_for_status()
             task = req.json()
 
-        except RuntimeError or AssertionError:
+        except :
             req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
             req.raise_for_status()
 
