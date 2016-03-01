@@ -114,6 +114,11 @@ class cp2kHandler():
         else:
             qs_settings = {}
 
+        if "rel_settings" in self.settings["settings"].keys():
+            qs_settings = self.settings["settings"]["rel_settings"]
+        else:
+            qs_settings = {}
+
         magmoms = self.structure.get_initial_magnetic_moments()
 
         #an ugly hack because the cp2k ase calculator can't set these parameters, we have to do a search/replace in an input template
@@ -136,6 +141,7 @@ class cp2kHandler():
                 inp            = inp_template,
                 uks            = magmoms.any(),
                 qs_settings    = qs_settings,
+                rel_settings   = rel_settings,
                 )
 
         return calc
