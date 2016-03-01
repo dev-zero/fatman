@@ -9,10 +9,8 @@ from ase.units import kJ, Ry
 
 def main():
     """retrieve all the datapoints for the various tests that have been done and compute the deltatest scores"""
-    testresult = None
-
-    available_methods = set()
-    #q = Result.select(Test).join(Task).join(Test)#.group_by(Test.name)
+    created_count = 0
+    attempt_count = 0
 
     q = Test.select().join(Task).join(Result).group_by(Test)
     available_tests = list(q)
@@ -21,18 +19,24 @@ def main():
     available_methods = list(q)
     
     for t in available_tests:
-        print "TEST: ", t.name
+        #print "TEST: ", t.name
         for m in available_methods:
-            print "  METHOD: ", m
+            #print "  METHOD: ", m, 
 
             q = Result.select().join(Task).where((Task.test == t)&(Task.method==m))
 
             if len(q)>0:   #it can happen that a particular no data is available for a particular method 
-                testresult = store_test_result(list(q))
+                created = store_test_result(list(q))
             else:
-                testresult = None
-            
-            
+                created = False
+
+            if created:
+                created_count+=1
+            attempt_count +=1
+            #print "created:", created 
+
+    print "CREATED {} NEW ENTRIES FROM {} RESULTS.".format(created_count, attempt_count)            
+
 
 def store_test_result(testset):
     """Take a list of 'result' rows and process them according to the type of test that was performed.
@@ -71,17 +75,17 @@ def store_test_result(testset):
                            "B1"      : B1,
                            "R"       : R }
         
-        TestResult.create_or_get(test=test, 
+        res, created = TestResult.get_or_create(test=test, 
                                  method=method,
-                                 result_data = result_data,
-                                 ctime = ctime)
+                                 defaults={'ctime': ctime,
+                                           'result_data': result_data })
 
 
     else:
         raise RuntimeError("Can't generate a Result entry for test %s" % testname)
 
 
-    return 0
+    return created 
 
 def ev_curve(volumes,energies):                                                                                                                                                                   
     structuredata = dcdft.DeltaCodesDFTCollection()                                                                                                                                                     
