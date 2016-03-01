@@ -5,7 +5,7 @@ from fatman.tools import Json2Atoms
 from codehandling import HandlerFactory
 import os
 
-SERVER = 'http://172.23.64.223'
+SERVER = 'https://172.23.64.223'
 TASKS_URL = SERVER + '/fatman/tasks'
 RESULTS_URL = SERVER + '/fatman/results'
 BASISSET_URL = SERVER + '/fatman/basis'
