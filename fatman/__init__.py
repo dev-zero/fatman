@@ -31,13 +31,14 @@ configure_uploads(app, (resultfiles,))
 # The imports are deliberately at this place.
 # They import this file itself, but need the app and db objects to be ready.
 # On the other hand we import them here to finish initialization of the app and db objects.
-import fatman.admin
-import fatman.api
 import fatman.models
 
 from fatman.models import User, Role, UserRole
 user_datastore = PeeweeUserDatastore(db, User, Role, UserRole)
 security = Security(app, user_datastore)
+
+import fatman.admin
+import fatman.api
 
 @app.route('/')
 def index():
