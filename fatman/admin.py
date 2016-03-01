@@ -27,6 +27,7 @@ class BaseDataView(ModelView):
     column_display_pk = True
     # permit CSV export everywhere
     can_export = True
+    page_size = 150
 
     def is_accessible(self):
         """
