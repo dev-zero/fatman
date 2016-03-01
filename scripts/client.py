@@ -16,7 +16,7 @@ def main():
 
     while 1:
         #request a task
-        req = requests.get(TASKS_URL, params={'limit': 1, 'status': 'new'})
+        req = requests.get(TASKS_URL, params={'limit': 1, 'status': 'new'}, verify=False)
         req.raise_for_status()
 
         #perhaps this could be replaced by daemon-like behavior: sleep, and check for new tasks after a few minutes
@@ -26,7 +26,7 @@ def main():
             return 0
 
         #set the task's status to pending
-        req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine':os.uname()[1]})
+        req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine':os.uname()[1]}, verify=False)
         req.raise_for_status()
         task = req.json()
 
@@ -42,8 +42,8 @@ def main():
                 #kindof a hack: kpoints are specified with each structure, but are in fact code parameters
 
             #REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
-            basis = requests.get(BASISSET_URL, data={'family':mymethod['basis_set'], 'element':set(struct.get_chemical_symbols())}).json()
-            pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family':mymethod['pseudopotential'], 'element':set(struct.get_chemical_symbols())}).json()
+            basis = requests.get(BASISSET_URL, data={'family':mymethod['basis_set'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
+            pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family':mymethod['pseudopotential'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
 
             if not "kind_settings" in mymethod.keys():
                 mymethod["kind_settings"] = {}
@@ -56,7 +56,7 @@ def main():
             codehandler = HandlerFactory(struct, mymethod)
 
             #REMOTE: update the task's status to "running"
-            req = requests.patch(SERVER + task['_links']['self'], data={'status': 'running'})
+            req = requests.patch(SERVER + task['_links']['self'], data={'status': 'running'}, verify=False)
             req.raise_for_status()
             task = req.json()
 
@@ -64,24 +64,24 @@ def main():
             e,output_file_path = codehandler.runOne()
 
             #REMOTE: throw the energy into the DB, get the id of the stored result
-            req = requests.post(RESULTS_URL, data={'energy': e, 'task_id': task['id']})
+            req = requests.post(RESULTS_URL, data={'energy': e, 'task_id': task['id']}, verify=False)
             req.raise_for_status()
             done_task = req.json()
             
             #REMOTE: upload the output file
             os.system ("bzip2 {}".format(output_file_path))
             with open(output_file_path + ".bz2") as f:
-                req = requests.post(SERVER + done_task["_links"]["self"]+'/file', files={'file':f})
+                req = requests.post(SERVER + done_task["_links"]["self"]+'/file', files={'file':f}, verify=False)
                 req.raise_for_status()
 
 
             #REMOTE: update the task's status to "done"
-            req = requests.patch(SERVER + task['_links']['self'], data={'status': 'done'})
+            req = requests.patch(SERVER + task['_links']['self'], data={'status': 'done'}, verify=False)
             req.raise_for_status()
             task = req.json()
 
         except RuntimeError or AssertionError:
-            req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'})
+            req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
             req.raise_for_status()
 
 
