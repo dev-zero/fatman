@@ -98,6 +98,9 @@ class Method(BaseModel):
         else:
             settings_info = ""
 
+        if "rel_settings" in self.settings.keys():
+            settings_info += ", relativistic"
+
         return "code: {}, pseudopotential: {}, basis set: {} {}".format(
                 self.code,
                 self.pseudopotential,
