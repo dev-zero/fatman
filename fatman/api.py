@@ -168,7 +168,8 @@ class Pseudopotentials(Resource):
 
         ret = {}
         for element in args['element']:
-            pseudo = Pseudopotential.get(Pseudopotential.family==args['family'] and Pseudopotential.element==element)
+            f = PseudopotentialFamily.get(PseudopotentialFamily.name==args['family'])
+            pseudo = Pseudopotential.get((Pseudopotential.family==f) & (Pseudopotential.element==element))
             ret[element] = pseudo.pseudo
 
         return ret
