@@ -7,7 +7,11 @@ from flask.ext.security import Security, PeeweeUserDatastore
 app = Flask(__name__)
 app.config.from_object('fatman.default_settings')
 app.config.from_envvar('FATMAN_SETTINGS', silent=True)
-app.debug = True
+
+if 'SECURITY_POST_LOGIN_VIEW' not in app.config:
+    app.config['SECURITY_POST_LOGIN_VIEW'] = app.config['APPLICATION_ROOT']
+if 'SECURITY_POST_LOGOUT_VIEW' not in app.config:
+    app.config['SECURITY_POST_LOGOUT_VIEW'] = app.config['APPLICATION_ROOT']
 
 db = PostgresqlExtDatabase(
     app.config['DATABASE'],
