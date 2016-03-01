@@ -115,9 +115,9 @@ class cp2kHandler():
             qs_settings = {}
 
         if "rel_settings" in self.settings["settings"].keys():
-            qs_settings = self.settings["settings"]["rel_settings"]
+            rel_settings = self.settings["settings"]["rel_settings"]
         else:
-            qs_settings = {}
+            rel_settings = {}
 
         magmoms = self.structure.get_initial_magnetic_moments()
 
