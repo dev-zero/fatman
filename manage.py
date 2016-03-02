@@ -52,6 +52,12 @@ def initdb():
                  'TZVP-pob',
                  'DZVP-MOLOPT-SR-GTH',
                  'DZVP-MOLOPT-GTH',
+                 'TZVP-MOLOPT-GTH',
+                 'TZV2PX-MOLOPT-GTH',
+                 'pc-1',
+                 'pc-2',
+                 'pc-3',
+                 'pc-4',
                 ]:
         models.BasissetFamily.create_or_get(name=name)
 

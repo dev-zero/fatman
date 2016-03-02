@@ -10,24 +10,33 @@ def main():
     available_elements = ["H","Li","Be","B","C","N","O","F","Na","Mg","Al","Si","P","S","Cl","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br",]
     available_elements = ["H","C","P","Cu"]
 
+    ####################
+    #EDIT HERE:
+    desired_methods = [4,5,6,7,8,9]
     desired_tests = ["deltatest_"+x for x in available_elements]
-    #desired_tests = ["deltatest_P"]
+    ############
 
-    desired_method = Method.get(Method.id == 10)
     status_new = TaskStatus.get(TaskStatus.name == "new")
 
     
     all_teststructures = TestStructure.select()
+    all_methods = Method.select()
 
-    for x in all_teststructures:
-        if x.test.name in desired_tests:
-            Task.create(structure = x.structure, 
-                        method    = desired_method, 
-                        status    = status_new,
-                        test      = x.test,
-                        ctime     = datetime.now(),
-                        mtime     = datetime.now(),
-                        machine   = "-")
+    for m in all_methods:
+        if m.id not in desired_methods: continue
+
+        for x in all_teststructures:
+            if x.test.name not in desired_tests: continue
+
+            t,created = Task.get_or_create(structure = x.structure, 
+                               method    = m, 
+                               test      = x.test,
+                               defaults=dict(
+                                   status    = status_new,
+                                   ctime     = datetime.now(),
+                                   mtime     = datetime.now(),
+                                   machine   = "-")
+                               )
 
 
 if __name__=="__main__":

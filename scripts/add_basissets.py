@@ -5,7 +5,7 @@ def main(args):
     fn = args[0]
 
     infile = open(fn)
-    available_bases = ['SZV-GTH', 'DZV-GTH', 'DZVP-GTH', 'TZVP-GTH', 'TZV2P-GTH', 'QZV2P-GTH', 'QZV3P-GTH', 'aug-DZVP-GTH', 'aug-TZVP-GTH', 'aug-TZV2P-GTH', 'aug-QZV2P-GTH', 'aug-QZV3P-GTH', '6-31G*', '6-311ppG3f2d', '6-31ppG3f2d', 'TZVP-pob', 'DZVP-MOLOPT-SR-GTH', 'DZVP-MOLOPT-GTH', 'DZVP-ALL', 'DZ-ANO']
+    available_bases = ['SZV-GTH', 'DZV-GTH', 'DZVP-GTH', 'TZVP-GTH', 'TZV2P-GTH', 'QZV2P-GTH', 'QZV3P-GTH', 'aug-DZVP-GTH', 'aug-TZVP-GTH', 'aug-TZV2P-GTH', 'aug-QZV2P-GTH', 'aug-QZV3P-GTH', '6-31G*', '6-311ppG3f2d', '6-31ppG3f2d', 'TZVP-pob', 'DZVP-MOLOPT-SR-GTH', 'DZVP-MOLOPT-GTH', 'DZVP-ALL', 'DZ-ANO', 'TZVP-MOLOPT-GTH', 'TZV2PX-MOLOPT-GTH', 'pc-1', 'pc-2', 'pc-3', 'pc-4']
 
     stored_basis = None
     element = None
@@ -23,7 +23,8 @@ def main(args):
                 if len(fam)==1:
                     basis = BasissetFamily.get(name=fam[0])
 
-                    BasisSet.create_or_get(family=basis, element=element, basis=stored_basis)
+                    b, created = BasisSet.get_or_create(family=basis, element=element, defaults=dict(basis=stored_basis))
+                    if created: print "created: ", element, fam[0]
 
 
 
