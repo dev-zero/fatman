@@ -21,7 +21,7 @@ def main():
     for t in available_tests:
         #print "TEST: ", t.name
         for m in available_methods:
-            #print "  METHOD: ", m, 
+            #print "  METHOD: ", m
 
             q = Result.select().join(Task).where((Task.test == t)&(Task.method==m))
 
@@ -65,7 +65,7 @@ def store_test_result(testset):
             volumes.append(struct.get_volume()/natom)
         
         v,e,B0,B1,R = ev_curve(volumes, energies)
-        if isinstance(v,complex):
+        if isinstance(v,complex) or (v=="fail"):
             result_data = {"_status" : "unfittable"}
         else:
             result_data = {"_status" : "fitted", 
@@ -95,6 +95,7 @@ def ev_curve(volumes,energies):
         v,e,B0, B1, R = eos.fit()                                                                                                                                                                            
     except ValueError:
         print "failure"
+        return "fail", "fail", "fail", "fail", "fail"
     else:
         return v,e,B0/kJ * 1.0e24, B1, R[0] 
 
