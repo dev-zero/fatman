@@ -28,6 +28,8 @@ class BaseDataView(ModelView):
     # permit CSV export everywhere
     can_export = True
     page_size = 150
+    can_view_details = True
+    column_formatters = {'basis': lambda v,c,m,p: m.basis[:400]}
 
     def is_accessible(self):
         """
