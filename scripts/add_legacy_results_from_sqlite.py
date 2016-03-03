@@ -121,7 +121,7 @@ def espresso_results(conn,cur):
 def cp2k_results(conn,cur):
     edb = dcdft.DeltaCodesDFTCollection()
 
-    sql = "SELECT * FROM cp2k WHERE status=\"done\" AND basis!='DZVP-MOLOPT-SR-GTH' AND basis!='aug-QZV3P-GTH-i01'"
+    sql = "SELECT * FROM cp2k WHERE status=\"done\" AND basis!='aug-QZV3P-GTH-i01'"
 
     cur.execute(sql)
     #pseudo_translate = {"gth-upf":"GTH-PBE-UPF", "gth-nlcc": "GTH-NLCC-PBE-UPF", "gth-nlcc2015": "GTH-NLCC2015-PBE-UPF"}

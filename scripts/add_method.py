@@ -3,7 +3,7 @@
 from fatman.models import Pseudopotential, BasisSet, PseudopotentialFamily, BasissetFamily, Method
 from ase.units import Ry
 
-basis  = BasissetFamily.get(BasissetFamily.name=='DZVP-ALL')
+basis  = BasissetFamily.get(BasissetFamily.name=='pc-2')
 pseudo = PseudopotentialFamily.get(PseudopotentialFamily.name=='ALL')
 code   = "cp2k"
 
@@ -11,13 +11,13 @@ Method.create_or_get(basis_set        = basis,
                      pseudopotential  = pseudo, 
                      code             = code, 
                      settings         = {   "cutoff_rho"  :  1000.*Ry, 
-                                            "rel_settings": {"method":"ZORA",
-                                                             "zora_type":"MP",
-                                                             "transformation" : "ATOM"}  , 
+                                       #    "rel_settings": {"method":"ZORA",
+                                       #                     "zora_type":"MP",
+                                       #                     "transformation" : "ATOM"}  , 
                                             "kpoint_shift": [0.5,0.5,0.5],
                                             "qs_settings" : {"method":"GAPW",
                                                              "extrapolation": "USE_GUESS",
                                                              "eps_default": "1.0E-10",
-                                                             "epsiso"     : "1.0E-04"},
+                                                             "epsiso"     : "1.0E-06"},
                                          }
                      )
