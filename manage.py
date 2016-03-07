@@ -43,7 +43,7 @@ def initdb():
                   WHERE a.method_id = b.method_id AND 
                         a.test_id = b.test_id
              );
-    """
+    """)
 
     for name in ['new', 'pending', 'running', 'done', 'error', 'resting']:
         models.TaskStatus.create_or_get(name=name)
