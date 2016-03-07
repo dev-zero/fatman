@@ -35,8 +35,7 @@ def initdb():
                      ], safe=True)
     
     db.execute_sql("""
-     DROP VIEW resultwithouttestresult;
-     CREATE VIEW resultwithouttestresult AS 
+     CREATE OR REPLACE VIEW resultwithouttestresult AS 
      SELECT result.* FROM result JOIN task a  ON a.id = result.task_id 
          WHERE NOT EXISTS 
              (SELECT 1 FROM testresult b 
