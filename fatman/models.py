@@ -101,7 +101,11 @@ class Method(BaseModel):
         if "rel_settings" in self.settings.keys():
             settings_info += ", relativistic"
 
-        return "code: {}, pseudopotential: {}, basis set: {} {}".format(
+        if "qs_settings" in self.settings.keys() and "epsiso" in self.settings['qs_settings'].keys():
+            settings_info += ", epsiso={}".format(self.settings['qs_settings']['epsiso'])
+
+        return "ID: {}, code: {}, pseudopotential: {}, basis set: {} {}".format(
+                self.id,
                 self.code,
                 self.pseudopotential,
                 self.basis_set,
