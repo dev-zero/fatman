@@ -11,7 +11,7 @@ from fatman.models import Structure, Test, TestStructure
 
 def main():
     """Add all the structures and associated tests for the 29 subsets of the GMTKN30 database"""
-    os.chdir("gmtkn30")
+    os.chdir("../gmtkn30")
 
     #some default values for cell sizes for the various subdatabases
     volumes ={ "ACONF": 20., "ADIM6": 22., "ALK6": 15., "AL2X": 15.,

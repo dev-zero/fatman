@@ -12,10 +12,10 @@ def main():
     created_count = 0
     attempt_count = 0
 
-    q = Test.select().join(Task).join(Result).group_by(Test)
+    q = Test.select().join(Task).join(ResultWithoutTestResult).group_by(Test)
     available_tests = list(q)
 
-    q = Method.select().join(Task).join(Result).group_by(Method)
+    q = Method.select().join(Task).join(ResultWithoutTestResult).group_by(Method)
     available_methods = list(q)
     
     for t in available_tests:
@@ -23,9 +23,9 @@ def main():
         for m in available_methods:
             #print "  METHOD: ", m
 
-            q = Result.select().join(Task).where((Task.test == t)&(Task.method==m))
+            q = ResultWithoutTestResult.select().join(Task).where((Task.test == t)&(Task.method==m))
 
-            if len(q)>0:   #it can happen that a particular no data is available for a particular method 
+            if len(q)>0:   #it can happen that no data is available for a particular method 
                 created = store_test_result(list(q))
             else:
                 created = False
