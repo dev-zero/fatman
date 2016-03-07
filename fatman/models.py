@@ -145,15 +145,35 @@ class Task(BaseModel):
     machine = CharField()
 
     def __str__(self):
-        return "id: {}, structure: {}, status: {}".format(
+        return "id: {}, structure: {}, status: {}, method: {}".format(
                 self.id,
                 self.structure,
-                self.status)
+                self.status,
+                self.method.id)
 
 class Result(BaseModel):
     energy = DoubleField()
     task = ForeignKeyField(Task, related_name='results')
     filename = CharField(null=True)
+
+class ResultWithoutTestResult(BaseModel):
+    # need to create a VIEW in postgres that feeds into this model
+    # https://github.com/coleifer/peewee/issues/378
+    #
+    #CREATE VIEW resultwithouttestresult AS 
+    #SELECT result.* FROM result JOIN task a  ON a.id = result.task_id 
+    #    WHERE NOT EXISTS 
+    #        (SELECT 1 FROM testresult b 
+    #             WHERE a.method_id = b.method_id AND 
+    #                   a.test_id = b.test_id
+    #        );
+    
+    energy = DoubleField()
+    task = ForeignKeyField(Task, related_name='resultswithout')
+    filename = CharField(null=True)
+
+    class Meta:
+        db_table = 'resultwithouttestresult'
 
 class TestResult(BaseModel):
     ctime = DateTimeField()

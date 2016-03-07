@@ -86,6 +86,7 @@ admin.add_view(BaseDataView(Test))
 admin.add_view(BaseDataView(TestStructure))
 admin.add_view(BaseDataView(Task))
 admin.add_view(BaseDataView(Result))
+admin.add_view(BaseDataView(ResultWithoutTestResult))
 admin.add_view(BaseDataView(TestResult))
 
 # define a context processor for merging flask-admin's template context into the

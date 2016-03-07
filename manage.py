@@ -12,7 +12,10 @@ manager = Manager(app)
 
 @manager.command
 def initdb():
-    """Initialize the database (structure and initial data)"""
+    """Initialize the database (structure and initial data)
+       A VIEW  is also created by manually executing a SQL statement,
+       as there doesn't seem to be any other way to create one.
+    """
 
     db.create_tables([models.Role,
                       models.User,
@@ -30,6 +33,16 @@ def initdb():
                       models.Pseudopotential,
                       models.TestResult,
                      ], safe=True)
+    
+    db.execute_sql("""
+     CREATE VIEW resultwithouttestresult AS 
+     SELECT result.* FROM result JOIN task a  ON a.id = result.task_id 
+         WHERE NOT EXISTS 
+             (SELECT 1 FROM testresult b 
+                  WHERE a.method_id = b.method_id AND 
+                        a.test_id = b.test_id
+             );
+    """
 
     for name in ['new', 'pending', 'running', 'done', 'error', 'resting']:
         models.TaskStatus.create_or_get(name=name)
