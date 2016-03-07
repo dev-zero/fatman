@@ -102,6 +102,11 @@ class cp2kHandler():
         ecut  = self.settings["settings"]["cutoff_rho"]
         kind_settings = self.settings["kind_settings"]
 
+        if 'pseudopotential' in self.settings.keys() and self.settings["pseudopotential"]=="ALL":
+            pseudo = "ALL"
+        else:
+            pseudo = False
+
         if "kpoints" in self.settings.keys():
             kpoints  = list(self.settings["kpoints"])
             if "kpoint_shift" in self.settings["settings"].keys():     #apply k-point origin shift
@@ -119,6 +124,16 @@ class cp2kHandler():
         else:
             rel_settings = {}
 
+        if "multiplicity" in self.settings.keys():
+            multiplicity = self.settings["multiplicity"]
+        else:
+            multiplicity = 1
+
+        if "charge" in self.settings.keys():
+            charge = self.settings["charge"]
+        else:
+            charge = 0
+
         magmoms = self.structure.get_initial_magnetic_moments()
 
         #an ugly hack because the cp2k ase calculator can't set these parameters, we have to do a search/replace in an input template
@@ -133,15 +148,17 @@ class cp2kHandler():
                 basis_set_file = False,
                 potential_file = False,
                 basis_set      = False,
-                pseudo_potential = False,
+                pseudo_potential = pseudo,
                 kpoints        = kpoints,
                 xc             ="PBE",
                 cutoff         = ecut,
                 max_scf        = 200,
                 inp            = inp_template,
-                uks            = magmoms.any(),
+                uks            = magmoms.any() or (multiplicity>1),
                 qs_settings    = qs_settings,
                 rel_settings   = rel_settings,
+                charge         = charge,
+                multiplicity   = multiplicity
                 )
 
         return calc

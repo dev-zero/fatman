@@ -41,6 +41,12 @@ def main():
                 mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
                 #kindof a hack: kpoints are specified with each structure, but are in fact code parameters
 
+            if "charge" in struct.info["key_value_pairs"].keys():
+                mymethod["charge"] = struct.info["key_value_pairs"]["charge"]
+
+            if "multiplicity" in struct.info["key_value_pairs"].keys():
+                mymethod["multiplicity"] = struct.info["key_value_pairs"]["multiplicity"]
+
             #REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
             basis = requests.get(BASISSET_URL, data={'family':mymethod['basis_set'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
             pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family':mymethod['pseudopotential'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
