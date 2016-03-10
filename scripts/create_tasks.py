@@ -14,7 +14,7 @@ def main():
 
     ####################
     #EDIT HERE:
-    desired_methods = [42]
+    desired_methods = [43]
     desired_tests = ["deltatest_"+x for x in available_elements]
     ############
 
@@ -24,6 +24,7 @@ def main():
     all_teststructures = TestStructure.select()
     all_methods = Method.select()
 
+    created_count = 0
     for m in all_methods:
         if m.id not in desired_methods: continue
 
@@ -39,7 +40,11 @@ def main():
                                    mtime     = datetime.now(),
                                    machine   = "-")
                                )
+            if created:
+                created_count +=1
 
+    return created_count
 
 if __name__=="__main__":
-    main()
+    c = main()
+    print "CREATED {} NEW TASKS".format(c)

@@ -7,7 +7,7 @@ from ase.test.tasks import dcdft
 from ase.units import kJ, Ry
 
 
-def main():
+def compute_results():
     """retrieve all the datapoints for the various tests that have been done and compute the deltatest scores"""
     created_count = 0
     attempt_count = 0
@@ -35,7 +35,7 @@ def main():
             attempt_count +=1
             #print "created:", created 
 
-    print "CREATED {} NEW ENTRIES FROM {} RESULTS.".format(created_count, attempt_count)            
+    return created_count, attempt_count
 
 
 def store_test_result(testset):
@@ -43,6 +43,10 @@ def store_test_result(testset):
        Store a Row object in the TestResults table"""
 
     testname = testset[0].task.test.name
+    method = testset[0].task.method
+    test = testset[0].task.test
+
+    ctime = datetime.now()
 
     if "deltatest" in testname:
 
@@ -53,9 +57,6 @@ def store_test_result(testset):
         volumes = []
         natom = 0
 
-        method = testset[0].task.method
-        ctime = datetime.now()
-        test = testset[0].task.test
 
         for x in range(len(testset)):
             struct = Json2Atoms(testset[x].task.structure.ase_structure)
@@ -75,15 +76,43 @@ def store_test_result(testset):
                            "B1"      : B1,
                            "R"       : R }
         
-        res, created = TestResult.get_or_create(test=test, 
-                                 method=method,
-                                 defaults={'ctime': ctime,
-                                           'result_data': result_data })
 
+    elif "GMTKN" in testname:
+        from fatman.tools import gmtkn_coefficients as gc
+        from ase.units import kcal, mol
+
+        sub_db = testname[6:]
+        all_structures = set([item[0] for sublist in gc[sub_db] for item in sublist] )
+
+        if len(testset)<len(all_structures): return None
+        #if we don't have all needed data points, we do nothing.
+
+        result_data = {"_status" : "incomplete", 
+                       "energies": []}
+                       
+        prefix = "gmtkn30_" + testname[6:] + "_"
+        all_energies = dict([(x.task.structure.name, x.energy) for x in testset])
+        for rxn in gc[sub_db]:
+            etot=0.
+            for struct, c in rxn:
+                try:
+                    etot += c*all_energies[prefix+struct]
+                except KeyError:
+                    pass
+
+            #print rxn, etot/kcal*mol, etot
+            result_data["energies"].append(etot)
 
     else:
         raise RuntimeError("Can't generate a Result entry for test %s" % testname)
 
+    res, created = TestResult.get_or_create(test=test, 
+                             method=method,
+                             defaults={'ctime': ctime,
+                                       'result_data': result_data })
+
+    if not created:
+        assert res.result_data == result_data
 
     return created 
 
@@ -103,5 +132,5 @@ def ev_curve(volumes,energies):
 
 
 if __name__=="__main__":
-
-    main()
+    created_count, attempt_count = compute_results()
+    print "CREATED {} NEW ENTRIES FROM {} RESULTS.".format(created_count, attempt_count)            
