@@ -30,13 +30,14 @@ def main():
         req.raise_for_status()
         task = req.json()
 
-        try:
+        if 1: 
             #get structure and convert to ASE object
             struct_json = task['structure']['ase_structure']
             struct = Json2Atoms(struct_json)
 
             #which code to use with which settings?
             mymethod = task['method']
+            print mymethod.keys()
             if "kpoints" in struct.info["key_value_pairs"].keys():
                 mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
                 #kindof a hack: kpoints are specified with each structure, but are in fact code parameters
@@ -51,11 +52,18 @@ def main():
             basis = requests.get(BASISSET_URL, data={'family':mymethod['basis_set'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
             pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family':mymethod['pseudopotential'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
 
-            if not "kind_settings" in mymethod.keys():
-                mymethod["kind_settings"] = {}
+            if "kind_settings" in mymethod["settings"].keys():
+                ks = mymethod["settings"]["kind_settings"].copy()
+            else:
+                ks = {}
+
+            mymethod["kind_settings"] = {}
+
 
             for x in set(basis.keys()) & set(pseudo.keys()):
                 mymethod["kind_settings"][x] =  {"basis_set":basis[x], "potential":pseudo[x]}
+                for k,v in ks.items():
+                    mymethod["kind_settings"][x][k] = v 
 
 
             #create our code-running object with the relevant settings.
@@ -86,7 +94,7 @@ def main():
             req.raise_for_status()
             task = req.json()
 
-        except :
+        else :
             req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
             req.raise_for_status()
 
