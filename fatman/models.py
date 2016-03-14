@@ -93,13 +93,14 @@ class Method(BaseModel):
         order_by = ('code',)
 
     def __str__(self):
-        if "cutoff_rho" in self.settings.keys():
-            settings_info = ", cutoff: {:.1f}".format(self.settings['cutoff_rho']/13.605692)
-        else:
-            settings_info = ""
+        settings_info = ""
 
-        if "rel_settings" in self.settings.keys():
-            settings_info += ", relativistic"
+        if self.settings:
+            if "cutoff_rho" in self.settings.keys():
+                settings_info = ", cutoff: {:.1f}".format(self.settings['cutoff_rho']/13.605692)
+
+            if "rel_settings" in self.settings.keys():
+                settings_info += ", relativistic"
 
         if "qs_settings" in self.settings.keys() and "epsiso" in self.settings['qs_settings'].keys():
             settings_info += ", epsiso={}".format(self.settings['qs_settings']['epsiso'])
