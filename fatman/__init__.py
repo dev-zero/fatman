@@ -6,6 +6,8 @@ from flask.ext.security import Security, PeeweeUserDatastore
 
 app = Flask(__name__)
 app.config.from_object('fatman.default_settings')
+app.config.from_pyfile('fatman.cfg', silent=True)
+app.config.from_pyfile('../fatman.cfg', silent=True)
 app.config.from_envvar('FATMAN_SETTINGS', silent=True)
 
 if 'SECURITY_POST_LOGIN_VIEW' not in app.config:
@@ -43,11 +45,4 @@ security = Security(app, user_datastore)
 
 import fatman.admin
 import fatman.api
-
-@app.route('/')
-def index():
-    """
-    Redirect requests to the base index to the admin interface,
-    until we have something else ready.
-    """
-    return redirect(url_for('admin.index'))
+import fatman.views
