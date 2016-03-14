@@ -1,3 +1,6 @@
 *~
 *.swp
 *.py[oc]
+typings
+node_modules
+.webassets-cache
