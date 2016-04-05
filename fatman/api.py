@@ -144,6 +144,10 @@ class ResultList(Resource):
 
         return model_to_dict(result), 201, {'Location': api.url_for(ResultResource, id=result.id)}
 
+class MethodList(Resource):
+    def get(self):
+        return [(m.id, str(m)) for m in Method.select()]
+
 
 class Basissets(Resource):
     def get(self):
@@ -256,22 +260,50 @@ class Comparison(Resource):
 
         ret={"test": {}, "methods": [method1.id, method2.id]}
         all_delta = []
-        for testname in args["test"]:
+
+        if args["test"] is not None:
+            testlist = args["test"]
+        else:
+            testlist = [t.name for t in Test.select()]
+
+        for testname in testlist:
+            dontadd = False
             test = Test.get(Test.name==testname)
+            print test.name
 
             try:
                 r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))
                 r2 = TestResult.get((TestResult.method==method2) & (TestResult.test==test))
+            except:
+                continue
+                #ret["test"][test.name] = "N/A"
+            print r1, r2
 
-                data_f = [r1.result_data["V"], r1.result_data["B0"], r1.result_data["B1"]]
-                data_w = [r2.result_data["V"], r2.result_data["B0"], r2.result_data["B1"]]
+            if "deltatest" in testname:
+                try:
+                    data_f = [r1.result_data["V"], r1.result_data["B0"], r1.result_data["B1"]]
+                    data_w = [r2.result_data["V"], r2.result_data["B0"], r2.result_data["B1"]]
                 
-                delta = calcDelta(data_f, data_w)
+                    delta = calcDelta(data_f, data_w)
+                except:
+                    dontadd = True
+
+            elif "GMTKN" in testname:
+                try:
+                    n=0
+                    mad=0.
+                    for e1, e2 in zip(r1.result_data["energies"], r2.result_data["energies"]):
+                        mad+= abs(e1-e2)
+                        n+=1
+
+                    delta=mad/n
+                except:
+                    dontadd = True
+
+            if not dontadd:
                 ret["test"][test.name] = delta 
                 all_delta.append(delta)
 
-            except:
-                ret["test"][test.name] = "N/A"
             
         all_delta = np.array(all_delta)
         ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
@@ -306,3 +338,5 @@ api.add_resource(CalcStatus, '/calcstatus')
 api.add_resource(MachineStatus, '/machinestatus')
 api.add_resource(TestResultResource, '/testresult')
 api.add_resource(Comparison, '/compare')
+api.add_resource(MethodList, '/methods')
+
