@@ -3,8 +3,8 @@
 from fatman.models import Pseudopotential, BasisSet, PseudopotentialFamily, BasissetFamily, Method
 from ase.units import Ry
 
-basis  = BasissetFamily.get(BasissetFamily.name=='pc-1')
-pseudo = PseudopotentialFamily.get(PseudopotentialFamily.name=='ALL')
+basis  = BasissetFamily.get(BasissetFamily.name=='DZVP-MOLOPT-SR-GTH')
+pseudo = PseudopotentialFamily.get(PseudopotentialFamily.name=='GTH-PBE')
 code   = "cp2k"
 
 M, c = Method.create_or_get(basis_set        = basis, 
@@ -19,8 +19,8 @@ M, c = Method.create_or_get(basis_set        = basis,
                                                               "extrapolation": "USE_GUESS",
                                                               "eps_default": "1.0E-10",
                                                               "epsiso"     : "1.0E-06"},
-                                            "kind_settings": {"lebedev_grid": "80",
-                                                              "radial_grid" : "80" }
+                                       #    "kind_settings": {"lebedev_grid": "80",
+                                       #                      "radial_grid" : "80" }
                                          }
                      )
 

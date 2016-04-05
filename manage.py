@@ -122,4 +122,5 @@ def make_shell_context():
     return dict(app=app, db=db, models=models)
 
 if __name__ == '__main__':
+    manager.debug=True
     manager.run()

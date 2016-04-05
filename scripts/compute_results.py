@@ -48,6 +48,9 @@ def store_test_result(testset):
 
     ctime = datetime.now()
 
+    print testname
+    #if testname=="GMTKN_ACONF" : return False 
+
     if "deltatest" in testname:
 
         if len(testset) < 5: return None
@@ -102,6 +105,7 @@ def store_test_result(testset):
 
             #print rxn, etot/kcal*mol, etot
             result_data["energies"].append(etot)
+        result_data["_status"] = "done"
 
     else:
         raise RuntimeError("Can't generate a Result entry for test %s" % testname)
