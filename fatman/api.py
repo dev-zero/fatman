@@ -173,7 +173,22 @@ class Pseudopotentials(Resource):
             ret[element] = pseudo.pseudo
 
         return ret
+
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('family', type=str)
+        parser.add_argument('element', type=str)
+        parser.add_argument('pseudo', type=str)
         
+        args = parser.parse_args()
+
+        f,created = PseudopotentialFamily.get_or_create(name==args['family'])
+        p,created = Pseudopotential.get_or_create(family=f, element=element, defaults=dict(pseudo=args['pseudo']))
+
+        if not created:
+            abort(400, message="Pseudo is already uploaded for this result")
+        
+        return Response(status=201)
 
 class MachineStatus(Resource):
     """Return a dictionary with the number of running and total tasks per machine:
