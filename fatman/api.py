@@ -14,6 +14,8 @@ from fatman.tools import calcDelta
 
 import numpy as np
 
+import json
+
 method_resource_fields = {
     'id': fields.Raw,
     'code': fields.Raw,
@@ -62,6 +64,39 @@ class TaskResource(Resource):
 
         return model_to_dict(task)
 
+    def post(self, id):
+        ret = []
+        parser = reqparse.RequestParser()
+        parser.add_argument('structure', type=str, required=False)
+        parser.add_argument('method', type=int, required=True)
+        parser.add_argument('status', type=str, default="new")
+        parser.add_argument('test', type=str, required=True)
+        args = parser.parse_args()
+
+        m = Method.get(Method.id == args['method'])
+        s = TaskStatus.get(TaskStatus.name == args['status'])
+        t = Test.get(Test.name == args['test'])
+
+        if 'structure' in args.keys() and args['structure'] is not None:
+            struct = Structure.get(Structure.name == args['structure'])
+            idlist = [struct.id]
+        else:
+            q = TestStructure.select().where(TestStructure.test == t)
+            q.execute()
+            idlist = [x.structure.id for x in q]
+
+        for id in idlist:
+            struct = Structure.get(Structure.id == id)
+            ta, created = Task.get_or_create(structure = struct,
+                                             method = m, 
+                                             test = t,
+                                             defaults = dict(ctime = datetime.now(),
+                                                             mtime = datetime.now(),
+                                                             status = s,
+                                                             machine = '-'))
+            ret.append(ta.id)
+
+        return ret
 
 class TaskList(Resource):
     def get(self):
@@ -149,6 +184,44 @@ class MethodList(Resource):
         return [(m.id, str(m)) for m in Method.select()]
 
 
+class Methods(Resource):
+    """Return all the details for a method, or set them"""
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('id', type=int)
+        args = parser.parse_args()
+
+        m = Method.get(Method.id==args['id'])
+        ret = {'id'             : m.id,
+               'code'           : m.code,
+               'pseudopotential': m.pseudopotential.id,
+               'basis_set'      : m.basis_set.id,
+               'settings'       : m.settings }
+               
+
+        return ret
+
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('code', type=str)
+        parser.add_argument('pseudopotential', type=int)
+        parser.add_argument('basis_set', type=int)
+        parser.add_argument('settings', type=str)
+        args = parser.parse_args()
+
+        b = BasissetFamily.get(BasissetFamily.id==args['basis_set'])
+        p = PseudopotentialFamily.get(PseudopotentialFamily.id==args['pseudopotential'])
+
+        print args
+        print json.loads(args['settings'])
+        m,created = Method.get_or_create(code = args['code'],
+                                         basis_set = b,
+                                         pseudopotential = p,
+                                         settings = json.loads(args['settings']))
+
+        return {'id': m.id}
+        
+
 class Basissets(Resource):
     def get(self):
         parser = reqparse.RequestParser()
@@ -183,16 +256,22 @@ class Pseudopotentials(Resource):
         parser.add_argument('family', type=str)
         parser.add_argument('element', type=str)
         parser.add_argument('pseudo', type=str)
+        parser.add_argument('overwrite', type=bool, default=False)
         
         args = parser.parse_args()
 
-        f,created = PseudopotentialFamily.get_or_create(name==args['family'])
-        p,created = Pseudopotential.get_or_create(family=f, element=element, defaults=dict(pseudo=args['pseudo']))
+        f,created = PseudopotentialFamily.get_or_create(name=args['family'])
+        p,created = Pseudopotential.get_or_create(family=f, element=args['element'], defaults=dict(pseudo=args['pseudo']))
 
-        if not created:
+        #the user can specify overwriting of the pseudo
+        if args['overwrite'] and not created:
+            q = Pseudopotential.update(pseudo=args['pseudo']).where(Pseudopotential.id == p.id)
+            q.execute()
+
+        if not created and not args['overwrite']:
             abort(400, message="Pseudo is already uploaded for this result")
         
-        return Response(status=201)
+        return {'id': f.id}
 
 class MachineStatus(Resource):
     """Return a dictionary with the number of running and total tasks per machine:
@@ -339,4 +418,5 @@ api.add_resource(MachineStatus, '/machinestatus')
 api.add_resource(TestResultResource, '/testresult')
 api.add_resource(Comparison, '/compare')
 api.add_resource(MethodList, '/methods')
+api.add_resource(Methods, '/method')
 
