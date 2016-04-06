@@ -30,7 +30,7 @@ def main():
         req.raise_for_status()
         task = req.json()
 
-        try: 
+        try : 
             #get structure and convert to ASE object
             struct_json = task['structure']['ase_structure']
             struct = Json2Atoms(struct_json)
@@ -48,21 +48,34 @@ def main():
                 mymethod["multiplicity"] = struct.info["key_value_pairs"]["multiplicity"]
 
             #REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
-            basis = requests.get(BASISSET_URL, data={'family':mymethod['basis_set'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
             pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family':mymethod['pseudopotential'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
 
-            if "kind_settings" in mymethod["settings"].keys():
-                ks = mymethod["settings"]["kind_settings"].copy()
-            else:
-                ks = {}
+            if mymethod["code"] == "cp2k":
+                basis = requests.get(BASISSET_URL, data={'family':mymethod['basis_set'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
+                if "kind_settings" in mymethod["settings"].keys():
+                    ks = mymethod["settings"]["kind_settings"].copy()
+                else:
+                    ks = {}
 
-            mymethod["kind_settings"] = {}
+                mymethod["kind_settings"] = {}
 
 
-            for x in set(basis.keys()) & set(pseudo.keys()):
-                mymethod["kind_settings"][x] =  {"basis_set":basis[x], "potential":pseudo[x]}
-                for k,v in ks.items():
-                    mymethod["kind_settings"][x][k] = v 
+                for x in set(basis.keys()) & set(pseudo.keys()):
+                    mymethod["kind_settings"][x] =  {"basis_set":basis[x], "potential":pseudo[x]}
+                    for k,v in ks.items():
+                        mymethod["kind_settings"][x][k] = v 
+
+            elif mymethod["code"] == "espresso":
+                odir = os.path.join("/users/ralph/work/espresso/", mymethod['pseudopotential'])
+                try:
+                    os.makedirs(odir)
+                except OSError:
+                    pass
+
+                for e, pp in pseudo.items():
+                    of = open(os.path.join(odir, e+".UPF"), 'w')
+                    of.write (pp)
+                    of.close()
 
 
             #create our code-running object with the relevant settings.

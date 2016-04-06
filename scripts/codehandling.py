@@ -8,6 +8,8 @@ from ase import Atoms
 from ase.test.tasks import dcdft
 from ase.units import Ry
 
+import espresso
+
 class abinitHandler():
     def __init__(self):
         _deltaRunner.workdir_prefix = "/data/ralph/deltatests/abinit"
@@ -185,12 +187,112 @@ class cp2kHandler():
         
         return e, os.path.join(workdir, "test.out")
 
+
+
+class espressoHandler():
+    def __init__(self,structure, settings = {}, workdir_prefix = "/data/ralph/deltatests/espresso"):
+        self.workdir_prefix = workdir_prefix
+        self.settings = settings
+        self.structure = structure
+
+    def getCalculator(self, input_only = None, outdir = "./"):
+        """
+        Set the required environment variables to run QuantumEspresso (unless already set).
+        Return a calculator object with all required parameters set to high accuracy
+        """
+        
+        os.popen("module load quantum-espresso")
+        os.popen("module load gcc-suite/5.3.0")
+
+        ecut     = self.settings["settings"]["cutoff_pw"]
+        xc       = self.settings["settings"]["xc"]
+        sigma    = self.settings["settings"]["sigma"]
+        smearing = str(self.settings["settings"]["smearing"])
+        kpts     = list(self.settings["kpoints"])
+        pseudopotential = self.settings["pseudopotential"]
+
+        calc = espresso.espresso(
+                        mode="scf",
+                        pw=ecut,                    #density cutoff automatically 4*ecut ?
+                        kpts=kpts,
+                        xc='PBE',
+                        outdir=outdir,
+                        smearing=smearing,
+                        sigma=sigma,
+                        psppath = "/users/ralph/work/espresso/" + pseudopotential ,
+                        output = {'removewf': True, 'removesave': True},
+                        parflags='-npool 4',
+                        onlycreatepwinp = input_only
+                        )
+            #            onlycreatepwinp=True,
+            #            outdir="./pwinp")
+        return calc
+
+    def runOne(self):
+        struct = self.structure
+        identifier = struct.info["key_value_pairs"]["identifier"]
+
+        workdir = os.path.join(self.workdir_prefix, "method_{:04d}/{:s}".format(self.settings["id"], identifier))
+        deltacalc = self.getCalculator()
+
+        try:
+            os.makedirs(workdir)
+        except OSError:
+            pass
+
+        deltacalc.outdir = workdir
+
+        #if np.sum(abs(struct.get_initial_magnetic_moments()))>0:
+        #    deltacalc.spinpol = True
+        os.chdir(workdir)
+
+        struct.set_calculator(deltacalc)
+
+        e = struct.get_potential_energy()
+        return e, os.path.join(workdir, "log")
+
+
+#   def createOne(self, pseudo, basis, element, strain, cutoff, kpts):
+#       struct = self._getStructure(element, strain)
+#       
+#       pdir = "{0:s}/{2:04d}_{3:s}_{4:s}/{1:4.3f}".format(element, strain,int(cutoff), "".join([str(x) for x in kpts]),pseudo)
+#       workdir = os.path.join(self.workdir_prefix, pdir)
+#       deltacalc = self.getDeltaCalc(cutoff,kpts,pseudo, basis, outdir=workdir,input_only=True)
+
+#       try:
+#           os.makedirs(workdir)
+#       except OSError:
+#           pass
+
+#       deltacalc.outdir = workdir
+#       deltacalc.pwinp = os.path.join(workdir,"pw.inp")
+#       if np.sum(abs(struct.get_initial_magnetic_moments()))>0:
+#           deltacalc.spinpol = True
+#       #os.chdir(workdir)
+
+#       struct.set_calculator(deltacalc)
+#       deltacalc.initialize(struct) 
+
+#       v = struct.get_volume()/len(struct.get_masses())
+
+#       return v,workdir,pdir,len(struct.get_masses())
+
+
+
+
+
+
+
+
 def HandlerFactory(structure, methodsettings = {"code":"cp2k"}):
     if methodsettings["code"] =="abinit":
         return abinitHandler(structure, settings = methodsettings)
 
     elif methodsettings["code"] =="cp2k":
         return cp2kHandler(structure, settings = methodsettings)
+
+    elif methodsettings["code"] =="espresso":
+        return espressoHandler(structure, settings = methodsettings)
 
     else:
         raise RuntimeError ("Asked for unknown code")
