@@ -201,8 +201,8 @@ class espressoHandler():
         Return a calculator object with all required parameters set to high accuracy
         """
         
-        os.popen("module load quantum-espresso")
-        os.popen("module load gcc-suite/5.3.0")
+        os.popen("module load quantum-espresso 2> /dev/null")
+        os.popen("module load gcc-suite/5.3.0 2> /dev/null")
 
         ecut     = self.settings["settings"]["cutoff_pw"]
         xc       = self.settings["settings"]["xc"]

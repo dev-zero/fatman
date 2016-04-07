@@ -3,6 +3,8 @@
 import requests, os
 from fatman.tools import Json2Atoms
 from codehandling import HandlerFactory
+from time import sleep
+from datetime import datetime
 import os
 
 SERVER = 'https://172.23.64.223'
@@ -22,8 +24,9 @@ def main():
         #perhaps this could be replaced by daemon-like behavior: sleep, and check for new tasks after a few minutes
         tasks = req.json()
         if len(tasks) == 0:
-            print('No task to run, exiting')
-            return 0
+            print '{:}: currently no tasks. Waiting 5 minutes.'.format(datetime.now())
+            sleep (5*60)
+            continue
 
         #set the task's status to pending
         req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine':os.uname()[1]}, verify=False)
