@@ -312,17 +312,20 @@ class TestResultResource(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('method', type=int, required=True)
-        parser.add_argument('test', type=str, required=True)
+        parser.add_argument('test', type=str)
         args = parser.parse_args()
 
         method1 = Method.get(Method.id==args["method"])
-        test1 = Test.get(Test.name==args["test"])
-
-        try:
+        if "test" in args.keys() and args["test"] is not None:
+            test1 = Test.get(Test.name==args["test"])
             r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
-            ret={"test": r.test.name, "method": r.method.id, "testresult": r.result_data}
-        except:
-            ret={"test": test1.name, "method": method1.id, "_error": "resource not found"}
+            ret={r.test.name: r.result_data}
+        else:
+            q = TestResult.select().where(TestResult.Method ==method1)
+            q.execute()
+            ret = {}
+            for x in q:
+                ret [x.test.name] = x.result_data
 
         return ret
 
