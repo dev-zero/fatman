@@ -316,16 +316,10 @@ class TestResultResource(Resource):
         args = parser.parse_args()
 
         method1 = Method.get(Method.id==args["method"])
-        if "test" in args.keys() and args["test"] is not None:
-            test1 = Test.get(Test.name==args["test"])
-            r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
-            ret={r.test.name: r.result_data}
-        else:
-            q = TestResult.select().where(TestResult.Method ==method1)
-            q.execute()
-            ret = {}
-            for x in q:
-                ret [x.test.name] = x.result_data
+
+        test1 = Test.get(Test.name==args["test"])
+        r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
+        ret={r.test.name: r.result_data}
 
         return ret
 
@@ -383,7 +377,7 @@ class Comparison(Resource):
                     dontadd = True
 
             if not dontadd:
-                ret["test"][test.name] = delta 
+                ret["test"][test.name] = data_f + data_w +  [delta]
                 all_delta.append(delta)
 
             
