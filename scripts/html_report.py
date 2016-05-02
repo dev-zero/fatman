@@ -195,59 +195,59 @@ def create_html_comparison():
     req.raise_for_status()
     method_list = sorted(req.json(), key = lambda x:x[0])
 
-#   of = open("/users/ralph/work/fatman/reports/html/index.html","w")
-#   of.write(headersection)
-#   of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
-#   of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
-#   of.write("</TR>\n")
+    of = open("/users/ralph/work/fatman/reports/html/index.html","w")
+    of.write(headersection)
+    of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
+    of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
+    of.write("</TR>\n")
 
-#   for m_id_1, desc_1 in method_list:
-#       of.write("<TR style=\"hover {{background: yellow;}}\"><TD><span title=\"{:}\">{:}</span></TD>".format(desc_1,m_id_1))
+    for m_id_1, desc_1 in method_list:
+        of.write("<TR style=\"hover {{background: yellow;}}\"><TD><span title=\"{:}\">{:}</span></TD>".format(desc_1,m_id_1))
 
-#       for m_id_2, desc_2 in method_list:
-#           if m_id_2<=m_id_1 :
-#               of.write("<TD></TD>")
-#               continue
-#           print m_id_1, m_id_2
-#           req = requests.get(COMPARE_URL, params = {"method1": m_id_1, "method2": m_id_2} , verify = False)
+        for m_id_2, desc_2 in method_list:
+            if m_id_2<=m_id_1 :
+                of.write("<TD></TD>")
+                continue
+            print m_id_1, m_id_2
+            req = requests.get(COMPARE_URL, params = {"method1": m_id_1, "method2": m_id_2} , verify = False)
 
-#           req.raise_for_status()
-#           a = req.json()
-#           val = a["summary"]["avg"]
-#           if val>99:
-#               of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">&gt;99</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"]))
-#           elif str(val)=='nan':
-#               of.write("<TD></TD>")
-#               continue
-#           else:
-#               of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">{:3.2f}</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"], val ))
+            req.raise_for_status()
+            a = req.json()
+            val = a["summary"]["avg"]
+            if val>99:
+                of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">&gt;99</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"]))
+            elif str(val)=='nan':
+                of.write("<TD></TD>")
+                continue
+            else:
+                of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">{:3.2f}</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"], val ))
 
-#           detailreport = HTMLReport("/users/ralph/work/fatman/reports/html/{:04d}-{:04d}.html".format(m_id_1, m_id_2))
-#           detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[])
-#           #detailreport.
-#           for t, line in a["test"].items():
-#               if "deltatest_" in t:
-#                   element = t.replace("deltatest_","")
+            detailreport = HTMLReport("/users/ralph/work/fatman/reports/html/{:04d}-{:04d}.html".format(m_id_1, m_id_2))
+            detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[])
+            #detailreport.
+            for t, line in a["test"].items():
+                if "deltatest_" in t:
+                    element = t.replace("deltatest_","")
 
-#               dataline = [("z", str(elements[element])),
-#                           ("Element", element), 
-#                           ("V<sub>0</sub>", line[0]), 
-#                           ("B<sub>0</sub>", line[1]),  
-#                           ("B<sub>1</sub>", line[2]), 
-#                           ("V<sub>0,r</sub>", line[3]), 
-#                           ("B<sub>0,r</sub>", line[4]),  
-#                           ("B<sub>1,r</sub>", line[5]), 
-#                           ("&Delta;",         line[6]) ]
-#               detailreport.add_line(dataline)
+                dataline = [("z", str(elements[element])),
+                            ("Element", element), 
+                            ("V<sub>0</sub>", line[0]), 
+                            ("B<sub>0</sub>", line[1]),  
+                            ("B<sub>1</sub>", line[2]), 
+                            ("V<sub>0,r</sub>", line[3]), 
+                            ("B<sub>0,r</sub>", line[4]),  
+                            ("B<sub>1,r</sub>", line[5]), 
+                            ("&Delta;",         line[6]) ]
+                detailreport.add_line(dataline)
 
-#           detailreport.set_table_footer(delta_avg = a["summary"]["avg"], delta_std=a["summary"]["stdev"])
-#           detailreport.write()
-#       of.write("</TR>")
+            detailreport.set_table_footer(delta_avg = a["summary"]["avg"], delta_std=a["summary"]["stdev"])
+            detailreport.write()
+        of.write("</TR>")
 
 
-#   of.write("</TABLE>")
-#   of.write("</BODY></HTML>")
-#   of.close()
+    of.write("</TABLE>")
+    of.write("</BODY></HTML>")
+    of.close()
 
 
 
@@ -295,8 +295,9 @@ def create_html_comparison():
             for t, line in a["test"].items():
                 if "deltatest_" in t:
                     element = t.replace("deltatest_","")
-
+                theid = desc_2.split(",")[0].split(":")[-1]
                 dataline = [#("z", str(elements[element])),
+                            ("ID", theid        ),
                            #("Element", element), 
                             ("Method", desc_2), 
                             ("V<sub>0</sub>", line[0]), 
