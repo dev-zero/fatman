@@ -117,68 +117,68 @@ atoms_db ={
             'O'  : [   "/users/ralph/work/fatman/PBE/O/q6/O.inp"  , "2s2 2p4"            ,  "[He]"          ] , 
             'F'  : [   "/users/ralph/work/fatman/PBE/F/q7/F.inp"  , "2s2 2p5"            ,  "[He]"          ] , 
             'Ne' : [   "/users/ralph/work/fatman/PBE/Ne/q8/Ne.inp", "2s2 2p6"            ,  "[He]"          ] , 
-            'Na' : [   "/users/ralph/work/fatman/PBE/H/q1/H.inp"  ,        ] , 
-            'Mg' : [   "/users/ralph/work/fatman/PBE/H/q1/H.inp"  ,        ] , 
-            'Al' : [   "/users/ralph/work/fatman/PBE/H/q1/H.inp"  ,        ] , 
-            'Si' : [   "/users/ralph/work/fatman/PBE/H/q1/H.inp"  ,        ] , 
-            'P'  : [    ] , 
-            'S'  : [    ] , 
-            'Cl' : [    ] , 
-            'Ar' : [    ] , 
-            'K'  : [    ] , 
-            'Ca' : [    ] , 
-            'Sc' : [    ] , 
-            'Ti' : [    ] , 
-            'V'  : [    ] , 
-            'Cr' : [    ] , 
-            'Mn' : [    ] , 
-            'Fe' : [    ] , 
-            'Co' : [    ] , 
-            'Ni' : [    ] , 
-            'Cu' : [    ] , 
-            'Zn' : [    ] , 
-            'Ga' : [    ] , 
-            'Ge' : [    ] , 
-            'As' : [    ] , 
-            'Se' : [    ] , 
-            'Br' : [    ] , 
-            'Kr' : [    ] , 
-            'Rb' : [    ] , 
-            'Sr' : [    ] , 
-            'Y'  : [    ] , 
-            'Zr' : [    ] , 
-            'Nb' : [    ] , 
-            'Mo' : [    ] , 
-            'Tc' : [    ] , 
-            'Ru' : [    ] , 
-            'Rh' : [    ] , 
-            'Pd' : [    ] , 
-            'Ag' : [    ] , 
-            'Cd' : [    ] , 
-            'In' : [    ] , 
-            'Sn' : [    ] , 
-            'Sb' : [    ] , 
-            'Te' : [    ] , 
-            'I'  : [    ] , 
-            'Xe' : [    ] , 
-            'Cs' : [    ] , 
-            'Ba' : [    ] , 
-            'La' : [    ] , 
-            'Hf' : [    ] , 
-            'Ta' : [    ] , 
-            'W'  : [    ] , 
-            'Re' : [    ] , 
-            'Os' : [    ] , 
-            'Ir' : [    ] , 
-            'Pt' : [    ] , 
-            'Au' : [    ] , 
-            'Hg' : [    ] , 
-            'Tl' : [    ] , 
-            'Pb' : [    ] , 
-            'Bi' : [    ] , 
-            'Po' : [    ] , 
-            'At' : [    ] , 
-            'Rn' : [    ] , 
+            'Na' : [   "/users/ralph/work/fatman/PBE/Na/q9/Na.inp", "2s2 2p6 3s1"        ,  "[He]"          ] , 
+            'Mg' : [   "/users/ralph/work/fatman/PBE/Mg/q10/Mg.inp","2s2 2p6 3s2"        ,  "[He]"          ] , 
+            'Al' : [   "/users/ralph/work/fatman/PBE/Al/q3/Al.inp", "3s2 3p1"            ,  "[Ne]"          ] , 
+            'Si' : [   "/users/ralph/work/fatman/PBE/Si/q4/Si.inp", "3s2 3p2"            ,  "[Ne]"          ] , 
+            'P'  : [   "/users/ralph/work/fatman/PBE/P/q5/P.inp"  , "3s2 3p3"            ,  "[Ne]"          ] , 
+            'S'  : [   "/users/ralph/work/fatman/PBE/S/q6/S.inp"  , "3s2 3p4"            ,  "[Ne]"          ] , 
+            'Cl' : [   "/users/ralph/work/fatman/PBE/Cl/q7/Cl.inp", "3s2 3p5"            ,  "[Ne]"          ] , 
+            'Ar' : [   "/users/ralph/work/fatman/PBE/Ar/q8/Ar.inp", "3s2 3p6"            ,  "[Ne]"          ] , 
+            'K'  : [   ""                                         , "3s2 3p6 4s1"        ,  "[Ne]"          ] ,
+            'Ca' : [   ""                                         , "3s2 3p6 4s2"        ,  "[Ne]"          ] ,
+            'Sc' : [   ""                                         , "3s2 3p6 4s2 3d1"    ,  "[Ne]"          ] ,
+            'Ti' : [   ""                                         , "3s2 3p6 4s2 3d2"    ,  "[Ne]"          ] ,
+            'V'  : [   ""                                         , "3s2 3p6 4s2 3d3"    ,  "[Ne]"          ] ,
+            'Cr' : [   ""                                         , "3s2 3p6 4s1 3d5"    ,  "[Ne]"          ] ,
+            'Mn' : [   ""                                         , "3s2 3p6 4s2 3d5"    ,  "[Ne]"          ] ,
+            'Fe' : [   ""                                         , "3s2 3p6 4s2 3d6"    ,  "[Ne]"          ] ,
+            'Co' : [   ""                                         , "3s2 3p6 4s2 3d7"    ,  "[Ne]"          ] ,
+            'Ni' : [   ""                                         , "3s2 3p6 4s2 3d8"    ,  "[Ne]"          ] ,
+            'Cu' : [   ""                                         , "4s1 3d10"           ,  "[Ar]"          ] ,
+            'Zn' : [   ""                                         , "4s2 3d10"           ,  "[Ar]"          ] ,
+            'Ga' : [   ""                                         , "4s2 4p1"            ,  "[Ar] 3d10"     ] ,
+            'Ge' : [   ""                                         , "4s2 4p2"            ,  "[Ar] 3d10"     ] ,
+            'As' : [   ""                                         , "4s2 4p3"            ,  "[Ar] 3d10"     ] ,
+            'Se' : [   ""                                         , "4s2 4p4"            ,  "[Ar] 3d10"     ] ,
+            'Br' : [   ""                                         , "4s2 4p5"            ,  "[Ar] 3d10"     ] ,
+            'Kr' : [   ""                                         , "4s2 4p6     "       ,  "[Ar] 3d10"     ] ,
+            'Rb' : [   ""                                         , "4s2 4p6 5s1"        ,  "[Ar] 3d10"     ] ,
+            'Sr' : [   ""                                         , "4s2 4p6 5s2"        ,  "[Ar] 3d10"     ] ,
+            'Y'  : [   ""                                         , "4s2 4p6 5s2 4d1"    ,  "[Ar] 3d10"     ] ,
+            'Zr' : [   ""                                         , "4s2 4p6 5s2 4d2"    ,  "[Ar] 3d10"     ] ,
+            'Nb' : [   ""                                         , "4s2 4p6 5s2 4d3"    ,  "[Ar] 3d10"     ] ,
+            'Mo' : [   ""                                         , "4s2 4p6 5s1 4d5"    ,  "[Ar] 3d10"     ] ,
+            'Tc' : [   ""                                         , "4s2 4p6 5s2 4d5"    ,  "[Ar] 3d10"     ] ,
+            'Ru' : [   ""                                         , "4s2 4p6 5s2 4d6"    ,  "[Ar] 3d10"     ] ,
+            'Rh' : [   ""                                         , "4s2 4p6 5s2 4d7"    ,  "[Ar] 3d10"     ] ,
+            'Pd' : [   ""                                         , "4s2 4p6 5s2 4d8"    ,  "[Ar] 3d10"     ] ,
+            'Ag' : [   ""                                         , "5s1 4d10"           ,  "[Kr]"          ] ,
+            'Cd' : [   ""                                         , "5s2 4d10"           ,  "[Kr]"          ] ,
+            'In' : [   ""                                         , "5s2 5p1"            ,  "[Kr] 4d10"     ] ,
+            'Sn' : [   ""                                         , "5s2 5p2"            ,  "[Kr] 4d10"     ] ,
+            'Sb' : [   ""                                         , "5s2 5p3"            ,  "[Kr] 4d10"     ] ,
+            'Te' : [   ""                                         , "5s2 5p4"            ,  "[Kr] 4d10"     ] ,
+            'I'  : [   ""                                         , "5s2 5p5"            ,  "[Kr] 4d10"     ] ,
+            'Xe' : [   ""                                         , "5s2 5p6"            ,  "[Kr] 4d10"     ] ,
+            'Cs' : [   ""                                         , "5s2 5p6 6s1"        ,  "[Kr] 4d10"     ] ,
+            'Ba' : [   ""                                         , "5s2 5p6 6s2"        ,  "[Kr] 4d10"     ] ,
+            'La' : [   ""                                         , "5s2 5p6 6s2 5d1"    ,  "[Kr] 4d10"     ] ,
+            'Hf' : [   ""                                         , "5s2 5p6 6s2 5d2"    ,  "[Kr] 4d10 4f14"] ,
+            'Ta' : [   ""                                         , "6s2 5d3"            ,  "[Xe] 4f14"     ] ,
+            'W'  : [   ""                                         , "6s1 5d5"            ,  "[Xe] 4f14"     ] ,
+            'Re' : [   ""                                         , "6s2 5d5"            ,  "[Xe] 4f14"     ] ,
+            'Os' : [   ""                                         , "6s2 5d6"            ,  "[Xe] 4f14"     ] ,
+            'Ir' : [   ""                                         , "6s2 5d7"            ,  "[Xe] 4f14"     ] ,
+            'Pt' : [   ""                                         , "6s2 5d8"            ,  "[Xe] 4f14"     ] ,
+            'Au' : [   ""                                         , "6s1 5d10"           ,  "[Xe] 4f14"     ] ,
+            'Hg' : [   ""                                         , "6s2 5d10"           ,  "[Xe] 4f14"     ] ,
+            'Tl' : [   ""                                         , "6s2 6p1"            ,  "[Xe] 4f14 5d10"] ,
+            'Pb' : [   ""                                         , "6s2 6p2"            ,  "[Xe] 4f14 5d10"] ,
+            'Bi' : [   ""                                         , "6s2 6p3"            ,  "[Xe] 4f14 5d10"] ,
+            'Po' : [   ""                                         , "6s2 6p4"            ,  "[Xe] 4f14 5d10"] ,
+            'At' : [   ""                                         , "6s2 6p5"            ,  "[Xe] 4f14 5d10"] ,
+            'Rn' : [   ""                                         , "6s2 6p6"            ,  "[Xe] 4f14 5d10"] ,
             }
 
 
@@ -191,7 +191,7 @@ def main(args):
 
     workdir_prefix += randomword(6)
     q = hashlib.sha1( ''.join(input_template_str.split()) + ''.join(str(atoms_db).split()) )
-    pp_unique_name = 'family_28_04_16' #urlsafe_b64encode(q.digest())[:7]
+    pp_unique_name = 'family_29_04_16' #urlsafe_b64encode(q.digest())[:7]
 
     for el in elements:
         #retrieve a default pseudopotential for that element as a starting guess
@@ -217,7 +217,10 @@ def main(args):
         except OSError:
             pass
 
+        filename = os.path.dirname(atoms_db[el][0])
         os.chdir(workdir)
+        os.system("cp {:}/GTH-PARAMETER {:}".format(filename, workdir))
+
 
         #write the input to a file
         of = open("job.inp", "w")
@@ -225,7 +228,7 @@ def main(args):
         of.close()
                
         #and run it.
-        os.popen(cp2k_command + " -i job.inp -o job.out")
+        #os.popen(cp2k_command + " -i job.inp -o job.out")
 
         #open the resulting pseudopotential data
         infile = open("GTH-PARAMETER")
