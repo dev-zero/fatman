@@ -187,6 +187,10 @@ class cp2kHandler():
         
         return e, os.path.join(workdir, "test.out")
 
+    def createOne(self):
+        print "NOT IMPLEMENTED"
+        quit()
+
 
 
 class espressoHandler():
@@ -252,30 +256,25 @@ class espressoHandler():
         return e, os.path.join(workdir, "log")
 
 
-#   def createOne(self, pseudo, basis, element, strain, cutoff, kpts):
-#       struct = self._getStructure(element, strain)
-#       
-#       pdir = "{0:s}/{2:04d}_{3:s}_{4:s}/{1:4.3f}".format(element, strain,int(cutoff), "".join([str(x) for x in kpts]),pseudo)
-#       workdir = os.path.join(self.workdir_prefix, pdir)
-#       deltacalc = self.getDeltaCalc(cutoff,kpts,pseudo, basis, outdir=workdir,input_only=True)
+    def createOne(self):
+        struct = self.structure
+        identifier = struct.info["key_value_pairs"]["identifier"]
 
-#       try:
-#           os.makedirs(workdir)
-#       except OSError:
-#           pass
+        workdir = os.path.join("/tmp/espresso-remote-task")
+        deltacalc = self.getCalculator(input_only=True)
 
-#       deltacalc.outdir = workdir
-#       deltacalc.pwinp = os.path.join(workdir,"pw.inp")
-#       if np.sum(abs(struct.get_initial_magnetic_moments()))>0:
-#           deltacalc.spinpol = True
-#       #os.chdir(workdir)
+        try:
+            os.makedirs(workdir)
+        except OSError:
+            pass
 
-#       struct.set_calculator(deltacalc)
-#       deltacalc.initialize(struct) 
+        deltacalc.outdir = workdir
+        deltacalc.pwinp = os.path.join(workdir,"pw.inp")
 
-#       v = struct.get_volume()/len(struct.get_masses())
+        struct.set_calculator(deltacalc)
+        deltacalc.initialize(struct) 
 
-#       return v,workdir,pdir,len(struct.get_masses())
+        return workdir
 
 
 
