@@ -153,7 +153,25 @@ class ResultFileResource(Resource):
 
 class ResultList(Resource):
     def get(self):
-        return [marshal(model_to_dict(r), result_resource_fields) for r in Result.select().join(Task)]
+        parser = reqparse.RequestParser()
+        parser.add_argument('test', type=str)
+        parser.add_argument('method', type=int)
+        args = parser.parse_args()
+
+        q = Result.select() \
+            .join(Task) \
+            .order_by(Result.id.asc())
+
+        if args['test'] is not None:
+            t = Test.get(Test.name == args['test'])
+            q = q.where(Result.Task.test == t)
+
+        if args['method'] is not None:
+            m = Method.get(Method.id == args['method'])
+            q = q.where(Task.method == m)
+        
+        return [marshal(model_to_dict(x), result_resource_fields) for x in q]
+
 
     @marshal_with(result_resource_fields)
     def post(self):
@@ -183,6 +201,9 @@ class MethodList(Resource):
     def get(self):
         return [(m.id, str(m)) for m in Method.select()]
 
+class TestList(Resource):
+    def get(self):
+        return [(t.id, str(t)) for t in Test.select()]
 
 class Methods(Resource):
     """Return all the details for a method, or set them"""
@@ -416,4 +437,5 @@ api.add_resource(TestResultResource, '/testresult')
 api.add_resource(Comparison, '/compare')
 api.add_resource(MethodList, '/methods')
 api.add_resource(Methods, '/method')
+api.add_resource(TestList, '/tests')
 
