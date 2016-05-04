@@ -44,7 +44,7 @@ def initdb():
              );
     """)
 
-    for name in ['new', 'pending', 'running', 'done', 'error', 'resting']:
+    for name in ['new', 'pending', 'running', 'done', 'error', 'resting', 'running-remote']:
         models.TaskStatus.create_or_get(name=name)
 
     for name in ['SZV-GTH',

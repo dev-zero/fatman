@@ -265,10 +265,16 @@ class Pseudopotentials(Resource):
         args = parser.parse_args()
 
         ret = {}
-        for element in args['element']:
+        if not len(args['element']) ==0 
+            for element in args['element']:
+                f = PseudopotentialFamily.get(PseudopotentialFamily.name==args['family'])
+                pseudo = Pseudopotential.get((Pseudopotential.family==f) & (Pseudopotential.element==element))
+                ret[element] = pseudo.pseudo
+        else:
             f = PseudopotentialFamily.get(PseudopotentialFamily.name==args['family'])
-            pseudo = Pseudopotential.get((Pseudopotential.family==f) & (Pseudopotential.element==element))
-            ret[element] = pseudo.pseudo
+            q =  Pseudopotential.select().where(Pseudopotential.family==f)
+            for ps in q:
+                ret[ps.element] = ps.pseudo
 
         return ret
 

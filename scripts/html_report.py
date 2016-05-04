@@ -7,6 +7,40 @@ SERVER = 'https://172.23.64.223/fatman'
 SERVER = 'http://127.0.0.1:5001'
 COMPARE_URL = SERVER + '/compare'
 METHODS_URL = SERVER + '/methods'
+TESTS_URL = SERVER + '/tests'
+
+headersection = """
+<HTML>
+<HEAD>
+<!--https://css-tricks.com/simple-css-row-column-highlighting/-->
+<STYLE>
+table {
+  overflow: hidden;
+}
+
+tr:hover {
+  background-color: #ffa;
+}
+
+td, th {
+  position: relative;
+  font-size: 11;
+}
+td:hover::after,
+th:hover::after {
+  content: "";
+  position: absolute;
+  background-color: #ffa;
+  left: 0;
+  top: -5000px;
+  height: 10000px;
+  width: 100%;
+  z-index: -1;
+}
+</STYLE>
+</HEAD>
+<BODY><H1>Method Comparison Matrix</H1>
+"""
 
 
 class deltaReport():
@@ -155,34 +189,128 @@ class HTMLReport(deltaReport):
 
 def create_html_comparison():
     """make a bunch of comparative html outputs"""
+    elements =  { "H":1, "He":2, "Li":3, "Be":4, "B":5, "C":6, "N":7, "O":8, "F":9, "Ne":10, "Na":11, "Mg":12, "Al":13, "Si":14, "P":15, "S":16, "Cl":17, "Ar":18, "K":19, "Ca":20, "Sc":21, "Ti":22, "V":23, "Cr":24, "Mn":25, "Fe":26, "Co":27, "Ni":28, "Cu":29, "Zn":30, "Ga":31, "Ge":32, "As":33, "Se":34, "Br":35, "Kr":36, "Rb":37, "Sr":38, "Y":39, "Zr":40, "Nb":41, "Mo":42, "Tc":43, "Ru":44, "Rh":45, "Pd":46, "Ag":47, "Cd":48, "In":49, "Sn":50, "Sb":51,  "Te":52, "I":53, "Xe":54, "Cs":55, "Ba":56, "Hf":72, "Ta":73, "W":74, "Re":75, "Os":76, "Ir":77, "Pt":78, "Au":79, "Hg":80, "Tl":81, "Pb":82, "Bi":83,  "Po":84, "Rn":86 }
 
     req = requests.get(METHODS_URL, verify = False)
     req.raise_for_status()
     method_list = sorted(req.json(), key = lambda x:x[0])
 
     of = open("/users/ralph/work/fatman/reports/html/index.html","w")
-    of.write("<HTML><BODY><H1>REPORT OVERVIEW</H1>\n")
+    of.write(headersection)
     of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
     of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
-    of.write("</TR>")
+    of.write("</TR>\n")
 
     for m_id_1, desc_1 in method_list:
-        of.write("<TR><TD><span title=\"{:}\">{:}</span></TD>".format(desc_1,m_id_1))
+        of.write("<TR style=\"hover {{background: yellow;}}\"><TD><span title=\"{:}\">{:}</span></TD>".format(desc_1,m_id_1))
 
         for m_id_2, desc_2 in method_list:
+            if m_id_2<=m_id_1 :
+                of.write("<TD></TD>")
+                continue
+            print m_id_1, m_id_2
             req = requests.get(COMPARE_URL, params = {"method1": m_id_1, "method2": m_id_2} , verify = False)
 
             req.raise_for_status()
             a = req.json()
             val = a["summary"]["avg"]
             if val>99:
-                of.write("<TD>&gt;99</TD>")
-            elif val==np.nan:
+                of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">&gt;99</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"]))
+            elif str(val)=='nan':
                 of.write("<TD></TD>")
+                continue
             else:
-                of.write("<TD><span title=\"avg: {:}\n std: {:}\n n: {:}\">{:3.2f}</span></TD>".format(val,a["summary"]["stdev"],a["summary"]["N"], val ))
-            print a["methods"], a["summary"]["avg"]
-            #quit()
+                of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">{:3.2f}</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"], val ))
+
+            detailreport = HTMLReport("/users/ralph/work/fatman/reports/html/{:04d}-{:04d}.html".format(m_id_1, m_id_2))
+            detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[])
+            #detailreport.
+            for t, line in a["test"].items():
+                if "deltatest_" in t:
+                    element = t.replace("deltatest_","")
+
+                dataline = [("z", str(elements[element])),
+                            ("Element", element), 
+                            ("V<sub>0</sub>", line[0]), 
+                            ("B<sub>0</sub>", line[1]),  
+                            ("B<sub>1</sub>", line[2]), 
+                            ("V<sub>0,r</sub>", line[3]), 
+                            ("B<sub>0,r</sub>", line[4]),  
+                            ("B<sub>1,r</sub>", line[5]), 
+                            ("&Delta;",         line[6]) ]
+                detailreport.add_line(dataline)
+
+            detailreport.set_table_footer(delta_avg = a["summary"]["avg"], delta_std=a["summary"]["stdev"])
+            detailreport.write()
+        of.write("</TR>")
+
+
+    of.write("</TABLE>")
+    of.write("</BODY></HTML>")
+    of.close()
+
+
+
+
+
+
+
+
+
+    req = requests.get(TESTS_URL, verify = False)
+    req.raise_for_status()
+    test_list = sorted(req.json(), key = lambda x:x[0])
+
+    of = open("/users/ralph/work/fatman/reports/html-by-test/index.html","w")
+    of.write(headersection)
+    of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
+    of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
+    of.write("</TR>\n")
+
+    for t_id_1, desc_1 in test_list:
+        if not 'deltatest' in desc_1: continue
+        of.write("<TR style=\"hover {{background: yellow;}}\"><TD>{:}</TD>".format(desc_1))
+
+        detailreport = HTMLReport("/users/ralph/work/fatman/reports/html-by-test/{:}.html".format(desc_1))
+        detailreport.set_report_header(code=desc_1, subtitle="Reference V0 = {:}, B0 = {:}, B1 = {:}", features=[])
+
+        for m_id_2, desc_2 in method_list:
+           #if m_id_2<=m_id_1 :
+           #    of.write("<TD></TD>")
+           #    continue
+            print desc_1, m_id_2
+            req = requests.get(COMPARE_URL, params = {"method1": m_id_2, "method2": 3, "test": desc_1} , verify = False)
+            req.raise_for_status()
+            a = req.json()
+            val = a["summary"]["avg"]
+            if val>99:
+                of.write("<TD><a href={:}.html>&gt;99</a></TD>".format(desc_1))
+            elif str(val)=='nan':
+                of.write("<TD></TD>")
+                continue
+            else:
+                of.write("<TD><a href={:}.html>{:3.2f}</a></TD>".format(desc_1,val))
+
+            #detailreport.
+            for t, line in a["test"].items():
+                if "deltatest_" in t:
+                    element = t.replace("deltatest_","")
+                theid = desc_2.split(",")[0].split(":")[-1]
+                dataline = [#("z", str(elements[element])),
+                            ("ID", theid        ),
+                           #("Element", element), 
+                            ("Method", desc_2), 
+                            ("V<sub>0</sub>", line[0]), 
+                            ("B<sub>0</sub>", line[1]),  
+                            ("B<sub>1</sub>", line[2]), 
+                           #("V<sub>0,r</sub>", line[3]), 
+                           #("B<sub>0,r</sub>", line[4]),  
+                           #("B<sub>1,r</sub>", line[5]), 
+                            ("&Delta;",         line[6]) ]
+                detailreport.add_line(dataline)
+
+        detailreport.set_table_footer(delta_avg = 0., delta_std=0.)
+        detailreport.write()
         of.write("</TR>")
 
 

@@ -1,0 +1,89 @@
+#!/bin/bash -l
+#
+
+# ----- SLURM JOB SUBMIT SCRIPT -----
+#SBATCH --export=ALL
+#SBATCH --error=error.log
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+#%%% Use FULL nodes - Only change when you know what you are doing! %%%#
+#%%% Misconfiguration cost you "money".                             %%%#
+#%%% Maximum on PizDora is: 24 or 48 with hyper threads (2/c).      %%%#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+# -- number of task per node and core --
+#SBATCH --ntasks-per-node=24
+#SBATCH --ntasks-per-core=2
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+
+################ CHANGE this section  (begin) ##########################
+# -- job info --
+#SBATCH --account=uzh1
+#SBATCH --job-name={workdir}
+#SBATCH --time=23:59:00
+
+# -- number of nodes --
+#SBATCH --nodes=4
+
+# -- number of MPI tasks per node --
+NTASKS_PER_NODE=48
+
+# -- number of OMP threads per MPI task --
+NTHREADS_PER_TASK=1
+
+# -- the program and input file --
+INP="pw.inp"
+SCRATCHDIR='/scratch/daint/rkoitz/deltatests/espresso/{workdir}/'
+INPDIR='/users/rkoitz/deltatests/espresso/{workdir}/'
+########################################################################
+
+
+
+################ NOTHING to be changed here ############################
+MAX_THREADS_PER_NODE=48 # PizDora maximum
+
+# -- modules to load --
+module load espresso/5.2.0
+
+# -- definition: function to start a calculation --
+slurm_startjob() {{
+  THREADS_PER_NODE=`echo "${{NTASKS_PER_NODE}} * ${{NTHREADS_PER_TASK}}" | bc`
+  if [ ${{THREADS_PER_NODE}} -gt ${{MAX_THREADS_PER_NODE}} ]; then
+     echo "Product of NTASKS_PER_NODE (${{NTASKS_PER_NODE}}) and"
+     echo "NTHREADS_PER_TASK (${{NTHREADS_PER_TASK}}) can't be larger than"
+     echo "MAX_THREADS_PER_NODE (${{MAX_THREADS_PER_NODE}})!"
+     exit 0
+  fi
+  export OMP_NUM_THREADS=${{NTHREADS_PER_TASK}}
+  NTASKS=`echo "${{SLURM_JOB_NUM_NODES}} * ${{NTASKS_PER_NODE}}" | bc`
+  pool=`echo "${{NTASKS}} / 4" | bc`
+  echo ' --------------------------------------------------------------'
+  echo ' |        --- COPYING TO SCRATCH ---                          |'
+  echo ' --------------------------------------------------------------'le
+  
+  mkdir -p $SCRATCHDIR
+  sed -i "s|pseudo_dir.*,|pseudo_dir='./',|g" pw.inp
+  cp $INPDIR/* $SCRATCHDIR
+
+  cd $SCRATCHDIR
+
+  echo ' --------------------------------------------------------------'
+  echo ' |        --- RUNNING JOB ---                                 |'
+  echo ' --------------------------------------------------------------'
+
+  aprun -n ${{NTASKS}} -N ${{NTASKS_PER_NODE}} -d ${{OMP_NUM_THREADS}} pw.x -npool ${{pool}} -in ${{INP}} > "${{INP}}.out"
+
+  en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654 / {natom} }}'` 
+
+  echo "req = requests.post(RESULTS_URL, data={{'energy': $en, 'task_id': {id} }}, verify=False); req.raise_for_status(); done_task = req.json();" >> /users/rkoitz/deltatests/update_fatman.py
+
+  echo "req = requests.patch(SERVER + {taskupdate}, data={{'status': 'done'}}, verify=False); req.raise_for_status(); task = req.json()" >> /users/rkoitz/deltatests/update_fatman.py
+
+  echo ' --------------------------------------------------------------'
+  echo ' |        --- DONE ---                                        |'
+  echo ' --------------------------------------------------------------'
+}}
+
+# -- start the calculation --
+slurm_startjob
+
+exit 0
