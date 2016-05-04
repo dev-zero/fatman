@@ -1,5 +1,5 @@
 <ul class="tasks">
-	<li *ngFor="#task of tasks">
-		{{task['id']}}
+	<li *ngFor="let task of tasks">
+		{{task['id']}}: {{task['status']}}
 	</li>
 </ul>

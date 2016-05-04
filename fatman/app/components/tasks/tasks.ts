@@ -1,29 +1,25 @@
-import {Component, OnInit} from 'angular2/core';
+import {Component, OnInit} from '@angular/core';
+
 import {TaskService} from '../../services/task';
 
 @Component({
   selector: 'tasks',
   templateUrl: 'components/tasks/tasks.html',
   styleUrls: ['components/tasks/tasks.css'],
+  providers: [TaskService]
 })
 
 export class Tasks implements OnInit {
-  private tasks: Array<Object> = new Array<Object>();
-  private _interval: any;
+  title = 'Tasks';
+  tasks: Object[];
 
   constructor(private _taskService: TaskService) { }
 
+  getTasks() {
+    this._taskService.getTasks().then(tasks => this.tasks = tasks);
+  }
+
   ngOnInit() {
-    this._taskService.tasks$.subscribe(latestTasks => {
-      this.tasks = latestTasks;
-    });
-
-    this._taskService.load();
-    this._interval = setInterval(() => { this._taskService.load(); }, 10*1000); // every 10 seconds
+    this.getTasks();
   }
-
-  ngOnDestroy() {
-    clearInterval(this._interval);
-  }
-
 }

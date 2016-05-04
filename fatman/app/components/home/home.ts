@@ -1,14 +1,11 @@
-import {Component} from 'angular2/core';
-import {Alert} from 'ng2-bootstrap/ng2-bootstrap';
+import {Component} from '@angular/core';
 
 @Component({
   selector: 'home',
   templateUrl: 'components/home/home.html',
   styleUrls: ['components/home/home.css'],
   providers: [],
-  directives: [
-    Alert
-  ],
+  directives: [],
   pipes: []
 })
 export class Home {

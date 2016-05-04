@@ -10,7 +10,8 @@
     </head>
     <body>
         <fatman-app>loading...</fatman-app>
+        <script src="{{ url_for('static', filename='polyfills.bundle.js') }}"></script>
         <script src="{{ url_for('static', filename='vendor.bundle.js') }}"></script>
-        <script src="{{ url_for('static', filename='bundle.js') }}"></script>
+        <script src="{{ url_for('static', filename='app.bundle.js') }}"></script>
     </body>
 </html>
