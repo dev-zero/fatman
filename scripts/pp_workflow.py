@@ -261,7 +261,7 @@ def main(args):
         req = requests.post(METHOD_URL, data={'code':'espresso', 
                                               'basis_set': 55, 
                                               'pseudopotential': upf_id, 
-                                              'settings': json.dumps({'smearing': 'marzari-vanderbilt', 'xc': 'PBE', 'cutoff_pw': 3401.4244569396633, 'sigma': 0.027211395655517306, 'cp2k_template': input_template_str})}, 
+                                              'settings': json.dumps({'smearing': 'marzari-vanderbilt', 'xc': 'PBE', 'cutoff_pw': 3401.4244569396633, 'sigma': 0.027211395655517306})}, 
                             verify=False)
         req.raise_for_status()
         method_id = req.json()['id']
