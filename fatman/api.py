@@ -233,8 +233,8 @@ class Methods(Resource):
         b = BasissetFamily.get(BasissetFamily.id==args['basis_set'])
         p = PseudopotentialFamily.get(PseudopotentialFamily.id==args['pseudopotential'])
 
-        print args
-        print json.loads(args['settings'])
+        print(args)
+        print(json.loads(args['settings']))
         m,created = Method.get_or_create(code = args['code'],
                                          basis_set = b,
                                          pseudopotential = p,
@@ -265,9 +265,9 @@ class Pseudopotentials(Resource):
         args = parser.parse_args()
 
         ret = {}
-        print "HERE"
-        print args
-        if not args['element'] is None :
+        print("HERE")
+        print(args)
+        if not args['element'] is None:
             for element in args['element']:
                 f = PseudopotentialFamily.get(PseudopotentialFamily.name==args['family'])
                 pseudo = Pseudopotential.get((Pseudopotential.family==f) & (Pseudopotential.element==element))
@@ -374,7 +374,7 @@ class Comparison(Resource):
         for testname in testlist:
             dontadd = False
             test = Test.get(Test.name==testname)
-            print test.name
+            print(test.name)
 
             try:
                 r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))
@@ -382,7 +382,7 @@ class Comparison(Resource):
             except:
                 continue
                 #ret["test"][test.name] = "N/A"
-            print r1, r2
+            print(r1, r2)
 
             if "deltatest" in testname:
                 try:
