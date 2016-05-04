@@ -2,12 +2,27 @@
 import os
 import numpy as np
 import requests
+import numpy as np
+import matplotlib.pyplot as plt
+
+def Json2Atoms(jsonstring):
+    """Read a JSON string and return an Atoms object"""
+
+    from ase.io.jsonio import decode
+    from ase.db.row import AtomsRow
+
+    dct = decode(jsonstring)
+    row = AtomsRow(dct)
+
+    return row.toatoms(attach_calculator=False, add_additional_information=True)
 
 SERVER = 'https://172.23.64.223/fatman'
 SERVER = 'http://127.0.0.1:5001'
 COMPARE_URL = SERVER + '/compare'
 METHODS_URL = SERVER + '/methods'
 TESTS_URL = SERVER + '/tests'
+TESTRESULT_URL        = SERVER + '/testresult'
+RESULT_URL            = SERVER + '/results'
 
 headersection = """
 <HTML>
@@ -41,6 +56,112 @@ th:hover::after {
 </HEAD>
 <BODY><H1>Method Comparison Matrix</H1>
 """
+
+def compare(method1, method2, test=None):
+    r= requests.get(COMPARE_URL, data={'method1':method1, 'method2':method2, 'test':test}, verify=False)
+    return r.json()
+
+def eos(V0,B0, B1, E0=0.):
+    B0 = B0 * 1e9 / 1.602176565e-19 / 1e30
+    rng = np.linspace(0.93*V0, 1.07*V0, 40)
+    E = [ E0 + 9./16. * V0 * B0 *  ( ((V0/v)**(2./3.) -1)**3 * B1 +
+                                     ((V0/v)**(2./3.) -1)**2 * (6-4*(V0/v)**(2./3.)) ) for v in rng]
+    return rng, np.array(E)
+
+def tresult(method, test):
+    r= requests.get(TESTRESULT_URL, data={'method':method, 'test':test}, verify=False)
+    return r.json()
+    
+def result(method, test=None):
+    r= requests.get(RESULT_URL, data={'method':method, 'test':test}, verify=False)
+    return r.json()
+    
+def energies_for_test(method, test):
+    V = []
+    E = []
+    r = result(method=method,test=test)
+    for x in r:
+        natom = len(Json2Atoms(x["task"]['structure']['ase_structure']).get_masses())
+        V.append(Json2Atoms(x["task"]['structure']['ase_structure']).get_volume()/natom)
+        E.append(x['energy']/natom)
+        
+    return np.array(V),np.array(E)
+
+def full_plot_data(method, test=None):
+    a = tresult(method, test)
+    V0 = a[test]['V']
+    B0 = a[test]['B0']
+    B1 = a[test]['B1']
+    
+        
+    xfit,yfit = eos(V0,B0,B1)
+    
+    x2,y2 = energies_for_test(method=method, test=test)
+    if 'E0' in a[test].keys():
+        E0 = a[test]['E0']
+        y2 -= E0
+    
+    return [xfit,yfit, x2,y2]
+
+def full_compare(method1, method2, writefile = False):
+    r = requests.get(COMPARE_URL, params={'method1':method1, 'method2':method2}, verify = False)
+    f = r.json()
+    tests = f['test'].keys()
+    
+    for t in tests:
+        c = full_plot_data(method1,t)
+        r = full_plot_data(method2,t)
+        if len(c[2])==0 and len(r[2]) == 0 :
+            volpoints = []
+            epoints = []
+        elif len(c[2])>0:
+            volpoints = c[2]
+            epoints = c[3]
+        else:
+            volpoints = r[2]
+            epoints = r[3]
+        
+        myfig = plt.figure(figsize=(15,4))
+        ax = plt.subplot2grid((2,2),(0, 0),rowspan=2)
+        ax.plot(c[0],c[1],'r', c[2],c[3], 'rs', label=['calc','fitted'])
+        ax.plot(r[0],r[1],'b', r[2],r[3], 'bs', label=['calc','fitted'])
+        ax.annotate("Method {:}".format(method1), xy= (c[0][3], c[1][3]), xytext = (-5,-30), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right')
+        ax.annotate("Method {:}".format(method2), xy= (r[0][-3], r[1][-3]), xytext = (5,-30), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='left')
+        diffc = np.interp(c[0],r[0],r[1])
+        #ax.fill_between(c[0],c[1],diffc, facecolor="#999999", alpha=0.7, color="#999999")
+        ax.fill_between(c[0], c[1], diffc, where=c[1] >= diffc, facecolor='#111111',alpha=0.6, color="#111111")
+        ax.fill_between(c[0], c[1], diffc, where=c[1] <= diffc, facecolor='#AAAAAA',alpha=0.6, color="#AAAAAA")
+        
+        ax.set_title(t)
+        
+        ax = plt.subplot2grid((2,2),(0, 1))
+        ax.plot(c[0],c[1]-r[1],'r')
+        ax.axhline(0, color='k', linewidth=0.5)
+        ax.set_title("Residual")
+        if not len(volpoints)==0:
+            ax.plot(volpoints,[0 for x in volpoints], 'ks', markersize=2.5)
+            xtmp = np.linspace(volpoints[2]*0.94, volpoints[2]*1.06, 40)
+            ytmp = np.interp(xtmp, c[0], c[1]-r[1])
+            #ax.axvline(xtmp[0], color='k', linewidth=0.5)
+            #ax.axvline(xtmp[-1], color='k', linewidth=0.5)
+            ax.fill_between(xtmp, [0. for x in xtmp], ytmp, where=0 >= ytmp, facecolor='#111111',alpha=0.6, color="#AAAAAA")
+            ax.fill_between(xtmp, [0. for x in xtmp], ytmp, where=0 <= ytmp, facecolor='#AAAAAA',alpha=0.6, color="#AAAAAA")
+
+        ax = plt.subplot2grid((2,2),(1, 1))
+        ax.text(0.4,0.5,"$\Delta V_0 = {:>8.5f}\quad   ({:4.3f}\%)$".format(f['test'][t][3]-f['test'][t][0],(f['test'][t][3]-f['test'][t][0])/f['test'][t][3]*100) ,fontsize=16)
+        ax.text(0.4,0.3,"$\Delta B_0 = {:>8.5f}\quad   ({:4.3f}\%)$".format(f['test'][t][4]-f['test'][t][1],(f['test'][t][4]-f['test'][t][1])/f['test'][t][4]*100) ,fontsize=16)
+        ax.text(0.4,0.1,"$\Delta B_1 = {:>8.5f}\quad   ({:4.3f}\%)$".format(f['test'][t][5]-f['test'][t][2],(f['test'][t][5]-f['test'][t][2])/f['test'][t][5]*100) ,fontsize=16)
+        ax.text(0,0.3,"$\mathbf{{\Delta = {:8.3f}}}\,\mathrm{{meV}}$".format(f['test'][t][6]),fontsize=18)
+        
+        ax.axis("off")
+        if writefile: 
+            if "deltatest_" in t:
+                element = t.replace("deltatest_","")
+            
+            picture = "img/{:04d}_{:04d}_{:s}.png".format(method1,method2,element)
+
+            plt.savefig("/users/ralph/work/fatman/reports/html/"+picture, dpi=200)
+        plt.close(myfig)
 
 
 class deltaReport():
@@ -209,6 +330,8 @@ def create_html_comparison():
                 of.write("<TD></TD>")
                 continue
             print m_id_1, m_id_2
+            full_compare(m_id_1, m_id_2,writefile = True)
+
             req = requests.get(COMPARE_URL, params = {"method1": m_id_1, "method2": m_id_2} , verify = False)
 
             req.raise_for_status()
@@ -228,9 +351,12 @@ def create_html_comparison():
             for t, line in a["test"].items():
                 if "deltatest_" in t:
                     element = t.replace("deltatest_","")
+                
+                picture = "img/{:04d}_{:04d}_{:s}.png".format(m_id_1,m_id_2,element)
+
 
                 dataline = [("z", str(elements[element])),
-                            ("Element", element), 
+                            ("Element", "<a href='{:}'>{:}</a>".format(picture,element)), 
                             ("V<sub>0</sub>", line[0]), 
                             ("B<sub>0</sub>", line[1]),  
                             ("B<sub>1</sub>", line[2]), 
@@ -295,11 +421,14 @@ def create_html_comparison():
             for t, line in a["test"].items():
                 if "deltatest_" in t:
                     element = t.replace("deltatest_","")
+
+                picture = "img/{:04d}_{:04d}_{:s}.png".format(3,m_id_2,element)
+
                 theid = desc_2.split(",")[0].split(":")[-1]
                 dataline = [#("z", str(elements[element])),
                             ("ID", theid        ),
                            #("Element", element), 
-                            ("Method", desc_2), 
+                            ("Method", "<a href='{:}'>{:}</a>".format(picture,desc_2)), 
                             ("V<sub>0</sub>", line[0]), 
                             ("B<sub>0</sub>", line[1]),  
                             ("B<sub>1</sub>", line[2]), 
