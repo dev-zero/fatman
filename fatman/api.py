@@ -164,7 +164,7 @@ class ResultList(Resource):
 
         if args['test'] is not None:
             t = Test.get(Test.name == args['test'])
-            q = q.where(Result.Task.test == t)
+            q = q.where(Task.test == t)
 
         if args['method'] is not None:
             m = Method.get(Method.id == args['method'])
