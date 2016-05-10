@@ -112,7 +112,7 @@ atoms_db ={
             'Li' : [   "/users/ralph/work/fatman/PBE/Li/q3/Li.inp", "1s2 2s1"            ,  "none"          ] , 
             'Be' : [   "/users/ralph/work/fatman/PBE/Be/q4/Be.inp", "1s2 2s2"            ,  "none"          ] , 
             'B'  : [   "/users/ralph/work/fatman/PBE/B/q3/B.inp"  , "2s2 2p1"            ,  "[He]"          ] , 
-            'C'  : [   "/users/ralph/work/fatman/PBE/C/q4/C.inp"  , "2s2 2p2"            ,  "[He]"          ] , 
+            'C'  : [   "/users/ralph/work/fatman/C_original_gth"  , "2s2 2p2"            ,  "[He]"          ] , 
             'N'  : [   "/users/ralph/work/fatman/PBE/N/q5/N.inp"  , "2s2 2p3"            ,  "[He]"          ] , 
             'O'  : [   "/users/ralph/work/fatman/PBE/O/q6/O.inp"  , "2s2 2p4"            ,  "[He]"          ] , 
             'F'  : [   "/users/ralph/work/fatman/PBE/F/q7/F.inp"  , "2s2 2p5"            ,  "[He]"          ] , 
@@ -121,8 +121,8 @@ atoms_db ={
             'Mg' : [   "/users/ralph/work/fatman/PBE/Mg/q10/Mg.inp","2s2 2p6 3s2"        ,  "[He]"          ] , 
             'Al' : [   "/users/ralph/work/fatman/PBE/Al/q3/Al.inp", "3s2 3p1"            ,  "[Ne]"          ] , 
             'Si' : [   "/users/ralph/work/fatman/PBE/Si/q4/Si.inp", "3s2 3p2"            ,  "[Ne]"          ] , 
-            'P'  : [   "/users/ralph/work/fatman/PBE/P/q5/P.inp"  , "3s2 3p3"            ,  "[Ne]"          ] , 
-            'S'  : [   "/users/ralph/work/fatman/PBE/S/q6/S.inp"  , "3s2 3p4"            ,  "[Ne]"          ] , 
+            'P'  : [   "/users/ralph/work/fatman/P_original_gth"  , "3s2 3p3"            ,  "[Ne]"          ] , 
+            'S'  : [   "/users/ralph/work/fatman/PBE/S_GTH_LT"  , "3s2 3p4"            ,  "[Ne]"          ] , 
             'Cl' : [   "/users/ralph/work/fatman/PBE/Cl/q7/Cl.inp", "3s2 3p5"            ,  "[Ne]"          ] , 
             'Ar' : [   "/users/ralph/work/fatman/PBE/Ar/q8/Ar.inp", "3s2 3p6"            ,  "[Ne]"          ] , 
             'K'  : [   ""                                         , "3s2 3p6 4s1"        ,  "[Ne]"          ] ,
@@ -191,7 +191,7 @@ def main(args):
 
     workdir_prefix += randomword(6)
     q = hashlib.sha1( ''.join(input_template_str.split()) + ''.join(str(atoms_db).split()) )
-    pp_unique_name = 'family_29_04_16' #urlsafe_b64encode(q.digest())[:7]
+    pp_unique_name = 'gth_pbe_reconverted' #urlsafe_b64encode(q.digest())[:7]
 
     for el in elements:
         #retrieve a default pseudopotential for that element as a starting guess
@@ -204,12 +204,12 @@ def main(args):
                      'elconf'      : atoms_db[el][1],
                      'core'        : atoms_db[el][2],
                    }
-       #myinput = input_template.render(settings)
-        with open(atoms_db[el][0]) as infile:
-            myinput_lines = infile.readlines()
-            myinput = "".join(myinput_lines)
-        
-        #prepare the working directory
+     # #myinput = input_template.render(settings)
+     #  with open(atoms_db[el][0]) as infile:
+     #      myinput_lines = infile.readlines()
+     #      myinput = "".join(myinput_lines)
+     #  
+     #  #prepare the working directory
         workdir = os.path.join(workdir_prefix, "{:s}".format(el))
 
         try:
@@ -219,19 +219,20 @@ def main(args):
 
         filename = os.path.dirname(atoms_db[el][0])
         os.chdir(workdir)
-        os.system("cp {:}/GTH-PARAMETER {:}".format(filename, workdir))
+     #  os.system("cp {:}/GTH-PARAMETER {:}".format(filename, workdir))
 
 
-        #write the input to a file
-        of = open("job.inp", "w")
-        of.write(myinput)
-        of.close()
+     #  #write the input to a file
+     #  of = open("job.inp", "w")
+     #  of.write(myinput)
+     #  of.close()
                
         #and run it.
         #os.popen(cp2k_command + " -i job.inp -o job.out")
-
+        myinput_lines = []
         #open the resulting pseudopotential data
-        infile = open("GTH-PARAMETER")
+        #infile = open("GTH-PARAMETER")
+        infile = open(atoms_db[el][0])
         pseudo_data = "".join(infile.readlines()[1:] + ['# ' + x for x in myinput_lines])
 
         #upload the PP data.

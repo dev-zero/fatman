@@ -246,8 +246,8 @@ class espressoHandler():
 
         deltacalc.outdir = workdir
 
-        #if np.sum(abs(struct.get_initial_magnetic_moments()))>0:
-        #    deltacalc.spinpol = True
+        if np.sum(abs(struct.get_initial_magnetic_moments()))>0:
+            deltacalc.spinpol = True
         os.chdir(workdir)
 
         struct.set_calculator(deltacalc)

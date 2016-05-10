@@ -33,16 +33,19 @@ def main():
         req.raise_for_status()
         task = req.json()
 
-        try : 
+        try: 
             #get structure and convert to ASE object
             struct_json = task['structure']['ase_structure']
             struct = Json2Atoms(struct_json)
 
             #which code to use with which settings?
             mymethod = task['method']
-            if "kpoints" in struct.info["key_value_pairs"].keys():
+            if "kpoints" in struct.info["key_value_pairs"].keys() and not "kpoints" in mymethod['settings'].keys():
                 mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
                 #kindof a hack: kpoints are specified with each structure, but are in fact code parameters
+            elif "kpoints" in mymethod['settings'].keys():
+                mymethod["kpoints"] = mymethod['settings']['kpoints']
+                #kpoints specified in the 'method' override those in the 'structure'
 
             if "charge" in struct.info["key_value_pairs"].keys():
                 mymethod["charge"] = struct.info["key_value_pairs"]["charge"]
@@ -109,7 +112,7 @@ def main():
             req.raise_for_status()
             task = req.json()
 
-        except :
+        except: 
             req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
             req.raise_for_status()
 

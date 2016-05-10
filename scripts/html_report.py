@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os
+import os, sys
 import numpy as np
 import requests
 import numpy as np
@@ -308,7 +308,7 @@ class HTMLReport(deltaReport):
         return text
 
 
-def create_html_comparison():
+def create_html_comparison(idlist = None):
     """make a bunch of comparative html outputs"""
     elements =  { "H":1, "He":2, "Li":3, "Be":4, "B":5, "C":6, "N":7, "O":8, "F":9, "Ne":10, "Na":11, "Mg":12, "Al":13, "Si":14, "P":15, "S":16, "Cl":17, "Ar":18, "K":19, "Ca":20, "Sc":21, "Ti":22, "V":23, "Cr":24, "Mn":25, "Fe":26, "Co":27, "Ni":28, "Cu":29, "Zn":30, "Ga":31, "Ge":32, "As":33, "Se":34, "Br":35, "Kr":36, "Rb":37, "Sr":38, "Y":39, "Zr":40, "Nb":41, "Mo":42, "Tc":43, "Ru":44, "Rh":45, "Pd":46, "Ag":47, "Cd":48, "In":49, "Sn":50, "Sb":51,  "Te":52, "I":53, "Xe":54, "Cs":55, "Ba":56, "Hf":72, "Ta":73, "W":74, "Re":75, "Os":76, "Ir":77, "Pt":78, "Au":79, "Hg":80, "Tl":81, "Pb":82, "Bi":83,  "Po":84, "Rn":86 }
 
@@ -322,15 +322,14 @@ def create_html_comparison():
     of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
     of.write("</TR>\n")
 
-    for m_id_1, desc_1 in method_list:
+    for m_id_1, desc_1 in method_list: 
         of.write("<TR style=\"hover {{background: yellow;}}\"><TD><span title=\"{:}\">{:}</span></TD>".format(desc_1,m_id_1))
 
         for m_id_2, desc_2 in method_list:
-            if m_id_2<=m_id_1 :
+            if m_id_2<=m_id_1:
                 of.write("<TD></TD>")
                 continue
             print m_id_1, m_id_2
-            full_compare(m_id_1, m_id_2,writefile = True)
 
             req = requests.get(COMPARE_URL, params = {"method1": m_id_1, "method2": m_id_2} , verify = False)
 
@@ -344,6 +343,12 @@ def create_html_comparison():
                 continue
             else:
                 of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">{:3.2f}</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"], val ))
+
+            #skipping non-requested reports.
+            if idlist is not None and not (m_id_1 in idlist or m_id_2 in idlist):
+                continue
+
+            full_compare(m_id_1, m_id_2,writefile = True)
 
             detailreport = HTMLReport("/users/ralph/work/fatman/reports/html/{:04d}-{:04d}.html".format(m_id_1, m_id_2))
             detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[])
@@ -448,6 +453,11 @@ def create_html_comparison():
     of.close()
 
 if __name__ == "__main__":
-    create_html_comparison()
+    args = sys.argv[1:]
+    if len(args)>0:
+        idlist = [int(x) for x in args]
+        create_html_comparison(idlist)
+    else:
+        create_html_comparison()
 
 
