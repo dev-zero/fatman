@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import requests, os
-from fatman.tools import Json2Atoms
+from fatman.tools import Json2Atoms, randomword
 from codehandling import HandlerFactory
 from time import sleep
 from datetime import datetime
-import os
+import os, sys
 
 SERVER = 'https://172.23.64.223'
 TASKS_URL = SERVER + '/fatman/tasks'
@@ -16,7 +16,20 @@ PSEUDOPOTENTIAL_URL   = SERVER + '/fatman/pseudo'
 def main():
     """The fatman client queries the DB for new tasks and runs them until none are left"""
 
+    exitword = "./{:}".format(randomword(8))
+    print "##########################################################################"
+    print "##                       FATMAN CLIENT                                  ##"
+    print "##########################################################################"
+    print "Run the following command to cleanly shutdown the client after finishing a task: touch {:}".format(exitword)
+    print "##########################################################################"
+    sys.stdout.flush()
+
     while 1:
+        #check if the 'exit file' exists, then exit
+        if os.path.exists(exitword):
+            os.remove(exitword)
+            return 0
+
         #request a task
         req = requests.get(TASKS_URL, params={'limit': 1, 'status': 'new'}, verify=False)
         req.raise_for_status()
@@ -115,6 +128,7 @@ def main():
         except: 
             req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
             req.raise_for_status()
+            sleep (60)  #just take a short break to avoid cycling through too many tasks if errors happen
 
 
 if __name__=="__main__":
