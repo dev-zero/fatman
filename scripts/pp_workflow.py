@@ -5,6 +5,7 @@ from ase import Atoms
 import requests, os, json, hashlib
 from base64 import urlsafe_b64encode
 from jinja2 import Template
+from fatman.tools import randomword
 
 SERVER = 'https://172.23.64.223'
 SERVER = 'http://127.0.0.1:5001'
@@ -275,10 +276,6 @@ def main(args):
         tasklist = req.json()
 
         print "{:2s}: {:}".format(el, ", ".join([str(x) for x in tasklist]))
-
-def randomword(length):
-    import random, string
-    return ''.join(random.choice(string.lowercase + string.digits) for i in range(length))
 
 if __name__ == "__main__":
     main(argv[1:])

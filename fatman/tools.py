@@ -982,9 +982,9 @@ def calcDelta(data_f, data_w):
 
     return Delta
 
-
-
-
+def randomword(length=8):
+    import random, string
+    return ''.join(random.choice(string.lowercase + string.digits) for i in range(length))
 
 
 def test1():
