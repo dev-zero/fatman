@@ -16,19 +16,24 @@ PSEUDOPOTENTIAL_URL   = SERVER + '/fatman/pseudo'
 def main():
     """The fatman client queries the DB for new tasks and runs them until none are left"""
 
-    exitword = "./{:}".format(randomword(8))
+    mywd = os.getcwd()
+    exitword = os.path.join(mywd, "{:}".format(randomword(8)))
     print "##########################################################################"
     print "##                       FATMAN CLIENT                                  ##"
     print "##########################################################################"
-    print "Run the following command to cleanly shutdown the client after finishing a task: touch {:}".format(exitword)
+    print "current working directory: {:}".format(mywd)
+    print "To shutdown the client after finishing a task: touch {:}".format(exitword)
     print "##########################################################################"
     sys.stdout.flush()
 
     while 1:
         #check if the 'exit file' exists, then exit
+        print "checking for {:}...".format(exitword),
         if os.path.exists(exitword):
             os.remove(exitword)
+            print "decided to quit"
             return 0
+        print "still running"
 
         #request a task
         req = requests.get(TASKS_URL, params={'limit': 1, 'status': 'new'}, verify=False)
