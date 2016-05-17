@@ -51,20 +51,22 @@ def main(args):
 
         tasks = req.json()
         
-        #perhaps this could be replaced by daemon-like behavior: sleep, and check for new tasks after a few minutes
+        #daemon-like behavior: sleep, and check for new tasks after a few minutes
         if len(tasks) == 0:
-            print '{:}: currently no tasks. Waiting 5 minutes.'.format(datetime.now())
+            print '{:}: Currently no tasks. Waiting {:} seconds.'.format(datetime.now(), DAEMON_SLEEPTIME)
             sleep (DAEMON_SLEEPTIME)
             continue
 
-        #set the task's status to pending
         task = tasks[0]
         print '{:}: Received task with id = {:}.'.format(datetime.now(), task['id'])
 
+        #set the task's status to pending
         if not args.no_update:
             req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine':machinename}, verify=False)
             req.raise_for_status()
 
+
+        # Here starts the actual processing of the task, trying to capture/ignore all possible errors
         try: 
             #get structure and convert to ASE object
             struct_json = task['structure']['ase_structure']
@@ -73,11 +75,11 @@ def main(args):
             #which code to use with which settings?
             mymethod = task['method']
             if "kpoints" in struct.info["key_value_pairs"].keys() and not "kpoints" in mymethod['settings'].keys():
-                mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
                 #kindof a hack: kpoints are specified with each structure, but are in fact code parameters
+                mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
             elif "kpoints" in mymethod['settings'].keys():
-                mymethod["kpoints"] = mymethod['settings']['kpoints']
                 #kpoints specified in the 'method' override those in the 'structure'
+                mymethod["kpoints"] = mymethod['settings']['kpoints']
 
             if "charge" in struct.info["key_value_pairs"].keys():
                 mymethod["charge"] = struct.info["key_value_pairs"]["charge"]
@@ -89,6 +91,7 @@ def main(args):
             pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family':mymethod['pseudopotential'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
 
             if mymethod["code"] == "cp2k":
+                #when running cp2k jobs, the basis and pseudo settings have to be rearranged into a 'kind_settings' structure, while preserving potentially existing kind_settings.
                 basis = requests.get(BASISSET_URL, data={'family':mymethod['basis_set'], 'element':set(struct.get_chemical_symbols())}, verify=False).json()
                 if "kind_settings" in mymethod["settings"].keys():
                     ks = mymethod["settings"]["kind_settings"].copy()
@@ -97,13 +100,13 @@ def main(args):
 
                 mymethod["kind_settings"] = {}
 
-
                 for x in set(basis.keys()) & set(pseudo.keys()):
                     mymethod["kind_settings"][x] =  {"basis_set":basis[x], "potential":pseudo[x]}
                     for k,v in ks.items():
                         mymethod["kind_settings"][x][k] = v 
 
             elif mymethod["code"] == "espresso":
+                #when running espresso jobs the pseudo file has to be written somewhere on disk
                 odir = os.path.join("/users/ralph/work/espresso/", mymethod['pseudopotential'])
                 try:
                     os.makedirs(odir)
@@ -115,19 +118,19 @@ def main(args):
                     of.write (pp)
                     of.close()
 
-
-            #create our code-running object with the relevant settings.
-            codehandler = HandlerFactory(struct, mymethod)
-
             #REMOTE: update the task's status to "running"
-            if not args.no_update:
+            if not args.no_update and not args.no_calc:
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'running'}, verify=False)
                 req.raise_for_status()
                 task = req.json()
 
+
             #run the code
             if not args.no_calc:
                 print '{:}: Calculating task with id = {:}.'.format(datetime.now(), task['id'])
+
+                #create our code-running object with the relevant settings.
+                codehandler = HandlerFactory(struct, mymethod)
                 e,output_file_path = codehandler.runOne()
 
                 print '{:}: Task {:} done. Energy: {:18.12f}'.format(datetime.now(), task['id'], e)
@@ -145,15 +148,17 @@ def main(args):
 
 
             #REMOTE: update the task's status to "done"
-            if not args.no_update:
+            if not args.no_update and not args.no_calc:
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'done'}, verify=False)
                 req.raise_for_status()
                 task = req.json()
 
-        except: 
+        except Exception as e: 
             if not args.no_update:
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
                 req.raise_for_status()
+
+            print '{:}: Encountered an error! {:}.'.format(datetime.now(), e)
 
         sleep (20)  #just take a short break to avoid cycling through too many tasks if errors happen
 
