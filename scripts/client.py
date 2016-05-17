@@ -158,7 +158,7 @@ def main(args):
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
                 req.raise_for_status()
 
-            print '{:}: Encountered an error! {:}.'.format(datetime.now(), e)
+            print '{:}: Encountered an error! {:}.'.format(datetime.now(), str(e))
 
         sleep (20)  #just take a short break to avoid cycling through too many tasks if errors happen
 
