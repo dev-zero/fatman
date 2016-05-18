@@ -10,43 +10,104 @@ from ase.units import Ry
 
 import espresso
 
-class abinitHandler():
-    def __init__(self):
-        _deltaRunner.workdir_prefix = "/data/ralph/deltatests/abinit"
+class HandlerParent():
+    """
+    TODO: docstring
+    """
+    def runOne(self):
+        struct = self.structure
+        identifier = struct.info["key_value_pairs"]["identifier"]
 
-    def getDeltaCalc(self, ecut, kpts=[16,16,16],pps='hgh.k', basis="none"):
+        workdir = os.path.join(self.workdir_prefix, "method_{:04d}/{:s}".format(self.settings["id"], identifier))
+
+        try:
+            os.makedirs(workdir)
+        except OSError:
+            pass
+
+        os.chdir(workdir)
+
+        deltacalc = self.getCalculator()
+
+        struct.set_calculator(deltacalc)
+
+        e = struct.get_potential_energy()
+        
+        return e, os.path.join(workdir, "test.out")
+
+
+
+
+class abinitHandler(HandlerParent):
+    #THIS IS CURRENTLY UNTESTED CODE, MAKE SURE IT WORKS!
+    """TODO: docstring here"""
+    def __init__(self,structure, settings = {}, workdir_prefix = "/data/ralph/deltatests/abinit"):
+        self.workdir_prefix = workdir_prefix
+        self.settings = settings
+        self.structure = structure
+
+    def getCalculator(self):
         """
-        Set the required environment variables to run abinit (unless already set).
-        Return a calculator object with all required parameters set to high accuracy
+        TODO: docstring
         """
-        if pps=="hgh.k.nlcc2015":
+
+        if "tolsym" in self.settings["settings"].keys():
+            tolsym = self.settings["settings"]["tolsym"]
+        else:
+            tolsym = 1.0e-12
+
+        if "fband" in self.settings["settings"].keys():
+            fband = self.settings["settings"]["fband"]
+        else:
+            fband = 1.5
+
+        if "xc" in self.settings["settings"].keys():
+            xc = self.settings["settings"]["xc"]
+        else:
+            xc = 'PBE'
+
+        if "ecut" in self.settings["settings"].keys():
+            ecut = self.settings["settings"]["cutoff"]
+        else:
+            ecut = 100.
+
+        if "ecutsm" in self.settings["settings"].keys():
+            ecutsm = self.settings["settings"]["ecutsm"]
+        else:
+            ecutsm = 0.0
+
+        if "tsmear" in self.settings["settings"].keys():
+            tsmear = self.settings["settings"]["tsmear"]
+        else:
+            tsmear = 0.01
+
+        if "kpoints" in self.settings.keys():
+            kpts = list(self.settings["kpoints"])
+        else:
+            kpts = [12,12,12]
+
+        pseudopotential = self.settings["pseudopotential"]
+
+        if pseudopotential=="hgh.k.nlcc2015":
             os.environ['ABINIT_PP_PATH'] = '/users/ralph/work/abinit/pseudos/HGH-NLCC2015'
-            pps="hgh.k"
-        elif pps=="hgh.k.nlcc":
+            pseudopotential="hgh.k"
+        elif pseudopotential=="hgh.k.nlcc":
             os.environ['ABINIT_PP_PATH'] = '/users/ralph/work/abinit/pseudos/HGH-NLCC'
-            pps="hgh.k"
+            pseudopotential="hgh.k"
         else:
             os.environ['ABINIT_PP_PATH'] = '/users/ralph/work/abinit/pseudos/HGH'
 
         if not 'ABINIT_ASE_ABINIT_COMMAND' in os.environ.keys():
-            os.environ['ASE_ABINIT_COMMAND'] = 'module load gcc-suite >/dev/null; nice -n 2 mpirun -np 4 /users/ralph/work/abinit/abinit-7.10.5/tmp9/abinit < PREFIX.files > PREFIX.log'
+            os.environ['ASE_ABINIT_COMMAND'] = 'module load gcc-suite >/dev/null; nice -n 2 mpirun -np 4 /users/ralph/work/abinit/abinit-7.10.5/tmp9/abinit < PREFIX.files > test.out'
 
 
-        kptdensity = 16.0  #in the original, MP kpts are generated somehow automatically, we just use what they have determined as converged
-        # this is converged
-        width = 0.01
-        ecutsm = 0.0
-        fband = 1.5
-        tolsym = 1.e-12
-
-
-        calc = Abinit(label='deltatest',
-                      pps=pps, # uses highest valence hgh.k pps
+        calc = Abinit(label='test',
+                      pps=pseudopotential, # uses highest valence hgh.k pps
                       xc='PBE',
                       kpts=kpts,
                       ecut=ecut,
                       occopt=3,
-                      tsmear=width,
+                      tsmear=tsmear,
                       ecutsm=ecutsm,
                       toldfe=1.0e-6,
                       nstep=900,
@@ -60,8 +121,13 @@ class abinitHandler():
                   )
         return calc
 
+    def createOne(self):
+        print "NOT IMPLEMENTED"
+        quit()
 
-class cp2kHandler():
+
+class cp2kHandler(HandlerParent):
+    """TODO: docstring here"""
     def __init__(self,structure, settings = {}, workdir_prefix = "/data/ralph/deltatests/cp2k"):
         self.workdir_prefix = workdir_prefix
         self.settings = settings
@@ -98,8 +164,7 @@ class cp2kHandler():
 
     def getCalculator(self):
         """
-        Set the required environment variables to run CP2K (unless already set).
-        Return a calculator object with all required parameters set to high accuracy
+        TODO: UPDATE Docstring
         """
         ecut  = self.settings["settings"]["cutoff_rho"]
         kind_settings = self.settings["kind_settings"]
@@ -138,9 +203,6 @@ class cp2kHandler():
 
         magmoms = self.structure.get_initial_magnetic_moments()
 
-        #an ugly hack because the cp2k ase calculator can't set these parameters, we have to do a search/replace in an input template
-        #formatparams = {"kpts1":kpts[0],"kpts2": kpts[1],"kpts3": kpts[2], "do_gapw": "FALSE"}
-
         inp_template = self.input_template
 
         calc = CP2K (
@@ -165,27 +227,6 @@ class cp2kHandler():
 
         return calc
 
-
-    def runOne(self):
-        struct = self.structure
-        identifier = struct.info["key_value_pairs"]["identifier"]
-
-        workdir = os.path.join(self.workdir_prefix, "method_{:04d}/{:s}".format(self.settings["id"], identifier))
-
-        try:
-            os.makedirs(workdir)
-        except OSError:
-            pass
-
-        os.chdir(workdir)
-
-        deltacalc = self.getCalculator()
-
-        struct.set_calculator(deltacalc)
-
-        e = struct.get_potential_energy()
-        
-        return e, os.path.join(workdir, "test.out")
 
     def createOne(self):
         print "NOT IMPLEMENTED"
@@ -278,11 +319,6 @@ class espressoHandler():
 
 
 
-
-
-
-
-
 def HandlerFactory(structure, methodsettings = {"code":"cp2k"}):
     if methodsettings["code"] =="abinit":
         return abinitHandler(structure, settings = methodsettings)
@@ -298,4 +334,3 @@ def HandlerFactory(structure, methodsettings = {"code":"cp2k"}):
 
 if __name__=="__main__":
     print("DONT RUN ME!")
-
