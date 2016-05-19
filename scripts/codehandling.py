@@ -1,4 +1,30 @@
 #!/usr/bin/env python
+"""codehandling.py
+Provides functionality to run computational codes with input data defined in FATMAN.
+
+Get a universally usable codehandler by calling HandlerFactory(), supplying the 
+structure for which the calculation is to be run and the method settings. The returned
+class then provides the methods runOne() and createOne(), which either execute the code 
+and return the energy and name of the output file, or create an input file and return 
+its location.
+
+Public Methods:
+    - HandlerFactory(structure, settings)
+      Returns a codehandler object that provides method to run calculations or create inputs.
+
+Classes:
+    - HandlerParent
+      Base class for all the codehandler objects. Provides a generic runOne() method to be inherited
+
+    - AbinitHandler
+      Handler for the abinit code package, uses ASE to interface with the code.
+
+    - Cp2kHandler 
+      Handler for the cp2k package, uses ASE to interface with the code.
+
+    - EspressoHandler 
+      Handler for Quantum Espresso, uses the ase-espresso module (https://github.com/vossjo/ase-espresso/).
+"""
 import numpy as np
 import os, json
 
@@ -11,9 +37,13 @@ from ase.units import Ry
 import espresso
 
 class HandlerParent():
+    """Base class for the codehandler.
+
+    Currently only provides the runOne() method which all derived classes inherit.
     """
-    TODO: docstring
-    """
+    def __init__(self):
+        self.output_filename = "test.out"
+
     def runOne(self):
         struct = self.structure
         identifier = struct.info["key_value_pairs"]["identifier"]
@@ -33,23 +63,38 @@ class HandlerParent():
 
         e = struct.get_potential_energy()
         
-        return e, os.path.join(workdir, "test.out")
+        return e, os.path.join(workdir, self.output_filename)
 
 
 
 
-class abinitHandler(HandlerParent):
+class AbinitHandler(HandlerParent):
     #THIS IS CURRENTLY UNTESTED CODE, MAKE SURE IT WORKS!
-    """TODO: docstring here"""
+    """Class to run the Abinit code with FATMAN data through ASE.
+    
+    Instantiated by the HandlerFactory for a particular ASE chemical structure
+    and a dictionary of settings supplied from FATMAN. The workdir_prefix defines a
+    writable 'scratch' directory, in which subdirectories will be created for the 
+    particular calculation.
+
+    Private methods:
+        - getCalculator()
+          return an ASE Calculator object with the correct settings.
+
+    Public methods:
+        - runOne()
+          inherited; create a calculator, run the job and return total energy and output path
+        - createOne()
+          create a calculator and make it write an input file. NOT IMPLEMENTED YET.
+    """
     def __init__(self,structure, settings = {}, workdir_prefix = "/data/ralph/deltatests/abinit"):
         self.workdir_prefix = workdir_prefix
         self.settings = settings
         self.structure = structure
+        self.output_filename = "PREFIX.out" 
 
     def getCalculator(self):
-        """
-        TODO: docstring
-        """
+        """Mangle the supplied settings and return an Abinit ASE Calculator object."""
 
         if "tolsym" in self.settings["settings"].keys():
             tolsym = self.settings["settings"]["tolsym"]
@@ -98,7 +143,7 @@ class abinitHandler(HandlerParent):
             os.environ['ABINIT_PP_PATH'] = '/users/ralph/work/abinit/pseudos/HGH'
 
         if not 'ABINIT_ASE_ABINIT_COMMAND' in os.environ.keys():
-            os.environ['ASE_ABINIT_COMMAND'] = 'module load gcc-suite >/dev/null; nice -n 2 mpirun -np 4 /users/ralph/work/abinit/abinit-7.10.5/tmp9/abinit < PREFIX.files > test.out'
+            os.environ['ASE_ABINIT_COMMAND'] = 'module load gcc-suite >/dev/null; nice -n 2 mpirun -np 4 /users/ralph/work/abinit/abinit-7.10.5/tmp9/abinit < PREFIX.files > PREFIX.out'
 
 
         calc = Abinit(label='test',
@@ -122,16 +167,35 @@ class abinitHandler(HandlerParent):
         return calc
 
     def createOne(self):
-        print "NOT IMPLEMENTED"
-        quit()
+        raise NotImplementedError("This method is not implemented")
 
+class Cp2kHandler(HandlerParent):
+    """Class to run CP2K with FATMAN data through ASE.
+    
+    Instantiated by the HandlerFactory for a particular ASE chemical structure
+    and a dictionary of settings supplied from FATMAN. The workdir_prefix defines a
+    writable 'scratch' directory, in which subdirectories will be created for the 
+    particular calculation.
 
-class cp2kHandler(HandlerParent):
-    """TODO: docstring here"""
+    The CP2K ASE interface is somewhat bare, so we have to provide an input template
+    that will be extended with specific settings and the system definition. Stored
+    as a string attribute of the class.
+
+    Private methods:
+        - getCalculator()
+          return an ASE Calculator object with the correct settings.
+
+    Public methods:
+        - runOne()
+          inherited; create a calculator, run the job and return total energy and output path
+        - createOne()
+          create a calculator and make it write an input file. NOT IMPLEMENTED YET.
+    """
     def __init__(self,structure, settings = {}, workdir_prefix = "/data/ralph/deltatests/cp2k"):
         self.workdir_prefix = workdir_prefix
         self.settings = settings
         self.structure = structure
+        self.output_filename = "test.out" 
         self.input_template = """
             &GLOBAL
             &END GLOBAL
@@ -163,9 +227,7 @@ class cp2kHandler(HandlerParent):
         """
 
     def getCalculator(self):
-        """
-        TODO: UPDATE Docstring
-        """
+        """Mangle the supplied settings and return an Abinit ASE Calculator object."""
         ecut  = self.settings["settings"]["cutoff_rho"]
         kind_settings = self.settings["kind_settings"]
 
@@ -229,16 +291,16 @@ class cp2kHandler(HandlerParent):
 
 
     def createOne(self):
-        print "NOT IMPLEMENTED"
-        quit()
+        raise NotImplementedError("This method is not implemented")
 
 
 
-class espressoHandler():
+class EspressoHandler():
     def __init__(self,structure, settings = {}, workdir_prefix = "/data/ralph/deltatests/espresso"):
         self.workdir_prefix = workdir_prefix
         self.settings = settings
         self.structure = structure
+        self.output_filename = "log" 
 
     def getCalculator(self, input_only = None, outdir = "./"):
         """
@@ -321,13 +383,13 @@ class espressoHandler():
 
 def HandlerFactory(structure, methodsettings = {"code":"cp2k"}):
     if methodsettings["code"] =="abinit":
-        return abinitHandler(structure, settings = methodsettings)
+        return AbinitHandler(structure, settings = methodsettings)
 
     elif methodsettings["code"] =="cp2k":
-        return cp2kHandler(structure, settings = methodsettings)
+        return Cp2kHandler(structure, settings = methodsettings)
 
     elif methodsettings["code"] =="espresso":
-        return espressoHandler(structure, settings = methodsettings)
+        return EspressoHandler(structure, settings = methodsettings)
 
     else:
         raise RuntimeError ("Asked for unknown code")
