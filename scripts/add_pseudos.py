@@ -5,12 +5,14 @@ Use this script on the FATMAN server to populate the database with pseudopotenti
 from a file with pseudos in cp2k-compatible format.
 
 Parameters:
-    - filename: path to the pseudopotential file to be parsed
+    <filename>  path to the pseudopotential file to be parsed.
+    -h          show this help.
 
 The PP family is not automatically created in the db, thus it must exist upfront.
 The list of these 'allowed' pseudopotential families is hardcoded ('available_pseudos').
 """
 
+from __future__ import print_function
 from sys import argv
 from fatman.models import PseudopotentialFamily, Pseudopotential
 
@@ -53,7 +55,7 @@ def main(args):
             stored_pseudo += line
 
 if __name__ == "__main__":
-    if len(argv) == 2:
+    if len(argv) == 2 and '-h' not in argv:
         main(argv[1:])
     else:
-        print __doc__
+        print (__doc__)

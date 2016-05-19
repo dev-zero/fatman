@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-"""add_deltatest_to_db.py - Populate the FATMAN database with all deltatest-related structures.
+"""add_deltatest_to_db.py -YES -- Populate the FATMAN database with all deltatest-related structures.
 
 Use this script on the FATMAN server to populate the database with all chemical structures
 that are required for the suite of deltatests.
-
-Parameters: none, just run the script
 
 The structures are taken from the 'dcdft' module in ASE. For each solid-state structure,
 5 systems are created with a uniform compression/strain of -2% to +2%.
@@ -12,11 +10,17 @@ These 5 systems make up the deltatest for that particular element. The Test is c
 the Test table, and the systems are added to the System table.
 Moreover, for each element k-point settings are stored from a hardcoded list based on the
 settings used for HGHk/abinit in the Lejaeghere, Science (2016) paper (SI).
+
+Parameters:
+    -h     Show this help.
+    -YES   Call the program with this switch to add the entries. 
+           Otherwise nothing happens to prevent accidental DB clusterfuck.
 """
 
+from __future__ import print_function
+from sys import argv
 
 from ase.test.tasks import dcdft
-from ase.db import connect
 
 from fatman import db
 from fatman.models import Structure, Test, TestStructure
@@ -39,7 +43,6 @@ def main():
     deltastructures = dcdft.DeltaCodesDFTCollection()
     element_list = deltastructures.keys()
 
-    con = connect("postgresql:///fatman")
 
     for el in element_list:
         if el not in kpts.keys():
@@ -65,4 +68,7 @@ def main():
             teststructure, created = TestStructure.create_or_get(structure=struct.id, test=test.id)
 
 if __name__ == "__main__":
-    main()
+    if len(argv) == 2 and argv[1] == "-YES" and '-h' not in argv:
+        main()
+    else:
+        print (__doc__)

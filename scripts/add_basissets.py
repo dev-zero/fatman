@@ -5,11 +5,14 @@ Use this script on the FATMAN server to populate the database with orbital basis
 from a file with pseudos in cp2k-compatible format.
 
 Parameters:
-    - filename: path to the basisset file to be parsed
+    <filename>  path to the basisset file to be parsed.
+    -h          show this help.
 
 The basisset family is not automatically created in the db, thus it must exist upfront.
 The list of these 'allowed' basisset families is hardcoded ('available_bases').
 """
+
+from __future__ import print_function
 
 from sys import argv
 from fatman.models import BasissetFamily, BasisSet
@@ -18,7 +21,6 @@ from fatman.models import BasissetFamily, BasisSet
 def main(args):
     fn = args[0]
 
-    infile = open(fn)
     available_bases = ['SZV-GTH', 'DZV-GTH', 'DZVP-GTH',
                        'TZVP-GTH', 'TZV2P-GTH', 'QZV2P-GTH',
                        'QZV3P-GTH', 'aug-DZVP-GTH', 'aug-TZVP-GTH',
@@ -35,37 +37,38 @@ def main(args):
     element = None
     bases = None
 
-    for line in infile:
-        if line.startswith("#") or line.startswith("!"):
-            continue
+    with open(fn) as infile:
+        for line in infile:
+            if line.startswith("#") or line.startswith("!"):
+                continue
 
-        # find a line with an element name at the beginning
-        if line[0] not in [str(x) for x in range(10)] + [" "]:
-            if element is not None and stored_basis is not None:
+            # find a line with an element name at the beginning
+            if line[0] not in [str(x) for x in range(10)] + [" "]:
+                if element is not None and stored_basis is not None:
 
-                # here we save the previously found basis to the DB
-                fam = [x for x in bases if x in available_bases]
-                if len(fam) == 1:
-                    basis = BasissetFamily.get(name=fam[0])
+                    # here we save the previously found basis to the DB
+                    fam = [x for x in bases if x in available_bases]
+                    if len(fam) == 1:
+                        basis = BasissetFamily.get(name=fam[0])
 
-                    b, created = BasisSet.get_or_create(family=basis, element=element, defaults=dict(basis=stored_basis))
-                    if created:
-                        print "created: ", element, fam[0]
+                        b, created = BasisSet.get_or_create(family=basis, element=element, defaults=dict(basis=stored_basis))
+                        if created:
+                            print("created: ", element, fam[0])
 
-            s = line.split()
-            element = s[0]
-            bases = s[1:]
+                s = line.split()
+                element = s[0]
+                bases = s[1:]
 
-            ok_basis = [x in available_bases for x in bases]
+                ok_basis = [x in available_bases for x in bases]
 
-            stored_basis = ""
+                stored_basis = ""
 
-            continue
+                continue
 
-        stored_basis += line
+            stored_basis += line
 
 if __name__ == "__main__":
-    if len(argv) == 2:
+    if len(argv) == 2 and '-h' not in argv:
         main(argv[1:])
     else:
-        print __doc__
+        print (__doc__)
