@@ -40,12 +40,12 @@ def main():
                          )
 
     if c:
-        print ("CREATED METHOD: {:}".format(M.id))
+        print("CREATED METHOD: {:}".format(M.id))
     else:
-        print ("Nothing created, id of existing method: {:}".format(M.id))
+        print("Nothing created, id of existing method: {:}".format(M.id))
 
 if __name__ == "__main__":
     if len(argv) == 1 and '-h' not in argv:
         main(argv[1:])
     else:
-        print (__doc__)
+        print(__doc__)
