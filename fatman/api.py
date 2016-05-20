@@ -53,14 +53,17 @@ class TaskResource(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('status', type=str, required=True)
         parser.add_argument('machine', type=str, required=False)
+        parser.add_argument('priority', type=int, required=False)
         args = parser.parse_args()
 
-        # update the status and reset the modification time
+        # update the status and/or priority and reset the modification time
         task = Task.get(Task.id == id)
         task.status = TaskStatus.get(TaskStatus.name == args['status']).id
         task.mtime = datetime.now()
         if 'machine' in args.keys() and args['machine'] is not None:
             task.machine = args['machine'] 
+        if 'priority' in args.keys() and args['priority'] is not None:
+            task.priority = args['priority'] 
         task.save()
 
         return model_to_dict(task)
@@ -72,6 +75,7 @@ class TaskResource(Resource):
         parser.add_argument('method', type=int, required=True)
         parser.add_argument('status', type=str, default="new")
         parser.add_argument('test', type=str, required=True)
+        parser.add_argument('priority', type=int, default=0)
         args = parser.parse_args()
 
         m = Method.get(Method.id == args['method'])
@@ -94,7 +98,8 @@ class TaskResource(Resource):
                                              defaults = dict(ctime = datetime.now(),
                                                              mtime = datetime.now(),
                                                              status = s,
-                                                             machine = '-'))
+                                                             machine = '-',
+                                                             priority = args['priority']))
             ret.append(ta.id)
 
         return ret
