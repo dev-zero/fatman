@@ -236,4 +236,4 @@ if __name__ == "__main__":
         abinit_ref()
         wien_ref()
     else:
-        print (__doc__)
+        print(__doc__)

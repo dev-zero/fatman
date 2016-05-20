@@ -112,7 +112,7 @@ atoms_db ={
             'He' : [   "/users/ralph/work/fatman/PBE/He/q2/He.inp", "1s2"                ,  "none"          ] , 
             'Li' : [   "/users/ralph/work/fatman/PBE/Li/q3/Li.inp", "1s2 2s1"            ,  "none"          ] , 
             'Be' : [   "/users/ralph/work/fatman/PBE/Be/q4/Be.inp", "1s2 2s2"            ,  "none"          ] , 
-            'B'  : [   "/users/ralph/work/fatman/PBE/B/q3/B.inp"  , "2s2 2p1"            ,  "[He]"          ] , 
+            'B'  : [   "/users/ralph/work/fatman/PBE_19May2016/B_GTH_NEW"  , "2s2 2p1"            ,  "[He]"          ] , 
             'C'  : [   "/users/ralph/work/fatman/C_original_gth"  , "2s2 2p2"            ,  "[He]"          ] , 
             'N'  : [   "/users/ralph/work/fatman/PBE/N/q5/N.inp"  , "2s2 2p3"            ,  "[He]"          ] , 
             'O'  : [   "/users/ralph/work/fatman/PBE/O/q6/O.inp"  , "2s2 2p4"            ,  "[He]"          ] , 
@@ -192,7 +192,7 @@ def main(args):
 
     workdir_prefix += randomword(6)
     q = hashlib.sha1( ''.join(input_template_str.split()) + ''.join(str(atoms_db).split()) )
-    pp_unique_name = 'gth_pbe_reconverted' #urlsafe_b64encode(q.digest())[:7]
+    pp_unique_name = 'family_19_06_16' #urlsafe_b64encode(q.digest())[:7]
 
     for el in elements:
         #retrieve a default pseudopotential for that element as a starting guess
@@ -234,7 +234,8 @@ def main(args):
         #open the resulting pseudopotential data
         #infile = open("GTH-PARAMETER")
         infile = open(atoms_db[el][0])
-        pseudo_data = "".join(infile.readlines()[1:] + ['# ' + x for x in myinput_lines])
+        #pseudo_data = myguess #"".join(infile.readlines()[1:] + ['# ' + x for x in myinput_lines])
+        pseudo_data = "".join(infile.readlines()[1:] )
 
         #upload the PP data.
         req = requests.post(PSEUDOPOTENTIAL_URL, data={'family':pp_unique_name, 'element':el, 'pseudo': pseudo_data, 'overwrite': True}, verify=False)
@@ -263,7 +264,7 @@ def main(args):
         req = requests.post(METHOD_URL, data={'code':'espresso', 
                                               'basis_set': 55, 
                                               'pseudopotential': upf_id, 
-                                              'settings': json.dumps({'smearing': 'marzari-vanderbilt', 'xc': 'PBE', 'cutoff_pw': 3401.4244569396633, 'sigma': 0.027211395655517306})}, 
+                                              'settings': json.dumps({'smearing': 'marzari-vanderbilt', 'xc': 'PBE', 'cutoff_pw': 3401.4244569396633, 'sigma': 0.027211395655517306, 'kpoints':[20,20,20]})}, 
                             verify=False)
         req.raise_for_status()
         method_id = req.json()['id']

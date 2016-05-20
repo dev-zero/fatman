@@ -426,8 +426,11 @@ def create_html_comparison(idlist = None):
             for t, line in a["test"].items():
                 if "deltatest_" in t:
                     element = t.replace("deltatest_","")
+                
+                no1 = 3 if m_id_2 > 3 else m_id_2
+                no2 = m_id_2 if m_id_2 >= 3 else 3
 
-                picture = "img/{:04d}_{:04d}_{:s}.png".format(3,m_id_2,element)
+                picture = "img/{:04d}_{:04d}_{:s}.png".format(no1,no2,element)
 
                 theid = desc_2.split(",")[0].split(":")[-1]
                 dataline = [#("z", str(elements[element])),
