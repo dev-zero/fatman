@@ -39,6 +39,7 @@ task_resource_fields = {
     'method': fields.Nested(method_resource_fields),
     'structure': fields.Nested(structure_resource_fields),
     '_links': { 'self': fields.Url('taskresource') },
+    'priority' : fields.Integer,
     }
 
 
@@ -109,7 +110,8 @@ class TaskList(Resource):
             .join(TaskStatus).switch(Task) \
             .join(Method).switch(Task) \
             .join(Structure).switch(Task) \
-            .order_by(Task.id.asc())
+            .order_by(Task.priority.desc()) 
+           # .order_by(Task.id.asc()) 
 
         if args['status'] is not None:
             status = TaskStatus.get(TaskStatus.name == args['status'])
