@@ -144,7 +144,7 @@ def ev_curve(volumes,energies):
     try:
         v,e,B0, B1, R = eos.fit()
     except ValueError:
-        print "failure"
+        print("failure")
         return "fail", "fail", "fail", "fail", "fail"
     else:
         return v,e,B0/kJ * 1.0e24, B1, R[0] 
