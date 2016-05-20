@@ -146,7 +146,7 @@ class Task(BaseModel):
     ctime = DateTimeField()
     mtime = DateTimeField()
     machine = CharField()
-    priority = IntegerField()
+    priority = IntegerField(default=0)
 
     def __str__(self):
         return "id: {}, structure: {}, status: {}, method: {}".format(
