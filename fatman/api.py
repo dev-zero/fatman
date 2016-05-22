@@ -111,12 +111,12 @@ class TaskList(Resource):
         parser.add_argument('limit', type=int)
         args = parser.parse_args()
 
-        q = Task.select() \
+        q = Task.select(Task, TaskStatus, Method, Structure, Test) \
             .join(TaskStatus).switch(Task) \
             .join(Method).switch(Task) \
             .join(Structure).switch(Task) \
+            .join(Test).switch(Task) \
             .order_by(Task.priority.desc()) 
-           # .order_by(Task.id.asc()) 
 
         if args['status'] is not None:
             status = TaskStatus.get(TaskStatus.name == args['status'])
