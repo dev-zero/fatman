@@ -22,6 +22,15 @@ method_resource_fields = {
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
     'settings': fields.Raw,
+    '_links': { 'self': fields.Url('methodresource') },
+    }
+
+method_list_fields = {
+    'id': fields.Raw,
+    'code': fields.Raw,
+    'pseudopotential': fields.String(attribute='pseudopotential.name'),
+    'basis_set': fields.String(attribute='basis_set.name'),
+    '_links': { 'self': fields.Url('methodresource') },
     }
 
 structure_resource_fields = {
@@ -40,6 +49,17 @@ task_resource_fields = {
     'structure': fields.Nested(structure_resource_fields),
     '_links': { 'self': fields.Url('taskresource') },
     'priority' : fields.Integer,
+    }
+
+task_list_fields = {
+    'id': fields.Integer,
+    'ctime': fields.String,
+    'mtime': fields.String,
+    'machine': fields.Raw,
+    'status': fields.String(attribute='status.name'),
+    'method': fields.Nested(method_list_fields),
+    'structure': fields.Nested(structure_resource_fields),
+    '_links': { 'self': fields.Url('taskresource') },
     }
 
 
@@ -128,7 +148,7 @@ class TaskList(Resource):
         if args['limit'] is not None:
             q = q.limit(args['limit'])
 
-        return [marshal(model_to_dict(t), task_resource_fields) for t in q]
+        return [marshal(model_to_dict(t), task_list_fields) for t in q]
 
 
 result_resource_fields = {
