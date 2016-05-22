@@ -1,4 +1,6 @@
 
+import logging
+
 from flask import Flask, redirect, url_for
 from playhouse.postgres_ext import PostgresqlExtDatabase
 from flask.ext.uploads import UploadSet, configure_uploads
@@ -15,10 +17,20 @@ if 'SECURITY_POST_LOGIN_VIEW' not in app.config:
 if 'SECURITY_POST_LOGOUT_VIEW' not in app.config:
     app.config['SECURITY_POST_LOGOUT_VIEW'] = app.config['APPLICATION_ROOT']
 
+if app.config.get('DATABASE_LOG_QUERIES', False):
+    logger = logging.getLogger('peewee')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
+
 db = PostgresqlExtDatabase(
     app.config['DATABASE'],
     autorollback=True, # automatically rollback when a query failed to avoid dead threads
-    register_hstore=False)
+    register_hstore=False,
+    user=app.config.get('DATABASE_USER'),
+    password=app.config.get('DATABASE_PASSWORD'),
+    host=app.config.get('DATABASE_HOST'),
+    port=app.config.get('DATABASE_PORT')
+    )
 
 # Explicitly connect
 @app.before_request
