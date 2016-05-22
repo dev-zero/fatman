@@ -22,7 +22,6 @@ method_resource_fields = {
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
     'settings': fields.Raw,
-    '_links': { 'self': fields.Url('methodresource') },
     }
 
 method_list_fields = {
@@ -30,7 +29,6 @@ method_list_fields = {
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
-    '_links': { 'self': fields.Url('methodresource') },
     }
 
 structure_resource_fields = {
