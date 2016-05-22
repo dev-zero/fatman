@@ -111,9 +111,12 @@ class TaskList(Resource):
         parser.add_argument('limit', type=int)
         args = parser.parse_args()
 
-        q = Task.select(Task, TaskStatus, Method, Structure, Test) \
+        q = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
             .join(TaskStatus).switch(Task) \
-            .join(Method).switch(Task) \
+            .join(Method) \
+               .join(PseudopotentialFamily).switch(Method) \
+               .join(BasissetFamily).switch(Method) \
+               .switch(Task) \
             .join(Structure).switch(Task) \
             .join(Test).switch(Task) \
             .order_by(Task.priority.desc()) 
