@@ -1,5 +1,5 @@
-import {Component} from '@angular/core';
-import {OnActivate, Router, RouteSegment, RouteTree} from '@angular/router';
+import {Component, OnInit} from '@angular/core';
+import {Router} from '@angular/router';
 
 import {ReportService} from './reports.service';
 
@@ -26,7 +26,7 @@ import {ReportService} from './reports.service';
   providers: [ReportService],
 })
 
-export class Reports implements OnActivate {
+export class Reports implements OnInit {
   title = 'Reports';
 
   methods: Object[];
@@ -38,22 +38,12 @@ export class Reports implements OnActivate {
     private _service: ReportService,
     private _router: Router) { }
 
-  routerOnActivate(curr: RouteSegment,
-                   prev?: RouteSegment,
-                   currTree?: RouteTree,
-                   prevTree?: RouteTree): void {
-    this._selectedRowId = +curr.getParam('m_row_id');
-    this._selectedColId = +curr.getParam('m_col_id');
-
+  ngOnInit() {
     this._service.getMethods().then(methods => this.methods = methods);
   }
 
-  isSelected(m_row, m_col) {
-    return (m_row.id === this._selectedRowId) && (m_col.id === this._selectedColId);
-  }
-
   onSelect(m_row, m_col) {
-    this._router.navigate(['/report', m_row.id, m_col.id]);
+    this._router.navigate(['/reports/comparison', m_row.id, m_col.id]);
   }
 }
 //  vim: set ts=2 sw=2 tw=0 :
