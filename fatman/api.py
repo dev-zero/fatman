@@ -29,6 +29,7 @@ method_list_fields = {
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
+    'settings': fields.Raw
     }
 
 structure_resource_fields = {
