@@ -65,7 +65,18 @@ task_list_fields = {
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
     def get(self, id):
-        return model_to_dict(Task.get(Task.id == id))
+        task = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
+            .where(Task.id == id) \
+            .join(TaskStatus).switch(Task) \
+            .join(Method) \
+               .join(PseudopotentialFamily).switch(Method) \
+               .join(BasissetFamily).switch(Method) \
+               .switch(Task) \
+            .join(Structure).switch(Task) \
+            .join(Test).switch(Task) \
+            .get()
+
+        return model_to_dict(task)
 
     @marshal_with(task_resource_fields)
     def patch(self, id):
@@ -187,8 +198,16 @@ class ResultList(Resource):
         parser.add_argument('method', type=int)
         args = parser.parse_args()
 
-        q = Result.select() \
+        q = Result.select(Result, Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
             .join(Task) \
+               .join(TaskStatus).switch(Task) \
+               .join(Method) \
+                  .join(PseudopotentialFamily).switch(Method) \
+                  .join(BasissetFamily).switch(Method) \
+                  .switch(Task) \
+               .join(Structure).switch(Task) \
+               .join(Test).switch(Task) \
+               .switch(Result) \
             .order_by(Result.id.asc())
 
         if args['test'] is not None:
