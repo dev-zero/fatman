@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
 import {Routes, Router, ROUTER_DIRECTIVES, ROUTER_PROVIDERS} from '@angular/router';
 
 import {Home} from './components/home/home';
@@ -13,15 +13,11 @@ import {About} from './components/about/about';
 })
 
 @Routes([
-  { path: '/home',  component: Home },
+  { path: '/', component: Home },
+  { path: '/home', component: Home },
   { path: '/tasks', component: Tasks },
   { path: '/about', component: About },
+  { path: '/reports', component: Reports },
 ])
 
-export class FatmanApp implements OnInit {
-  constructor(private _router: Router) {}
-
-  ngOnInit() {
-    this._router.navigate(['/home']);
-  }
-}
+export class FatmanApp {}
