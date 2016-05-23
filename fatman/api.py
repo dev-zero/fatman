@@ -38,6 +38,11 @@ structure_resource_fields = {
     'ase_structure' : fields.Raw, 
     }
 
+structure_list_fields = {
+    'id': fields.Raw,
+    'name': fields.Raw,
+    }
+
 task_resource_fields = {
     'id': fields.Integer,
     'ctime': fields.String,
@@ -57,7 +62,7 @@ task_list_fields = {
     'machine': fields.Raw,
     'status': fields.String(attribute='status.name'),
     'method': fields.Nested(method_list_fields),
-    'structure': fields.Nested(structure_resource_fields),
+    'structure': fields.Nested(structure_list_fields),
     '_links': { 'self': fields.Url('taskresource') },
     }
 
