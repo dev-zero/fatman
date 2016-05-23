@@ -1,11 +1,14 @@
 import {Component, OnInit} from '@angular/core';
 
-import {TaskService} from '../../services/task';
+import {TaskService} from './tasks.service';
 
 @Component({
-  selector: 'tasks',
-  templateUrl: 'components/tasks/tasks.html',
-  styleUrls: ['components/tasks/tasks.css'],
+  template: `
+    <ul class="tasks">
+        <li *ngFor="let task of tasks">
+            {{task['id']}}: {{task['status']}}
+        </li>
+    </ul>`,
   providers: [TaskService]
 })
 
