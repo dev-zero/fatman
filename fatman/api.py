@@ -394,7 +394,7 @@ class TestResultResource(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('method', type=int, required=True)
-        parser.add_argument('test', type=str)
+        parser.add_argument('test', type=str, required=True)
         args = parser.parse_args()
 
         method1 = Method.get(Method.id==args["method"])
