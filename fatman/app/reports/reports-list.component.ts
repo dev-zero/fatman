@@ -5,7 +5,7 @@ import {ReportService} from './reports.service';
 
 @Component({
    template: `
-    <table class="table table-bordered table-striped table-condensed">
+    <table class="table table-bordered table-striped table-condensed table-hover">
       <thead>
         <th>&nbsp;</th>
           <th *ngFor="let method of methods">{{method['id']}}</th>
