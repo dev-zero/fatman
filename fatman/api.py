@@ -22,6 +22,7 @@ method_resource_fields = {
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
     'settings': fields.Raw,
+    '_links': { 'self': fields.Url('methodresource') },
     }
 
 method_list_fields = {
@@ -29,6 +30,7 @@ method_list_fields = {
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
+    '_links': { 'self': fields.Url('methodresource') },
     }
 
 structure_resource_fields = {
@@ -249,30 +251,17 @@ class ResultList(Resource):
 
         return model_to_dict(result), 201, {'Location': api.url_for(ResultResource, id=result.id)}
 
-class MethodList(Resource):
-    def get(self):
-        return [(m.id, str(m)) for m in Method.select()]
-
 class TestList(Resource):
     def get(self):
         return [(t.id, str(t)) for t in Test.select()]
 
-class Methods(Resource):
-    """Return all the details for a method, or set them"""
+class MethodList(Resource):
     def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('id', type=int)
-        args = parser.parse_args()
+        q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
+            .join(PseudopotentialFamily).switch(Method) \
+            .join(BasissetFamily).switch(Method)
 
-        m = Method.get(Method.id==args['id'])
-        ret = {'id'             : m.id,
-               'code'           : m.code,
-               'pseudopotential': m.pseudopotential.id,
-               'basis_set'      : m.basis_set.id,
-               'settings'       : m.settings }
-               
-
-        return ret
+        return [marshal(model_to_dict(m), method_list_fields) for m in q]
 
     def post(self):
         parser = reqparse.RequestParser()
@@ -293,7 +282,18 @@ class Methods(Resource):
                                          settings = json.loads(args['settings']))
 
         return {'id': m.id}
-        
+
+class MethodResource(Resource):
+    """Return all the details for a method, or set them"""
+    @marshal_with(method_resource_fields)
+    def get(self, id):
+        q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
+            .where(Method.id == id) \
+            .join(PseudopotentialFamily).switch(Method) \
+            .join(BasissetFamily).switch(Method) \
+            .get()
+
+        return model_to_dict(q)
 
 class Basissets(Resource):
     def get(self):
@@ -495,7 +495,7 @@ api.add_resource(CalcStatus, '/calcstatus')
 api.add_resource(MachineStatus, '/machinestatus')
 api.add_resource(TestResultResource, '/testresult')
 api.add_resource(Comparison, '/compare')
+api.add_resource(MethodResource, '/methods/<int:id>')
 api.add_resource(MethodList, '/methods')
-api.add_resource(Methods, '/method')
 api.add_resource(TestList, '/tests')
 

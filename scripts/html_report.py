@@ -20,11 +20,12 @@ def Json2Atoms(jsonstring):
 
 SERVER = 'https://172.23.64.223/fatman'
 SERVER = 'http://127.0.0.1:5001'
-COMPARE_URL = SERVER + '/compare'
-METHODS_URL = SERVER + '/methods'
-TESTS_URL = SERVER + '/tests'
-TESTRESULT_URL        = SERVER + '/testresult'
-RESULT_URL            = SERVER + '/results'
+
+COMPARE_URL    = SERVER + '/compare'
+METHODS_URL    = SERVER + '/methods'
+TESTS_URL      = SERVER + '/tests'
+TESTRESULT_URL = SERVER + '/testresult'
+RESULT_URL     = SERVER + '/results'
 
 REPORTS_BASE_DIR = "/users/ralph/work/fatman/reports"
 
@@ -318,18 +319,22 @@ def create_html_comparison(idlist = None):
 
     req = requests.get(METHODS_URL, verify = False)
     req.raise_for_status()
-    method_list = sorted(req.json(), key = lambda x:x[0])
+    method_list = sorted(req.json(), key = lambda x: x['id'])
 
     of = open(path.join(REPORTS_BASE_DIR, "html/index.html"), "w")
     of.write(headersection)
     of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
-    of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
+    of.write("".join(["<TD style=\"width:40px\"><span title=\"ID: {id}, code: {code}, pseudopotential: {pseudopotential}, basis set: {basis_set}\">{id}</span></TD>".format(**m) for m  in method_list]))
     of.write("</TR>\n")
 
-    for m_id_1, desc_1 in method_list: 
-        of.write("<TR style=\"hover {{background: yellow;}}\"><TD><span title=\"{:}\">{:}</span></TD>".format(desc_1,m_id_1))
+    for method_row in method_list:
+        desc_1 = "ID: {id}, code: {code}, pseudopotential: {pseudopotential}, basis set: {basis_set}".format(**method_row)
+        of.write("<TR style=\"hover {{background: yellow;}}\"><TD><span title=\"{desc}\">{id}</span></TD>".format(desc=desc_1, **method_row))
 
-        for m_id_2, desc_2 in method_list:
+        m_id_1 = method_row['id']
+        for method_col in method_list:
+            m_id_2 = method_col['id']
+            desc_2 = "ID: {id}, code: {code}, pseudopotential: {pseudopotential}, basis set: {basis_set}".format(**method_col)
             if m_id_2 <= m_id_1:
                 of.write("<TD></TD>")
                 continue
@@ -399,7 +404,7 @@ def create_html_comparison(idlist = None):
     of = open(path.join(REPORTS_BASE_DIR, "html-by-test/index.html"), "w")
     of.write(headersection)
     of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
-    of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
+    of.write("".join(["<TD style=\"width:40px\"><span title=\"ID: {id}, code: {code}, pseudopotential: {pseudopotential}, basis set: {basis_set}\">{id}</span></TD>".format(**m) for m  in method_list]))
     of.write("</TR>\n")
 
     for t_id_1, desc_1 in test_list:
@@ -409,7 +414,8 @@ def create_html_comparison(idlist = None):
         detailreport = HTMLReport(path.join(REPORTS_BASE_DIR, "html-by-test", "{:}.html".format(desc_1)))
         detailreport.set_report_header(code=desc_1, subtitle="Reference V0 = {:}, B0 = {:}, B1 = {:}", features=[])
 
-        for m_id_2, desc_2 in method_list:
+        for method in method_list:
+            m_id_2 = method['id']
            #if m_id_2<=m_id_1 :
            #    of.write("<TD></TD>")
            #    continue
@@ -436,11 +442,10 @@ def create_html_comparison(idlist = None):
 
                 picture = "img/{:04d}_{:04d}_{:s}.png".format(no1, no2, element)
 
-                theid = desc_2.split(",")[0].split(":")[-1]
                 dataline = [#("z", str(elements[element])),
-                            ("ID", theid        ),
+                            ("ID", method['id']),
                            #("Element", element), 
-                            ("Method", "<a href='{:}'>{:}</a>".format(picture,desc_2)), 
+                            ("Method", "<a href='{picture}'>ID: {id}, code: {code}, pseudopotential: {pseudopotential}, basis set: {basis_set}</a>".format(picture=picture, **method)),
                             ("V<sub>0</sub>", line[0]), 
                             ("B<sub>0</sub>", line[1]),  
                             ("B<sub>1</sub>", line[2]), 
