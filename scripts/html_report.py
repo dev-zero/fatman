@@ -26,6 +26,8 @@ TESTS_URL = SERVER + '/tests'
 TESTRESULT_URL        = SERVER + '/testresult'
 RESULT_URL            = SERVER + '/results'
 
+REPORTS_BASE_DIR = "/users/ralph/work/fatman/reports"
+
 headersection = """
 <HTML>
 <HEAD>
@@ -162,7 +164,7 @@ def full_compare(method1, method2, writefile = False):
             
             picture = "img/{:04d}_{:04d}_{:s}.png".format(method1,method2,element)
 
-            plt.savefig("/users/ralph/work/fatman/reports/html/"+picture, dpi=200)
+            plt.savefig(path.join(REPORTS_BASE_DIR, "html", picture), dpi=200)
         plt.close(myfig)
 
 
@@ -318,7 +320,7 @@ def create_html_comparison(idlist = None):
     req.raise_for_status()
     method_list = sorted(req.json(), key = lambda x:x[0])
 
-    of = open("/users/ralph/work/fatman/reports/html/index.html","w")
+    of = open(path.join(REPORTS_BASE_DIR, "html/index.html"), "w")
     of.write(headersection)
     of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
     of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
@@ -352,7 +354,7 @@ def create_html_comparison(idlist = None):
 
             full_compare(m_id_1, m_id_2, writefile=True)
 
-            detailreport = HTMLReport("/users/ralph/work/fatman/reports/html/{:04d}-{:04d}.html".format(m_id_1, m_id_2))
+            detailreport = HTMLReport(path.join(REPORTS_BASE_DIR, "html", "{:04d}-{:04d}.html".format(m_id_1, m_id_2)))
             detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[])
             #detailreport.
             for t, line in a["test"].items():
@@ -394,7 +396,7 @@ def create_html_comparison(idlist = None):
     req.raise_for_status()
     test_list = sorted(req.json(), key = lambda x:x[0])
 
-    of = open("/users/ralph/work/fatman/reports/html-by-test/index.html","w")
+    of = open(path.join(REPORTS_BASE_DIR, "html-by-test/index.html"), "w")
     of.write(headersection)
     of.write("<TABLE><TR><TD style=\"width:40px\"></TD>")
     of.write("".join(["<TD style=\"width:40px\"><span title=\"{:}\">{:}</span></TD>".format(x[1],x[0]) for x  in method_list]))
@@ -404,7 +406,7 @@ def create_html_comparison(idlist = None):
         if not 'deltatest' in desc_1: continue
         of.write("<TR style=\"hover {{background: yellow;}}\"><TD>{:}</TD>".format(desc_1))
 
-        detailreport = HTMLReport("/users/ralph/work/fatman/reports/html-by-test/{:}.html".format(desc_1))
+        detailreport = HTMLReport(path.join(REPORTS_BASE_DIR, "html-by-test", "{:}.html".format(desc_1)))
         detailreport.set_report_header(code=desc_1, subtitle="Reference V0 = {:}, B0 = {:}, B1 = {:}", features=[])
 
         for m_id_2, desc_2 in method_list:
