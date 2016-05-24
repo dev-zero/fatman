@@ -1,8 +1,10 @@
 #!/usr/bin/python
-import os, sys
+
+import sys
+from os import path
+
 import numpy as np
 import requests
-import numpy as np
 import matplotlib.pyplot as plt
 
 def Json2Atoms(jsonstring):
@@ -326,17 +328,17 @@ def create_html_comparison(idlist = None):
         of.write("<TR style=\"hover {{background: yellow;}}\"><TD><span title=\"{:}\">{:}</span></TD>".format(desc_1,m_id_1))
 
         for m_id_2, desc_2 in method_list:
-            if m_id_2<=m_id_1:
+            if m_id_2 <= m_id_1:
                 of.write("<TD></TD>")
                 continue
-            print m_id_1, m_id_2
+            print('{} {}'.format(m_id_1, m_id_2))
 
-            req = requests.get(COMPARE_URL, params = {"method1": m_id_1, "method2": m_id_2} , verify = False)
+            req = requests.get(COMPARE_URL, params = {"method1": m_id_1, "method2": m_id_2}, verify=False)
 
             req.raise_for_status()
             a = req.json()
             val = a["summary"]["avg"]
-            if val>99:
+            if val > 99:
                 of.write("<TD><a href={:} title=\"avg: {:}\n std: {:}\n n: {:}\">&gt;99</a></TD>".format("{:04d}-{:04d}.html".format(m_id_1, m_id_2),val,a["summary"]["stdev"],a["summary"]["N"]))
             elif str(val)=='nan':
                 of.write("<TD></TD>")
@@ -348,7 +350,7 @@ def create_html_comparison(idlist = None):
             if idlist is not None and not (m_id_1 in idlist or m_id_2 in idlist):
                 continue
 
-            full_compare(m_id_1, m_id_2,writefile = True)
+            full_compare(m_id_1, m_id_2, writefile=True)
 
             detailreport = HTMLReport("/users/ralph/work/fatman/reports/html/{:04d}-{:04d}.html".format(m_id_1, m_id_2))
             detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[])
@@ -357,11 +359,11 @@ def create_html_comparison(idlist = None):
                 if "deltatest_" in t:
                     element = t.replace("deltatest_","")
                 
-                picture = "img/{:04d}_{:04d}_{:s}.png".format(m_id_1,m_id_2,element)
+                picture = "img/{:04d}_{:04d}_{:s}.png".format(m_id_1, m_id_2, element)
 
 
                 dataline = [("z", str(elements[element])),
-                            ("Element", "<a href='{:}'>{:}</a>".format(picture,element)), 
+                            ("Element", "<a href='{:}'>{:}</a>".format(picture, element)),
                             ("V<sub>0</sub>", line[0]), 
                             ("B<sub>0</sub>", line[1]),  
                             ("B<sub>1</sub>", line[2]), 
@@ -409,7 +411,7 @@ def create_html_comparison(idlist = None):
            #if m_id_2<=m_id_1 :
            #    of.write("<TD></TD>")
            #    continue
-            print desc_1, m_id_2
+            print('{} {}'.format(desc_1, m_id_2))
             req = requests.get(COMPARE_URL, params = {"method1": m_id_2, "method2": 3, "test": desc_1} , verify = False)
             req.raise_for_status()
             a = req.json()
@@ -420,7 +422,7 @@ def create_html_comparison(idlist = None):
                 of.write("<TD></TD>")
                 continue
             else:
-                of.write("<TD><a href={:}.html>{:3.2f}</a></TD>".format(desc_1,val))
+                of.write("<TD><a href={:}.html>{:3.2f}</a></TD>".format(desc_1, val))
 
             #detailreport.
             for t, line in a["test"].items():
@@ -430,7 +432,7 @@ def create_html_comparison(idlist = None):
                 no1 = 3 if m_id_2 > 3 else m_id_2
                 no2 = m_id_2 if m_id_2 >= 3 else 3
 
-                picture = "img/{:04d}_{:04d}_{:s}.png".format(no1,no2,element)
+                picture = "img/{:04d}_{:04d}_{:s}.png".format(no1, no2, element)
 
                 theid = desc_2.split(",")[0].split(":")[-1]
                 dataline = [#("z", str(elements[element])),
@@ -443,7 +445,8 @@ def create_html_comparison(idlist = None):
                            #("V<sub>0,r</sub>", line[3]), 
                            #("B<sub>0,r</sub>", line[4]),  
                            #("B<sub>1,r</sub>", line[5]), 
-                            ("&Delta;",         line[6]) ]
+                            ("&Delta;",         line[6]),
+                            ]
                 detailreport.add_line(dataline)
 
         detailreport.set_table_footer(delta_avg = 0., delta_std=0.)
@@ -457,7 +460,7 @@ def create_html_comparison(idlist = None):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if len(args)>0:
+    if len(args) > 0:
         idlist = [int(x) for x in args]
         create_html_comparison(idlist)
     else:

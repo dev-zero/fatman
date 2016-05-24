@@ -276,7 +276,7 @@ def main(args):
         req.raise_for_status()
         tasklist = req.json()
 
-        print "{:2s}: {:}".format(el, ", ".join([str(x) for x in tasklist]))
+        print("{:2s}: {:}".format(el, ", ".join([str(x) for x in tasklist])))
 
 if __name__ == "__main__":
     main(argv[1:])

@@ -153,7 +153,7 @@ class TaskList(Resource):
                .switch(Task) \
             .join(Structure).switch(Task) \
             .join(Test).switch(Task) \
-            .order_by(Task.priority.desc()) 
+            .order_by(Task.priority.desc())
 
         if args['status'] is not None:
             status = TaskStatus.get(TaskStatus.name == args['status'])
