@@ -58,3 +58,7 @@ npm install
 After that, the web-application should be available on:
 
   http://localhost:5000/app
+
+Provided that the following things are set up and running:
+* port-forward the postgresql server to the local host (`ssh -L 5432:localhost:5432 172.23.64.223`)
+* start the fatman server locally (`FATMAN_SETTINGS=$PWD/fatman.cfg ./manage.py runserver -p 5000`) with the appropriate `DATABASE_HOST` in the config.
