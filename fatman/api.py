@@ -276,10 +276,10 @@ class Methods(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('code', type=str)
-        parser.add_argument('pseudopotential', type=int)
-        parser.add_argument('basis_set', type=int)
-        parser.add_argument('settings', type=str)
+        parser.add_argument('code', type=str, required=True)
+        parser.add_argument('pseudopotential', type=int, required=True)
+        parser.add_argument('basis_set', type=int, required=True)
+        parser.add_argument('settings', type=str, required=True)
         args = parser.parse_args()
 
         b = BasissetFamily.get(BasissetFamily.id==args['basis_set'])
