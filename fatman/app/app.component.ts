@@ -4,6 +4,7 @@ import {Routes, Router, ROUTER_DIRECTIVES} from '@angular/router';
 import {Home} from './home/home';
 import {Tasks} from './tasks/tasks-list.component';
 import {Reports} from './reports/reports-list.component';
+import {ReportsComparison} from './reports/reports-comparison.component';
 
 @Component({
   selector: 'fatman-app',
@@ -33,6 +34,7 @@ import {Reports} from './reports/reports-list.component';
   { path: '/', component: Home },
   { path: '/home', component: Home },
   { path: '/tasks', component: Tasks },
+  { path: '/reports/comparison/:id1/:id2', component: ReportsComparison },
   { path: '/reports', component: Reports },
 ])
 
