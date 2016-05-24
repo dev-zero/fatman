@@ -65,28 +65,45 @@ def main(args):
             sleep(DAEMON_SLEEPTIME)
             continue
 
-        task = tasks[0]
-        print('{:}: Received task with id = {:}.'.format(datetime.now(), task['id']))
 
         # set the task's status to pending
         if not args.no_update:
             req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine': machinename}, verify=False)
-            req.raise_for_status()
+        else:
+            req = requests.get(SERVER + tasks[0]['_links']['self'], verify=False)
+
+        req.raise_for_status()
+        task = req.json()
+
+
+        print('{:}: Received task with id = {:}.'.format(datetime.now(), task['id']))
 
         # Start the actual processing of the task, trying to capture/ignore all possible errors.
-        try:
+        if 1:
             # get structure and convert to ASE object
             struct_json = task['structure']['ase_structure']
             struct = Json2Atoms(struct_json)
 
             # which code to use with which settings?
             mymethod = task['method']
-            if "kpoints" in struct.info["key_value_pairs"].keys() and "kpoints" not in mymethod['settings'].keys():
+            if "kpoints" in struct.info["key_value_pairs"].keys() and "kpoints" not in mymethod['settings'].keys() and "max_kpoints" not in mymethod['settings'].keys():
                 # kindof a hack: kpoints are specified with each structure, but are in fact code parameters
                 mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
             elif "kpoints" in mymethod['settings'].keys():
                 # kpoints specified in the 'method' override those in the 'structure'
                 mymethod["kpoints"] = mymethod['settings']['kpoints']
+            elif "max_kpoints" in mymethod['settings'].keys():
+                # if max_kpoints is specified, we use whichever kpoint setting is smaller
+                if "kpoints" in struct.info["key_value_pairs"].keys():
+                    nkp1 = struct.info["key_value_pairs"]["kpoints"][0]*struct.info["key_value_pairs"]["kpoints"][1] * struct.info["key_value_pairs"]["kpoints"][2]
+                else:
+                    nkp1 = 1e10
+
+                nkp2 = mymethod['settings']['max_kpoints'][0] * mymethod['settings']['max_kpoints'][1] * mymethod['settings']['max_kpoints'][2] 
+                if nkp2 < nkp1:
+                    mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
+                else:
+                    mymethod["kpoints"] = mymethod['settings']['max_kpoints']
 
             if "charge" in struct.info["key_value_pairs"].keys():
                 mymethod["charge"] = struct.info["key_value_pairs"]["charge"]
@@ -134,6 +151,7 @@ def main(args):
             # run the code
             if not args.no_calc:
                 print('{:}: Calculating task with id = {:}.'.format(datetime.now(), task['id']))
+                sys.stdout.flush()
 
                 # create our code-running object with the relevant settings.
                 codehandler = HandlerFactory(struct, mymethod)
@@ -158,7 +176,8 @@ def main(args):
                 req.raise_for_status()
                 task = req.json()
 
-        except Exception as e:
+       #except Exception as e:
+        else:
             if not args.no_update:
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
                 req.raise_for_status()
