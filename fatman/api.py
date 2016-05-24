@@ -259,9 +259,10 @@ class MethodList(Resource):
     def get(self):
         q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
             .join(PseudopotentialFamily).switch(Method) \
-            .join(BasissetFamily).switch(Method)
+            .join(BasissetFamily).switch(Method) \
+            .order_by(Method.id)
 
-        return sorted([marshal(model_to_dict(m), method_list_fields) for m in q], key=lambda x:x['id'])
+        return [marshal(model_to_dict(m), method_list_fields) for m in q]
 
     def post(self):
         parser = reqparse.RequestParser()
