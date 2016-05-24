@@ -31,9 +31,6 @@ export class Reports implements OnInit {
 
   methods: Object[];
 
-  private _selectedRowId: number;
-  private _selectedColId: number;
-
   constructor(
     private _service: ReportService,
     private _router: Router) { }
