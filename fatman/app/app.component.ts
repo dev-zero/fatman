@@ -1,4 +1,8 @@
 import {Component} from '@angular/core';
+
+// Add the RxJS Observable operators we need in this app.
+import './rxjs-operators';
+
 import {Routes, Router, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {Home} from './home/home';

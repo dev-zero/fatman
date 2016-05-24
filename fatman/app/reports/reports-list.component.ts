@@ -29,14 +29,18 @@ import {ReportService} from './reports.service';
 export class Reports implements OnInit {
   title = 'Reports';
 
+  errorMessage: string;
   methods: Object[];
+  mode = 'Observable';
 
   constructor(
     private _service: ReportService,
     private _router: Router) { }
 
   ngOnInit() {
-    this._service.getMethods().then(methods => this.methods = methods);
+    this._service.getMethods().subscribe(
+      methods => this.methods = methods,
+      error => this.errorMessage = <any>error);
   }
 
   onSelect(m_row, m_col) {

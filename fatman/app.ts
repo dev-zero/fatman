@@ -6,8 +6,6 @@ import {ROUTER_PROVIDERS} from '@angular/router';
 
 import {FatmanApp} from './app/app.component';
 
-import 'rxjs/Rx'
-
 //enableProdMode();
 
 // Since services are simple classes, we have to specify providers here
