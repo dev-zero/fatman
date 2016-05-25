@@ -8,7 +8,7 @@ export class TaskService {
   }
 
   getTasks() {
-    return this._http.get('../tasks')
+    return this._http.get('../tasks?limit=500&timeorder=True')
       .map((response) => response.json())
       .toPromise();
   }
