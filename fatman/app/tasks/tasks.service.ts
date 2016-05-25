@@ -1,5 +1,7 @@
-import { Http, Response } from '@angular/http';
+import { Http, Response, URLSearchParams } from '@angular/http';
 import { Injectable } from '@angular/core';
+
+import { Observable } from 'rxjs/Observable';
 
 @Injectable()
 export class TaskService {
@@ -7,10 +9,22 @@ export class TaskService {
   constructor(private _http: Http) {
   }
 
-  getTasks() {
-    return this._http.get('../tasks?limit=500&timeorder=True')
+  private _methodsUrl = '../tasks';
+
+  getTasks(): Observable<Object[]> {
+    let params: URLSearchParams = new URLSearchParams();
+    params.set('limit', '500');
+    params.set('timeorder', 'True');
+    return this._http.get(this._methodsUrl, {search: params})
       .map((response) => response.json())
-      .toPromise();
+      .catch(this.handleError);
+  }
+
+  private handleError(error: any) {
+    let errMsg = (error.message) ? error.message :
+      error.status ? `${error.status} - ${error.statusText}` : 'Server error';
+    console.error(errMsg);
+    return Observable.throw(errMsg);
   }
 }
 //  vim: set ts=2 sw=2 tw=0 :

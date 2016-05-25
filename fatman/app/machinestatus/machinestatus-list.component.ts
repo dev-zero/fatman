@@ -26,12 +26,16 @@ import {MachinestatusService} from './machinestatus.service';
 
 export class MachineStatus implements OnInit {
   title = 'Machines';
+
+  errorMessage: string;
   machines: Object[];
 
   constructor(private _MachinestatusService: MachinestatusService) { }
 
   getMachinestatus() {
-    this._MachinestatusService.getMachinestatus().then(machines => this.machines = machines);
+    this._MachinestatusService.getMachinestatus().subscribe(
+      machines => this.machines = machines,
+      error => this.errorMessage = <any>error);
   }
 
   ngOnInit() {

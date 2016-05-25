@@ -30,12 +30,16 @@ import {TaskService} from './tasks.service';
 
 export class Tasks implements OnInit {
   title = 'Tasks';
+
+  errorMessage: string;
   tasks: Object[];
 
   constructor(private _taskService: TaskService) { }
 
   getTasks() {
-    this._taskService.getTasks().then(tasks => this.tasks = tasks);
+    this._taskService.getTasks().subscribe(
+      tasks => this.tasks = tasks,
+      error => this.errorMessage = <any>error);
   }
 
   ngOnInit() {
