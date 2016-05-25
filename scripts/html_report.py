@@ -297,7 +297,7 @@ class HTMLReport(deltaReport):
             elif isinstance(d, str):
                 text += "<TD align=\"right\">{:s}</TD>".format(d)
             else:
-                text += "<TD align=\"right\">{:s}</TD>".format(d)
+                text += "<TD align=\"right\">{:s}</TD>".format(str(d))
 
         text = text[:-1] + "</TR>\n"
         self.output  += text
