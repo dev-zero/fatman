@@ -376,7 +376,7 @@ class MachineStatus(Resource):
             else:
                 ret[x.machine] = [0,x.count]
         
-        return ret
+        return [ [k, v[0], v[1]] for k,v in ret.items() ]
 
 class CalcStatus(Resource):
     """Return a dictionary of task statuses and the number of tasks with that status
