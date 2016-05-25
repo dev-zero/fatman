@@ -145,6 +145,7 @@ class TaskList(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('status', type=str)
         parser.add_argument('limit', type=int)
+        parser.add_argument('timeorder', type=bool, default=False)
         args = parser.parse_args()
 
         q = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
@@ -156,6 +157,9 @@ class TaskList(Resource):
             .join(Structure).switch(Task) \
             .join(Test).switch(Task) \
             .order_by(Task.priority.desc())
+
+        if args['timeorder']:
+            q = q.order_by(Task.mtime.desc())
 
         if args['status'] is not None:
             status = TaskStatus.get(TaskStatus.name == args['status'])
