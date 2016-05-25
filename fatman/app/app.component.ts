@@ -7,6 +7,7 @@ import {Routes, Router, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {Home} from './home/home';
 import {Tasks} from './tasks/tasks-list.component';
+import {MachineStatus} from './machinestatus/machinestatus-list.component';
 import {Reports} from './reports/reports-list.component';
 import {ReportsComparison} from './reports/reports-comparison.component';
 
@@ -24,6 +25,7 @@ import {ReportsComparison} from './reports/reports-comparison.component';
 	    <li><a [routerLink]="['/home']">Home</a></li>
 	    <li><a [routerLink]="['/tasks']">Tasks</a></li>
 	    <li><a [routerLink]="['/reports']">Reports</a></li>
+	    <li><a [routerLink]="['/machinestatus']">Machine Status</a></li>
 	  </ul>
 	</div>
       </div>
@@ -40,6 +42,7 @@ import {ReportsComparison} from './reports/reports-comparison.component';
   { path: '/tasks', component: Tasks },
   { path: '/reports/comparison/:id1/:id2', component: ReportsComparison },
   { path: '/reports', component: Reports },
+  { path: '/machinestatus', component: MachineStatus },
 ])
 
 export class FatmanApp {}
