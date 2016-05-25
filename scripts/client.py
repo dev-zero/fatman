@@ -25,7 +25,7 @@ DAEMON_SLEEPTIME      = 5*60
 def main(args):
 
     mywd = os.getcwd()
-    exitword = os.path.join(mywd, "{:}".format(randomword(8)))
+    exitword = os.path.join(mywd, "exit.{:}".format(randomword(6)))
     machinename = os.uname()[1]
 
     print("############################################################################")
@@ -79,7 +79,7 @@ def main(args):
         print('{:}: Received task with id = {:}.'.format(datetime.now(), task['id']))
 
         # Start the actual processing of the task, trying to capture/ignore all possible errors.
-        if 1:
+        try:
             # get structure and convert to ASE object
             struct_json = task['structure']['ase_structure']
             struct = Json2Atoms(struct_json)
@@ -100,7 +100,7 @@ def main(args):
                     nkp1 = 1e10
 
                 nkp2 = mymethod['settings']['max_kpoints'][0] * mymethod['settings']['max_kpoints'][1] * mymethod['settings']['max_kpoints'][2] 
-                if nkp2 < nkp1:
+                if nkp2 > nkp1:
                     mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
                 else:
                     mymethod["kpoints"] = mymethod['settings']['max_kpoints']
@@ -176,8 +176,7 @@ def main(args):
                 req.raise_for_status()
                 task = req.json()
 
-       #except Exception as e:
-        else:
+        except Exception as e:
             if not args.no_update:
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
                 req.raise_for_status()
