@@ -20,7 +20,6 @@ import {ReportService} from './reports.service';
       </tbody>
     </table>
   `,
-  providers: [ReportService],
 })
 
 export class ReportsComparison implements OnActivate {

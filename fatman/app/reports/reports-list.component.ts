@@ -23,7 +23,6 @@ import {ReportService} from './reports.service';
       </tbody>
     </table>
   `,
-  providers: [ReportService],
 })
 
 export class Reports implements OnInit {
