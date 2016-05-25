@@ -17,20 +17,20 @@ import {ReportsComparison} from './reports/reports-comparison.component';
   template: `
     <nav class="navbar navbar-inverse navbar-static-top">
       <div class="container">
-	<div class="navbar-header">
-	  <a class="navbar-brand" href="#">FATMAN</a>
-	</div>
-	<div id="navbar" class="collapse navbar-collapse">
-	  <ul class="nav navbar-nav">
-	    <li><a [routerLink]="['/home']">Home</a></li>
-	    <li><a [routerLink]="['/tasks']">Tasks</a></li>
-	    <li><a [routerLink]="['/reports']">Reports</a></li>
-	    <li><a [routerLink]="['/machinestatus']">Machine Status</a></li>
-	  </ul>
-	</div>
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">FATMAN</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a [routerLink]="['/home']">Home</a></li>
+            <li><a [routerLink]="['/tasks']">Tasks</a></li>
+            <li><a [routerLink]="['/reports']">Reports</a></li>
+            <li><a [routerLink]="['/machinestatus']">Machine Status</a></li>
+          </ul>
+        </div> <!--/.navbar-collapse -->
       </div>
     </nav>
-    <div>
+    <div class="container">
       <router-outlet></router-outlet>
     </div>
   `,
