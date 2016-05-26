@@ -26,11 +26,15 @@ def main(args):
 
     mywd = os.getcwd()
     exitword = os.path.join(mywd, "exit.{:}".format(randomword(6)))
-    machinename = os.uname()[1]
+
 
     hpc = args.hpc_mode
     maxtask = args.maxtask
     ntask = 0
+    if hpc:
+        machinename = 'hpc'
+    else:
+        machinename = os.uname()[1]
 
     print("############################################################################")
     print("##                         FATMAN CLIENT                                  ##")
