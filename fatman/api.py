@@ -146,6 +146,7 @@ class TaskList(Resource):
         parser.add_argument('status', type=str)
         parser.add_argument('limit', type=int)
         parser.add_argument('timeorder', type=bool, default=False)
+        parser.add_argument('machine', type=str)
         args = parser.parse_args()
 
         q = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
@@ -164,6 +165,9 @@ class TaskList(Resource):
         if args['status'] is not None:
             status = TaskStatus.get(TaskStatus.name == args['status'])
             q = q.where(Task.status == status)
+
+        if args['machine'] is not None:
+            q = q.where(Task.machine == args['machine'])
 
         if args['limit'] is not None:
             q = q.limit(args['limit'])
