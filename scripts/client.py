@@ -28,6 +28,10 @@ def main(args):
     exitword = os.path.join(mywd, "exit.{:}".format(randomword(6)))
     machinename = os.uname()[1]
 
+    hpc = args.hpc_mode
+    maxtask = args.maxtask
+    ntask = 0
+
     print("############################################################################")
     print("##                         FATMAN CLIENT                                  ##")
     print("############################################################################")
@@ -39,14 +43,23 @@ def main(args):
         print("# Calculations will not be run, as per user request")
     if args.no_update:
         print("# Task status will not be updated on server, as per user request")
+    if maxtask < 99999:
+        print("# Stopping after {:} tasks.".format(maxtask))
+    if hpc:
+        print("# HPC MODE: Creating and uploading tasks.")
     print("############################################################################")
     print("# To shutdown the client after finishing a task: \n#        touch {:}".format(exitword))
     print("############################################################################")
     sys.stdout.flush()
 
-    while 1:
+    while ntask < maxtask:
+        ntask += 1
+
+        if hpc:
+            os.system("rm /tmp/espresso-remote-task/*")
+
         # check if the 'exit file' exists, then exit
-        print("# Checking for {:}...".format(exitword),end='')
+        print("# Checking for {:}...".format(exitword), end='')
         if os.path.exists(exitword):
             os.remove(exitword)
             print("decided to quit.")
@@ -65,7 +78,6 @@ def main(args):
             sleep(DAEMON_SLEEPTIME)
             continue
 
-
         # set the task's status to pending
         if not args.no_update:
             req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine': machinename}, verify=False)
@@ -74,7 +86,6 @@ def main(args):
 
         req.raise_for_status()
         task = req.json()
-
 
         print('{:}: Received task with id = {:}.'.format(datetime.now(), task['id']))
 
@@ -99,7 +110,7 @@ def main(args):
                 else:
                     nkp1 = 1e10
 
-                nkp2 = mymethod['settings']['max_kpoints'][0] * mymethod['settings']['max_kpoints'][1] * mymethod['settings']['max_kpoints'][2] 
+                nkp2 = mymethod['settings']['max_kpoints'][0] * mymethod['settings']['max_kpoints'][1] * mymethod['settings']['max_kpoints'][2]
                 if nkp2 > nkp1:
                     mymethod["kpoints"] = struct.info["key_value_pairs"]["kpoints"]
                 else:
@@ -143,13 +154,17 @@ def main(args):
                     of.close()
 
             # REMOTE: update the task's status to "running"
-            if not args.no_update and not args.no_calc:
+            if not args.no_update and not args.no_calc and not hpc:
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'running'}, verify=False)
+                req.raise_for_status()
+                task = req.json()
+            elif not args.no_update and not args.no_calc and hpc:
+                req = requests.patch(SERVER + task['_links']['self'], data={'status': 'running-remote'}, verify=False)
                 req.raise_for_status()
                 task = req.json()
 
             # run the code
-            if not args.no_calc:
+            if not args.no_calc and not hpc:
                 print('{:}: Calculating task with id = {:}.'.format(datetime.now(), task['id']))
                 sys.stdout.flush()
 
@@ -170,8 +185,28 @@ def main(args):
                     req = requests.post(SERVER + done_task["_links"]["self"]+'/file', files={'file': f}, verify=False)
                     req.raise_for_status()
 
+            elif hpc:
+                os.system("cp {:}/{:}.UPF /tmp/espresso-remote-task".format(odir, e))
+
+                codehandler = HandlerFactory(struct, mymethod)
+                output_file_path = codehandler.createOne()
+
+                runscript_template = (open("./dora_script_espresso.txt")).read()
+                params = {"workdir"    : "{:04d}/{:s}".format(mymethod["id"], struct.info["key_value_pairs"]["identifier"]),
+                          "taskupdate" : task['_links']['self'],
+                          "natom"      : len(struct.get_masses()),
+                          "id"         : task['id']}
+
+                of = open(os.path.join("/tmp/espresso-remote-task", "runjob_dora.sh"), "w")
+                of.write(runscript_template.format(**params))
+                of.close()
+
+                if not args.no_upload:
+                    os.system("ssh rkoitz@ela.cscs.ch 'mkdir -p /users/rkoitz/deltatests/espresso/{workdir}/'".format(**params))
+                    os.system("scp -rp /tmp/espresso-remote-task/* rkoitz@ela.cscs.ch:/users/rkoitz/deltatests/espresso/{workdir}/".format(**params))
+
             # REMOTE: update the task's status to "done"
-            if not args.no_update and not args.no_calc:
+            if not args.no_update and not args.no_calc and not hpc:
                 req = requests.patch(SERVER + task['_links']['self'], data={'status': 'done'}, verify=False)
                 req.raise_for_status()
                 task = req.json()
@@ -183,7 +218,8 @@ def main(args):
 
             print('{:}: Encountered an error! {:}.'.format(datetime.now(), str(e)))
 
-        sleep(20)  # just take a short break to avoid cycling through too many tasks if errors happen
+        if not hpc:
+            sleep(20)  # just take a short break to avoid cycling through too many tasks if errors happen
 
 
 if __name__ == "__main__":
@@ -197,6 +233,22 @@ if __name__ == "__main__":
                         help='Do not update the task\'s status on the server.',
                         action='store_true',
                         dest='no_update')
+
+    parser.add_argument('--no-upload',
+                        help='Do not upload the task to the hpc node.',
+                        action='store_true',
+                        dest='no_upload')
+
+    parser.add_argument('--hpc-mode',
+                        help='Number of HPC calculations to upload (hpc-mode only!)',
+                        action='store_true',
+                        dest='hpc_mode')
+
+    parser.add_argument('--maxtask',
+                        help='Number of tasks after which to stop.',
+                        type=int,
+                        default=99999,
+                        dest='maxtask')
 
     args = parser.parse_args(sys.argv[1:])
 

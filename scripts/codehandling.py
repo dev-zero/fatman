@@ -403,6 +403,9 @@ class EspressoHandler():
         deltacalc.outdir = workdir
         deltacalc.pwinp = os.path.join(workdir, "pw.inp")
 
+        if np.sum(abs(struct.get_initial_magnetic_moments())) > 0:
+            deltacalc.spinpol = True
+
         struct.set_calculator(deltacalc)
         deltacalc.initialize(struct)
 

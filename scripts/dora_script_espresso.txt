@@ -3,17 +3,9 @@
 
 # ----- SLURM JOB SUBMIT SCRIPT -----
 #SBATCH --export=ALL
-#SBATCH --error=error.log
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
-#%%% Use FULL nodes - Only change when you know what you are doing! %%%#
-#%%% Misconfiguration cost you "money".                             %%%#
-#%%% Maximum on PizDora is: 24 or 48 with hyper threads (2/c).      %%%#
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
-# -- number of task per node and core --
-#SBATCH --ntasks-per-node=24
-#SBATCH --ntasks-per-core=2
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+#SBATCH --error=slurm.%J.err
+#SBATCH --output=slurm.%J.out
+#SBATCH --exclusive
 
 ################ CHANGE this section  (begin) ##########################
 # -- job info --
@@ -22,13 +14,10 @@
 #SBATCH --time=23:59:00
 
 # -- number of nodes --
-#SBATCH --nodes=4
-
-# -- number of MPI tasks per node --
-NTASKS_PER_NODE=24
-
-# -- number of OMP threads per MPI task --
-NTHREADS_PER_TASK=1
+#SBATCH --nodes=4               # of nodes            (default =  1)
+#SBATCH --ntasks-per-node=36    # of MPI tasks/node   (default = 36)
+#SBATCH --cpus-per-task=1       # of OMP threads/task (default =  1)
+#SBATCH --ntasks-per-core=1     # HT (default = 1, HyperThreads = 2)
 
 # -- the program and input file --
 INP="pw.inp"
@@ -46,16 +35,9 @@ module load espresso/5.2.0
 
 # -- definition: function to start a calculation --
 slurm_startjob() {{
-  THREADS_PER_NODE=`echo "${{NTASKS_PER_NODE}} * ${{NTHREADS_PER_TASK}}" | bc`
-  if [ ${{THREADS_PER_NODE}} -gt ${{MAX_THREADS_PER_NODE}} ]; then
-     echo "Product of NTASKS_PER_NODE (${{NTASKS_PER_NODE}}) and"
-     echo "NTHREADS_PER_TASK (${{NTHREADS_PER_TASK}}) can't be larger than"
-     echo "MAX_THREADS_PER_NODE (${{MAX_THREADS_PER_NODE}})!"
-     exit 0
-  fi
-  export OMP_NUM_THREADS=${{NTHREADS_PER_TASK}}
   NTASKS=`echo "${{SLURM_JOB_NUM_NODES}} * ${{NTASKS_PER_NODE}}" | bc`
   pool=`echo "${{NTASKS}} / 4" | bc`
+
   echo ' --------------------------------------------------------------'
   echo ' |        --- COPYING TO SCRATCH ---                          |'
   echo ' --------------------------------------------------------------'le
@@ -70,7 +52,27 @@ slurm_startjob() {{
   echo ' |        --- RUNNING JOB ---                                 |'
   echo ' --------------------------------------------------------------'
 
-  aprun -n ${{NTASKS}} -N ${{NTASKS_PER_NODE}} -d ${{OMP_NUM_THREADS}} pw.x -npool ${{pool}} -in ${{INP}} > "${{INP}}.out"
+  export OMP_NUM_THREADS=${{SLURM_CPUS_PER_TASK}}
+  if [ ${{OMP_NUM_THREADS}} -gt 1 ]; then
+    export SLURM_CPU_BIND="sockets"
+  fi
+
+  /usr/bin/time -p srun \
+    --bcast=/tmp/${{USER}} \
+    --ntasks ${{SLURM_NTASKS}} \
+    --ntasks-per-node ${{SLURM_NNODES}} \
+    --cpus-per-task ${{OMP_NUM_THREADS}} \
+    pw.x -npool ${{pool}} -i ${{INP}} > ${{INP}}.out
+
+  srun --ntasks ${{SLURM_NTASKS}} \
+    --ntasks-per-node ${{SLURM_NNODES}} \
+    --cpus-per-task ${{OMP_NUM_THREADS}} \
+    numactl -s
+
+  srun --ntasks ${{SLURM_NTASKS}} \
+    --ntasks-per-node ${{SLURM_NNODES}} \
+    --cpus-per-task ${{OMP_NUM_THREADS}} \
+    numactl -H
 
   en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654 / {natom} }}'` 
 
