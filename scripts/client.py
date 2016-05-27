@@ -208,6 +208,8 @@ def main(args):
                 if not args.no_upload:
                     os.system("ssh rkoitz@ela.cscs.ch 'mkdir -p /users/rkoitz/deltatests/espresso/{workdir}/'".format(**params))
                     os.system("scp -rp /tmp/espresso-remote-task/* rkoitz@ela.cscs.ch:/users/rkoitz/deltatests/espresso/{workdir}/".format(**params))
+                    if args.do_submit:
+                        os.system("ssh rkoitz@ela.cscs.ch \"ssh dora 'cd /users/rkoitz/deltatests/espresso/{workdir}/; /apps/dora/slurm/default/bin/sbatch runjob_dora.sh'\"".format(**params))
 
             # REMOTE: update the task's status to "done"
             if not args.no_update and not args.no_calc and not hpc:
@@ -242,6 +244,11 @@ if __name__ == "__main__":
                         help='Do not upload the task to the hpc node.',
                         action='store_true',
                         dest='no_upload')
+
+    parser.add_argument('--do-submit',
+                        help='Submit the job to SLURM after upload. Without this option the user has to submit the job him/herself.',
+                        action='store_true',
+                        dest='do_submit')
 
     parser.add_argument('--hpc-mode',
                         help='Number of HPC calculations to upload (hpc-mode only!)',
