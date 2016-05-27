@@ -231,6 +231,7 @@ class Cp2kHandler(HandlerParent):
 
     def getCalculator(self):
         """Mangle the supplied settings and return an Abinit ASE Calculator object."""
+
         ecut = self.settings["settings"]["cutoff_rho"]
         kind_settings = self.settings["kind_settings"]
 
@@ -293,6 +294,8 @@ class Cp2kHandler(HandlerParent):
         return calc
 
     def createOne(self):
+        """Attach the cp2k calculator to the structure, write an input file and return its path.
+        """
         raise NotImplementedError("This method is not implemented")
 
 
@@ -322,7 +325,7 @@ class EspressoHandler():
         - runOne()
           inherited; create a calculator, run the job and return total energy and output path
         - createOne()
-          create a calculator and make it write an input file. NOT IMPLEMENTED YET.
+          create a calculator and make it write an input file.
     """
 
     def __init__(self, structure, settings={}, workdir_prefix="/data/ralph/deltatests/espresso"):
@@ -366,6 +369,16 @@ class EspressoHandler():
         return calc
 
     def runOne(self):
+        """Attach the ASE Calculator (espresso) to the structure, run the energy calc, and return its results.
+
+        Create working directory for the calculation based on the workdir_prefix, get the espresso calculator,
+        set it to work in that directory and run the energy calculation.
+        If the structure specifies magnetic moments, the option `spinpol` has to be set for the calculator.
+
+        Returns:
+            - e: the total energy from the DFT calculation in eV.
+            - the path of the output file (`log`) which should then eventually be uploaded to the server.
+        """
         struct = self.structure
         identifier = struct.info["key_value_pairs"]["identifier"]
 
@@ -389,6 +402,16 @@ class EspressoHandler():
         return e, os.path.join(workdir, "log")
 
     def createOne(self):
+        """Attach the ASE Calculator (espresso) to the structure, write a Q.E. input file and return its path.
+
+        Create output directory for the input file base on workdir_prefix, get the espresso calculator set to
+        only produce an input file, write that input file and return the pathname where it was created.
+        If the structure specifies magnetic moments, the option `spinpol` has to be set for the calculator.
+
+        Returns:
+            - the path of the input file (`pw.inp`) for Q. Espresso.
+        """
+
         struct = self.structure
         identifier = struct.info["key_value_pairs"]["identifier"]
 
@@ -409,7 +432,7 @@ class EspressoHandler():
         struct.set_calculator(deltacalc)
         deltacalc.initialize(struct)
 
-        return workdir
+        return deltacalc.pwinp
 
 
 def HandlerFactory(structure, methodsettings={"code": "cp2k"}):
@@ -428,4 +451,4 @@ def HandlerFactory(structure, methodsettings={"code": "cp2k"}):
         raise RuntimeError("Asked for unknown code")
 
 if __name__ == "__main__":
-    print("DONT RUN ME!")
+    print("DONT RUN ME, I'M ONLY A LIBRARY!")
