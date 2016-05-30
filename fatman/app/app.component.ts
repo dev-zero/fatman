@@ -10,6 +10,7 @@ import {Tasks} from './tasks/tasks-list.component';
 import {MachineStatus} from './machinestatus/machinestatus-list.component';
 import {Reports} from './reports/reports-list.component';
 import {ReportsComparison} from './reports/reports-comparison.component';
+import {Periodictable} from './periodictable/periodictable-list.component';
 
 @Component({
   selector: 'fatman-app',
@@ -26,6 +27,7 @@ import {ReportsComparison} from './reports/reports-comparison.component';
             <li><a [routerLink]="['/tasks']">Tasks</a></li>
             <li><a [routerLink]="['/reports']">Reports</a></li>
             <li><a [routerLink]="['/machinestatus']">Machine Status</a></li>
+            <li><a [routerLink]="['/periodictable']">Periodic Table</a></li>
           </ul>
         </div> <!--/.navbar-collapse -->
       </div>
@@ -43,6 +45,7 @@ import {ReportsComparison} from './reports/reports-comparison.component';
   { path: '/reports/comparison/:id1/:id2', component: ReportsComparison },
   { path: '/reports', component: Reports },
   { path: '/machinestatus', component: MachineStatus },
+  { path: '/periodictable', component: Periodictable },
 ])
 
 export class FatmanApp {}
