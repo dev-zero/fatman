@@ -1,4 +1,25 @@
 #!/usr/bin/env python
+"""pp_workflow.py <element> <element> <element> ... - take pseudopotentials optimized by cp2k and upload them for deltatesting.
+
+This script goes through a list of elements, takes the stored cp2k-optimized pseudo from the filesystem,
+uploads it, and creates a FATMAN Method that uses this PP and new FATMAN Tasks for deltatesting the pseudo.
+Most options are hardcoded, including the electron configuration of the elements and the location of
+the optimized pseudos (a file usually called `GTH-PARAMETER`, in cp2k format).
+
+Parameters:
+    <element>   chemical symbol of the element for which to upload the pseudo
+                can be repeated, separate with spaces.
+    -h          show this help.
+
+Some remarks:
+    - In principle, existing pseudopotentials in the same family will not be overwritten, instead raising an error.
+      This can be changed manually in the code.
+    - Make sure that all instances of the PP family name are consistent (`pp_unique_name`) and reflect the
+      core size of the desired PP (`atoms_db`).
+    - The script runs cp2k with a hardcoded input template to convert the cp2k PP to the UPF format. cp2k has to be
+      available and runnable. The conversion has been shown to work correctly, but more rigorous testing wouldn't hurt.
+"""
+
 from sys import argv
 from ase.calculators.cp2k import CP2K
 from ase import Atoms
@@ -122,11 +143,26 @@ atoms_db_largecore ={
             'Ni' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ni/q10/GTH-PARAMETER"  , "4s2 3d8"            ,  "[Ar]"          ] ,
             'Cu' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cu/q1/GTH-PARAMETER"   , "4s1"                ,  "[Ar] 3d10"     ] ,
             'Zn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zn/q2/GTH-PARAMETER"   , "4s2"                ,  "[Ar] 3d10"     ] ,
-            'Ga' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ga/q3/GTH-PARAMETER"   , "4s2 4p1"            ,  "[Ar] 3d10"     ] }
+            'Ga' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ga/q3/GTH-PARAMETER"   , "4s2 4p1"            ,  "[Ar] 3d10"     ] ,
+            'Rb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Rb/q1/GTH-PARAMETER"   , "5s1"                ,  "[Kr]"          ] ,
+            'Sr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sr/q2/GTH-PARAMETER"   , "5s2"                ,  "[Kr]"          ] ,
+            'Y'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Y/q3/GTH-PARAMETER"    , "5s2 4d1"            ,  "[Kr]"          ] ,
+            'Zr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zr/q4/GTH-PARAMETER"   , "5s2 4d2"            ,  "[Kr]"          ] ,
+            'Nb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Nb/q5/GTH-PARAMETER"   , "5s1 4d4"            ,  "[Kr]"          ] ,
+            'Mo' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Mo/q6/GTH-PARAMETER"   , "5s1 4d5"            ,  "[Kr]"          ] ,
+            'Tc' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Tc/q7/GTH-PARAMETER"   , "5s2 4d5"            ,  "[Kr]"          ] ,
+            'Ru' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ru/q8/GTH-PARAMETER"   , "5s1 4d7"            ,  "[Kr]"          ] ,
+            'Rh' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Rh/q9/GTH-PARAMETER"   , "5s2 4p1"            ,  "missing  "     ] ,
+            'Pd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Pd/q10/GTH-PARAMETER"  , "5s2 4p1"            ,  "missing  "     ] ,
+            'Ag' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ag/q1/GTH-PARAMETER"   , "5s2 4p1"            ,  "missing  "     ] ,
+            'Cd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cd/q2/GTH-PARAMETER"   , "5s2"                ,  "[Kr] 4d10"     ] ,
+            'In' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/In/q3/GTH-PARAMETER"   , "5s2 5p1"            ,  "[Kr] 4d10"     ] 
+            }
 
 atoms_db_mediumcore ={  
             'Cu' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cu/q11/GTH-PARAMETER"  , "4s1 3d10"           ,  "[Ar]"          ] ,
-            'Zn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zn/q12/GTH-PARAMETER"  , "4s2 3d10"           ,  "[Ar]"          ] }
+            'Zn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zn/q12/GTH-PARAMETER"  , "4s2 3d10"           ,  "[Ar]"          ] ,
+            'Ag' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ag/q11/GTH-PARAMETER"  , "5s2 4d10"           ,  "[Kr]"          ] }
 
             
 atoms_db_smallcore ={  
@@ -166,24 +202,24 @@ atoms_db_smallcore ={
             'Se' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Se/q6/GTH-PARAMETER"   , "4s2 4p4"            ,  "[Ar] 3d10"     ] ,
             'Br' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Br/q7/GTH-PARAMETER"   , "4s2 4p5"            ,  "[Ar] 3d10"     ] ,
             'Kr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Kr/q8/GTH-PARAMETER"   , "4s2 4p6"            ,  "[Ar] 3d10"     ] ,
-            'Rb' : [   ""                                                                , "4s2 4p6 5s1"        ,  "[Ar] 3d10"     ] ,
-            'Sr' : [   ""                                                                , "4s2 4p6 5s2"        ,  "[Ar] 3d10"     ] ,
-            'Y'  : [   ""                                                                , "4s2 4p6 5s2 4d1"    ,  "[Ar] 3d10"     ] ,
-            'Zr' : [   ""                                                                , "4s2 4p6 5s2 4d2"    ,  "[Ar] 3d10"     ] ,
-            'Nb' : [   ""                                                                , "4s2 4p6 5s2 4d3"    ,  "[Ar] 3d10"     ] ,
-            'Mo' : [   ""                                                                , "4s2 4p6 5s1 4d5"    ,  "[Ar] 3d10"     ] ,
-            'Tc' : [   ""                                                                , "4s2 4p6 5s2 4d5"    ,  "[Ar] 3d10"     ] ,
-            'Ru' : [   ""                                                                , "4s2 4p6 5s2 4d6"    ,  "[Ar] 3d10"     ] ,
-            'Rh' : [   ""                                                                , "4s2 4p6 5s2 4d7"    ,  "[Ar] 3d10"     ] ,
-            'Pd' : [   ""                                                                , "4s2 4p6 5s2 4d8"    ,  "[Ar] 3d10"     ] ,
-            'Ag' : [   ""                                                                , "5s1 4d10"           ,  "[Kr]"          ] ,
-            'Cd' : [   ""                                                                , "5s2 4d10"           ,  "[Kr]"          ] ,
-            'In' : [   ""                                                                , "5s2 5p1"            ,  "[Kr] 4d10"     ] ,
-            'Sn' : [   ""                                                                , "5s2 5p2"            ,  "[Kr] 4d10"     ] ,
-            'Sb' : [   ""                                                                , "5s2 5p3"            ,  "[Kr] 4d10"     ] ,
-            'Te' : [   ""                                                                , "5s2 5p4"            ,  "[Kr] 4d10"     ] ,
-            'I'  : [   ""                                                                , "5s2 5p5"            ,  "[Kr] 4d10"     ] ,
-            'Xe' : [   ""                                                                , "5s2 5p6"            ,  "[Kr] 4d10"     ] ,
+            'Rb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Rb/q9/GTH-PARAMETER"   , "4s2 4p6 5s1"        ,  "[Ar] 3d10"     ] ,
+            'Sr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sr/q10/GTH-PARAMETER"  , "4s2 4p6 5s2"        ,  "[Ar] 3d10"     ] ,
+            'Y'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Y/q11/GTH-PARAMETER"   , "4s2 4p6 5s2 4d1"    ,  "[Ar] 3d10"     ] ,
+            'Zr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zr/q12/GTH-PARAMETER"  , "4s2 4p6 5s2 4d2"    ,  "[Ar] 3d10"     ] ,
+            'Nb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Nb/q13/GTH-PARAMETER"  , "4s2 4p6 5s2 4d3"    ,  "[Ar] 3d10"     ] ,
+            'Mo' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Mo/q14/GTH-PARAMETER"  , "4s2 4p6 5s1 4d5"    ,  "[Ar] 3d10"     ] ,
+            'Tc' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Tc/q15/GTH-PARAMETER"  , "4s2 4p6 5s2 4d5"    ,  "[Ar] 3d10"     ] ,
+            'Ru' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ru/q16/GTH-PARAMETER"  , "4s2 4p6 5s2 4d6"    ,  "[Ar] 3d10"     ] ,
+            'Rh' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Rh/q17/GTH-PARAMETER"  , "4s2 4p6 5s2 4d7"    ,  "[Ar] 3d10"     ] ,
+            'Pd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Pd/q18/GTH-PARAMETER"  , "4s2 4p6 5s2 4d8"    ,  "[Ar] 3d10"     ] ,
+            'Ag' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ag/q19/GTH-PARAMETER"  , "5s1 4d10"           ,  "[Kr]"          ] ,
+            'Cd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cd/q12/GTH-PARAMETER"  , "5s2 4d10"           ,  "[Kr]"          ] ,
+            'In' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/In/q13/GTH-PARAMETER"  , "5s2 5p1 4d10"       ,  "[Kr]"          ] ,
+            'Sn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sn/q4/GTH-PARAMETER"   , "5s2 5p2"            ,  "[Kr] 4d10"     ] ,
+            'Sb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sb/q5/GTH-PARAMETER"   , "5s2 5p3"            ,  "[Kr] 4d10"     ] ,
+            'Te' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Te/q6/GTH-PARAMETER"   , "5s2 5p4"            ,  "[Kr] 4d10"     ] ,
+            'I'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/I/q7/GTH-PARAMETER"    , "5s2 5p5"            ,  "[Kr] 4d10"     ] ,
+            'Xe' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Xe/q8/GTH-PARAMETER"   , "5s2 5p6"            ,  "[Kr] 4d10"     ] ,
             'Cs' : [   ""                                                                , "5s2 5p6 6s1"        ,  "[Kr] 4d10"     ] ,
             'Ba' : [   ""                                                                , "5s2 5p6 6s2"        ,  "[Kr] 4d10"     ] ,
             'La' : [   ""                                                                , "5s2 5p6 6s2 5d1"    ,  "[Kr] 4d10"     ] ,
@@ -261,7 +297,7 @@ def main(args):
         pseudo_data = "".join(infile.readlines()[1:] )
 
         #upload the PP data.
-        req = requests.post(PSEUDOPOTENTIAL_URL, data={'family':pp_unique_name, 'element':el, 'pseudo': pseudo_data, 'overwrite': True}, verify=False)
+        req = requests.post(PSEUDOPOTENTIAL_URL, data={'family':pp_unique_name, 'element':el, 'pseudo': pseudo_data, 'overwrite': False}, verify=False)
         req.raise_for_status()
 
         settings['pseudoguess'] = pseudo_data
@@ -287,10 +323,11 @@ def main(args):
         req = requests.post(METHOD_URL, data={'code':'espresso', 
                                               'basis_set': 55, 
                                               'pseudopotential': upf_id, 
-                                              'settings': json.dumps({'smearing': 'marzari-vanderbilt', 'xc': 'PBE', 'cutoff_pw': 3401.4244569396633, 'sigma': 0.027211395655517306, 'max_kpoints':[20,20,20]})}, 
+                                              'settings': json.dumps({'smearing': 'marzari-vanderbilt', 'xc': 'PBE', 'cutoff_pw': 3401.4244569396633, 'sigma': 0.027211395655517306, 'max_kpoints': [20,20,20]})}, 
                             verify=False)
         req.raise_for_status()
-        method_id = req.json()['id']
+        #method_id = req.json()['id']
+        method_id = 76 #req.json()['id']
 
         #create the corresponding delta tasks for this method.
         req = requests.post(TASK_URL, data={  'method':method_id, 
@@ -303,4 +340,7 @@ def main(args):
         print("{:2s}: {:}".format(el, ", ".join([str(x) for x in tasklist])))
 
 if __name__ == "__main__":
-    main(argv[1:])
+    if len(argv) > 1 and '-h' not in argv:
+        main()
+    else:
+        print (__doc__)
