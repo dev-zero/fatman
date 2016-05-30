@@ -81,6 +81,7 @@ slurm_startjob() {{
   echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'done'}}, verify=False); req.raise_for_status(); task = req.json()" >> /users/rkoitz/deltatests/update_fatman.py
 
   cp $SCRATCHDIR/*out $INPDIR
+  bzip2 $INPDIR/pw.inp.out
   echo ' --------------------------------------------------------------'
   echo ' |        --- DONE ---                                        |'
   echo ' --------------------------------------------------------------'
