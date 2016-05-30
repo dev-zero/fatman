@@ -64,24 +64,22 @@ slurm_startjob() {{
     --cpus-per-task ${{OMP_NUM_THREADS}} \
     pw.x -npool ${{pool}} -i ${{INP}} > ${{INP}}.out
 
-  srun --ntasks ${{SLURM_NTASKS}} \
-    --ntasks-per-node ${{SLURM_NNODES}} \
-    --cpus-per-task ${{OMP_NUM_THREADS}} \
-    numactl -s
+  if [ $? -eq 0 ]
+  then
+      echo 'No Error'
+      en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654 / {natom} }}'` 
 
-  srun --ntasks ${{SLURM_NTASKS}} \
-    --ntasks-per-node ${{SLURM_NNODES}} \
-    --cpus-per-task ${{OMP_NUM_THREADS}} \
-    numactl -H
+      echo "req = requests.post(RESULTS_URL, data={{'energy': $en, 'task_id': {id} }}, verify=False); req.raise_for_status(); done_task = req.json();" >> /users/rkoitz/deltatests/update_fatman.py
 
-  en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654 / {natom} }}'` 
+      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'done'}}, verify=False); req.raise_for_status(); task = req.json()" >> /users/rkoitz/deltatests/update_fatman.py
 
-  echo "req = requests.post(RESULTS_URL, data={{'energy': $en, 'task_id': {id} }}, verify=False); req.raise_for_status(); done_task = req.json();" >> /users/rkoitz/deltatests/update_fatman.py
+      cp $SCRATCHDIR/*out $INPDIR
+      bzip2 $INPDIR/pw.inp.out
+  else
+      echo 'encountered an error'
+      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'error'}}, verify=False); req.raise_for_status(); task = req.json()" >> /users/rkoitz/deltatests/update_fatman.py
+  fi
 
-  echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'done'}}, verify=False); req.raise_for_status(); task = req.json()" >> /users/rkoitz/deltatests/update_fatman.py
-
-  cp $SCRATCHDIR/*out $INPDIR
-  bzip2 $INPDIR/pw.inp.out
   echo ' --------------------------------------------------------------'
   echo ' |        --- DONE ---                                        |'
   echo ' --------------------------------------------------------------'
