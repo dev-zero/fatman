@@ -7,6 +7,9 @@ import numpy as np
 import requests
 import matplotlib.pyplot as plt
 
+
+from jinja2 import Template
+
 def Json2Atoms(jsonstring):
     """Read a JSON string and return an Atoms object"""
 
@@ -61,6 +64,144 @@ th:hover::after {
 </HEAD>
 <BODY><H1>Method Comparison Matrix</H1>
 """
+
+blank_pt = {'H'  : "" , 'He' : "" , 'Li' : "" , 'Be' : "" , 'B'  : "" , 'C'  : "" , 'N'  : "" ,
+            'O'  : "" , 'F'  : "" , 'Ne' : "" , 'Na' : "" , 'Mg' : "" , 'Al' : "" ,
+            'Si' : "" , 'P'  : "" , 'S'  : "" , 'Cl' : "" , 'Ar' : "" , 'K'  : "" ,
+            'Ca' : "" , 'Sc' : "" , 'Ti' : "" , 'V'  : "" , 'Cr' : "" , 'Mn' : "" ,
+            'Fe' : "" , 'Co' : "" , 'Ni' : "" , 'Cu' : "" , 'Zn' : "" , 'Ga' : "" ,
+            'Ge' : "" , 'As' : "" , 'Se' : "" , 'Br' : "" , 'Kr' : "" , 'Rb' : "" ,
+            'Sr' : "" , 'Y'  : "" , 'Zr' : "" , 'Nb' : "" , 'Mo' : "" , 'Tc' : "" ,
+            'Ru' : "" , 'Rh' : "" , 'Pd' : "" , 'Ag' : "" , 'Cd' : "" , 'In' : "" ,
+            'Sn' : "" , 'Sb' : "" , 'Te' : "" , 'I'  : "" , 'Xe' : "" , 'Cs' : "" ,
+            'Ba' : "" , 'La' : "" , 'Hf' : "" , 'Ta' : "" , 'W'  : "" , 'Re' : "" ,
+            'Os' : "" , 'Ir' : "" , 'Pt' : "" , 'Au' : "" , 'Hg' : "" , 'Tl' : "" ,
+            'Pb' : "" , 'Bi' : "" , 'Po' : "" , 'At' : "" , 'Rn' : "" } 
+
+pt_template_str ="""
+  <html><head><style>td{ border: 1px solid #CCCCCC; width: 30px; padding: 10px; vertical-align: center; text-align: center}</style><title>Comparing  with 1</title></head><body>
+  <table style='margin-left: auto; margin-right:auto; font-size:12; table-layout: fixed; width: 1500px; padding: 2px; border-collapse: collapse'>
+      <tr> <td colspan=18 style="text-align: left; font-size: 16; border: none"><h3>Comparing methods {{ m1 }} and  {{ m2 }}</td> </tr>
+      <tr> 
+        <td><b><b>H </b></b><br />{{ '{0:s}'.format(H) }}</td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td><b><b>He </b></b><br />{{ '{0:s}'.format(He) }}</td> </tr> 
+      <tr> 
+        <td><b><b>Li </b></b><br />{{ '{0:s}'.format(Li) }}</td> 
+        <td><b><b>Be </b></b><br />{{ '{0:s}'.format(Be) }}</td> 
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td><b>B </b><br />{{ '{0:s}'.format(B) }}</td> 
+        <td><b>C </b><br />{{ '{0:s}'.format(C) }}</td> 
+        <td><b>N </b><br />{{ '{0:s}'.format(N) }}</td> 
+        <td><b>O </b><br />{{ '{0:s}'.format(O) }}</td> 
+        <td><b>F </b><br />{{ '{0:s}'.format(F) }}</td> 
+        <td><b>Ne</b><br />{{ '{0:s}'.format(Ne) }}</td> </tr> 
+      <tr> 
+        <td><b>Na </b><br />{{ '{0:s}'.format(Na) }}</td> 
+        <td><b>Mg </b><br />{{ '{0:s}'.format(Mg) }}</td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td> </td> 
+        <td><b>Al</b><br />{{ '{0:s}'.format(Al) }}</td> 
+        <td><b>Si</b><br />{{ '{0:s}'.format(Si) }}</td> 
+        <td><b>P </b><br />{{ '{0:s}'.format(P) }}</td> 
+        <td><b>S </b><br />{{ '{0:s}'.format(S) }}</td> 
+        <td><b>Cl</b><br />{{ '{0:s}'.format(Cl) }}</td> 
+        <td><b>Ar</b><br />{{ '{0:s}'.format(Ar) }}</td> </tr> 
+      <tr> 
+        <td><b>K </b><br />{{ '{0:s}'.format(K) }}</td> 
+        <td><b>Ca</b><br />{{ '{0:s}'.format(Ca) }}</td> 
+        <td><b>Sc</b><br />{{ '{0:s}'.format(Sc) }}</td> 
+        <td><b>Ti</b><br />{{ '{0:s}'.format(Ti) }}</td> 
+        <td><b>V </b><br />{{ '{0:s}'.format(V) }}</td> 
+        <td><b>Cr</b><br />{{ '{0:s}'.format(Cr) }}</td> 
+        <td><b>Mn</b><br />{{ '{0:s}'.format(Mn) }}</td> 
+        <td><b>Fe</b><br />{{ '{0:s}'.format(Fe) }}</td> 
+        <td><b>Co</b><br />{{ '{0:s}'.format(Co) }}</td> 
+        <td><b>Ni</b><br />{{ '{0:s}'.format(Ni) }}</td> 
+        <td><b>Cu</b><br />{{ '{0:s}'.format(Cu) }}</td> 
+        <td><b>Zn</b><br />{{ '{0:s}'.format(Zn) }}</td> 
+        <td><b>Ga</b><br />{{ '{0:s}'.format(Ga) }}</td> 
+        <td><b>Ge</b><br />{{ '{0:s}'.format(Ge) }}</td> 
+        <td><b>As</b><br />{{ '{0:s}'.format(As) }}</td> 
+        <td><b>Se</b><br />{{ '{0:s}'.format(Se) }}</td> 
+        <td><b>Br</b><br />{{ '{0:s}'.format(Br) }}</td> 
+        <td><b>Kr</b><br />{{ '{0:s}'.format(Kr) }}</td> </tr> 
+      <tr> 
+        <td><b>Rb</b><br />{{ '{0:s}'.format(Rb) }}</td> 
+        <td><b>Sr</b><br />{{ '{0:s}'.format(Sr) }}</td> 
+        <td><b>Y </b><br />{{ '{0:s}'.format(Y) }}</td> 
+        <td><b>Zr</b><br />{{ '{0:s}'.format(Zr) }}</td> 
+        <td><b>Nb</b><br />{{ '{0:s}'.format(Nb) }}</td> 
+        <td><b>Mo</b><br />{{ '{0:s}'.format(Mo) }}</td> 
+        <td><b>Tc</b><br />{{ '{0:s}'.format(Tc) }}</td> 
+        <td><b>Ru</b><br />{{ '{0:s}'.format(Ru) }}</td> 
+        <td><b>Rh</b><br />{{ '{0:s}'.format(Rh) }}</td> 
+        <td><b>Pd</b><br />{{ '{0:s}'.format(Pd) }}</td> 
+        <td><b>Ag</b><br />{{ '{0:s}'.format(Ag) }}</td> 
+        <td><b>Cd</b><br />{{ '{0:s}'.format(Cd) }}</td> 
+        <td><b>In</b><br />{{ '{0:s}'.format(In) }}</td> 
+        <td><b>Sn</b><br />{{ '{0:s}'.format(Sn) }}</td> 
+        <td><b>Sb</b><br />{{ '{0:s}'.format(Sb) }}</td> 
+        <td><b>Te</b><br />{{ '{0:s}'.format(Te) }}</td> 
+        <td><b>I </b><br />{{ '{0:s}'.format(I) }}</td> 
+        <td><b>Xe</b><br />{{ '{0:s}'.format(Xe) }}</td> </tr> 
+      <tr> 
+        <td><b>Cs</b><br />{{ '{0:s}'.format(Cs) }}</td> 
+        <td><b>Ba</b><br />{{ '{0:s}'.format(Ba) }}</td> 
+        <td><b>La</b><br />{{ '{0:s}'.format(La) }}</td> 
+        <td><b>Hf</b><br />{{ '{0:s}'.format(Hf) }}</td> 
+        <td><b>Ta</b><br />{{ '{0:s}'.format(Ta) }}</td> 
+        <td><b>W </b><br />{{ '{0:s}'.format(W) }}</td> 
+        <td><b>Re</b><br />{{ '{0:s}'.format(Re) }}</td> 
+        <td><b>Os</b><br />{{ '{0:s}'.format(Os) }}</td> 
+        <td><b>Ir</b><br />{{ '{0:s}'.format(Ir) }}</td> 
+        <td><b>Pt</b><br />{{ '{0:s}'.format(Pt) }}</td> 
+        <td><b>Au</b><br />{{ '{0:s}'.format(Au) }}</td> 
+        <td><b>Hg</b><br />{{ '{0:s}'.format(Hg) }}</td> 
+        <td><b>Tl</b><br />{{ '{0:s}'.format(Tl) }}</td> 
+        <td><b>Pb</b><br />{{ '{0:s}'.format(Pb) }}</td> 
+        <td><b>Bi</b><br />{{ '{0:s}'.format(Bi) }}</td> 
+        <td><b>Po</b><br />{{ '{0:s}'.format(Po) }}</td> 
+        <td><b>At</b><br />{{ '{0:s}'.format(At) }}</td> 
+        <td><b>Rn</b><br />{{ '{0:s}'.format(Rn) }}</td> </tr> 
+      <tr> <td colspan=18 style="text-align: left; font-size: 14; border: none"><a href="{{ backlink }}"> To list view</a> </td></tr>
+  </table>
+    </body></html>
+"""
+pt_template = Template(pt_template_str)
+
 
 def compare(method1, method2, test=None):
     r= requests.get(COMPARE_URL, data={'method1':method1, 'method2':method2, 'test':test}, verify=False)
@@ -359,15 +500,20 @@ def create_html_comparison(idlist = None):
 
             full_compare(m_id_1, m_id_2, writefile=True)
 
+            pt_results = blank_pt.copy()
+            pt_results['m1'] = m_id_1
+            pt_results['m2'] = m_id_2
+            pt_results['backlink'] = "{:04d}-{:04d}.html".format(m_id_1, m_id_2)
+
             detailreport = HTMLReport(path.join(REPORTS_BASE_DIR, "html", "{:04d}-{:04d}.html".format(m_id_1, m_id_2)))
-            detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[])
+            detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[('View', '<a href="{:}">PT</a>'.format("{:04d}-{:04d}-pt.html".format(m_id_1, m_id_2)))])
             #detailreport.
             for t, line in a["test"].items():
                 if "deltatest_" in t:
                     element = t.replace("deltatest_","")
+                    pt_results[element] = '{:4.3f}'.format(line[6])
                 
                 picture = "img/{:04d}_{:04d}_{:s}.png".format(m_id_1, m_id_2, element)
-
 
                 dataline = [("z", str(elements[element])),
                             ("Element", "<a href='{:}'>{:}</a>".format(picture, element)),
@@ -382,6 +528,10 @@ def create_html_comparison(idlist = None):
 
             detailreport.set_table_footer(delta_avg = a["summary"]["avg"], delta_std=a["summary"]["stdev"])
             detailreport.write()
+
+            with open(path.join(REPORTS_BASE_DIR, "html", "{:04d}-{:04d}-pt.html".format(m_id_1, m_id_2)),'w') as pt_outfile:
+                pt_outfile.write(pt_template.render(pt_results))
+
         of.write("</TR>")
 
 
