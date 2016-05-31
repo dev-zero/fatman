@@ -196,7 +196,7 @@ pt_template_str ="""
         <td><b>Po</b><br />{{ '{0:s}'.format(Po) }}</td> 
         <td><b>At</b><br />{{ '{0:s}'.format(At) }}</td> 
         <td><b>Rn</b><br />{{ '{0:s}'.format(Rn) }}</td> </tr> 
-      <tr> <td colspan=18 style="text-align: left; font-size: 14; border: none"><a href="{{ backlink }}"> To list view</a> </td></tr>
+      <tr> <td colspan=18 style="text-align: left; font-size: 14; border: none"><a href="{{ backlink }}">List View</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="index.html">Home</a>  </td></tr>
   </table>
     </body></html>
 """
