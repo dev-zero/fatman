@@ -79,124 +79,125 @@ blank_pt = {'H'  : "" , 'He' : "" , 'Li' : "" , 'Be' : "" , 'B'  : "" , 'C'  : "
             'Pb' : "" , 'Bi' : "" , 'Po' : "" , 'At' : "" , 'Rn' : "" } 
 
 pt_template_str ="""
-  <html><head><style>td{ border: 1px solid #CCCCCC; width: 30px; padding: 10px; vertical-align: center; text-align: center}</style><title>Comparing  with 1</title></head><body>
-  <table style='margin-left: auto; margin-right:auto; font-size:12; table-layout: fixed; width: 1500px; padding: 2px; border-collapse: collapse'>
-      <tr> <td colspan=18 style="text-align: left; font-size: 16; border: none"><h3>Comparing methods {{ m1 }} and  {{ m2 }}</td> </tr>
+  <html><head><style>td.q{ border: 1px solid #CCCCCC; width: 30px; padding: 10px; vertical-align: center; text-align: center}</style><title>Comparing  with 1</title></head><body>
+  {{ toptable }}
+  <br />
+  <link rel="stylesheet" type="text/css" href="blue/style.css">
+  <table style='margin-left: auto; margin-right:auto; font-size:12; table-layout: fixed; width: 1350px; padding: 2px; border-collapse: collapse'>
       <tr> 
-        <td><b><b>H </b></b><br />{{ '{0:s}'.format(H) }}</td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td><b><b>He </b></b><br />{{ '{0:s}'.format(He) }}</td> </tr> 
+        <td class='q'><a href='../html-by-test/deltatest_H.html'><b>H</b></a><br />{{ '{0:s}'.format(H) }}</td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_He.html'>He</a></b><br />{{ '{0:s}'.format(He) }}</td> </tr> 
       <tr> 
-        <td><b><b>Li </b></b><br />{{ '{0:s}'.format(Li) }}</td> 
-        <td><b><b>Be </b></b><br />{{ '{0:s}'.format(Be) }}</td> 
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td><b>B </b><br />{{ '{0:s}'.format(B) }}</td> 
-        <td><b>C </b><br />{{ '{0:s}'.format(C) }}</td> 
-        <td><b>N </b><br />{{ '{0:s}'.format(N) }}</td> 
-        <td><b>O </b><br />{{ '{0:s}'.format(O) }}</td> 
-        <td><b>F </b><br />{{ '{0:s}'.format(F) }}</td> 
-        <td><b>Ne</b><br />{{ '{0:s}'.format(Ne) }}</td> </tr> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Li.html'>Li</a></b><br />{{ '{0:s}'.format(Li) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Be.html'>Be</a></b><br />{{ '{0:s}'.format(Be) }}</td> 
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q' style='border:0'></td>
+        <td class='q'><b><a href='../html-by-test/deltatest_B.html'>B</a></b><br />{{ '{0:s}'.format(B) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_C.html'>C</a></b><br />{{ '{0:s}'.format(C) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_N.html'>N</a></b><br />{{ '{0:s}'.format(N) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_O.html'>O</a></b><br />{{ '{0:s}'.format(O) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_F.html'>F</a></b><br />{{ '{0:s}'.format(F) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ne.html'>Ne</a></b><br />{{ '{0:s}'.format(Ne) }}</td> </tr> 
       <tr> 
-        <td><b>Na </b><br />{{ '{0:s}'.format(Na) }}</td> 
-        <td><b>Mg </b><br />{{ '{0:s}'.format(Mg) }}</td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td><b>Al</b><br />{{ '{0:s}'.format(Al) }}</td> 
-        <td><b>Si</b><br />{{ '{0:s}'.format(Si) }}</td> 
-        <td><b>P </b><br />{{ '{0:s}'.format(P) }}</td> 
-        <td><b>S </b><br />{{ '{0:s}'.format(S) }}</td> 
-        <td><b>Cl</b><br />{{ '{0:s}'.format(Cl) }}</td> 
-        <td><b>Ar</b><br />{{ '{0:s}'.format(Ar) }}</td> </tr> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Na.html'>Na</a> </b><br />{{ '{0:s}'.format(Na) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Mg.html'>Mg</a> </b><br />{{ '{0:s}'.format(Mg) }}</td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q' style='border:0'> </td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Al.html'>Al</a></b><br />{{ '{0:s}'.format(Al) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Si.html'>Si</a></b><br />{{ '{0:s}'.format(Si) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_P.html'>P</a></b><br />{{ '{0:s}'.format(P) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_S.html'>S</a></b><br />{{ '{0:s}'.format(S) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Cl.html'>Cl</a></b><br />{{ '{0:s}'.format(Cl) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ar.html'>Ar</a></b><br />{{ '{0:s}'.format(Ar) }}</td> </tr> 
       <tr> 
-        <td><b>K </b><br />{{ '{0:s}'.format(K) }}</td> 
-        <td><b>Ca</b><br />{{ '{0:s}'.format(Ca) }}</td> 
-        <td><b>Sc</b><br />{{ '{0:s}'.format(Sc) }}</td> 
-        <td><b>Ti</b><br />{{ '{0:s}'.format(Ti) }}</td> 
-        <td><b>V </b><br />{{ '{0:s}'.format(V) }}</td> 
-        <td><b>Cr</b><br />{{ '{0:s}'.format(Cr) }}</td> 
-        <td><b>Mn</b><br />{{ '{0:s}'.format(Mn) }}</td> 
-        <td><b>Fe</b><br />{{ '{0:s}'.format(Fe) }}</td> 
-        <td><b>Co</b><br />{{ '{0:s}'.format(Co) }}</td> 
-        <td><b>Ni</b><br />{{ '{0:s}'.format(Ni) }}</td> 
-        <td><b>Cu</b><br />{{ '{0:s}'.format(Cu) }}</td> 
-        <td><b>Zn</b><br />{{ '{0:s}'.format(Zn) }}</td> 
-        <td><b>Ga</b><br />{{ '{0:s}'.format(Ga) }}</td> 
-        <td><b>Ge</b><br />{{ '{0:s}'.format(Ge) }}</td> 
-        <td><b>As</b><br />{{ '{0:s}'.format(As) }}</td> 
-        <td><b>Se</b><br />{{ '{0:s}'.format(Se) }}</td> 
-        <td><b>Br</b><br />{{ '{0:s}'.format(Br) }}</td> 
-        <td><b>Kr</b><br />{{ '{0:s}'.format(Kr) }}</td> </tr> 
+        <td class='q'><b><a href='../html-by-test/deltatest_K.html'>K</a></b><br />{{ '{0:s}'.format(K) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ca.html'>Ca</a></b><br />{{ '{0:s}'.format(Ca) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Sc.html'>Sc</a></b><br />{{ '{0:s}'.format(Sc) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ti.html'>Ti</a></b><br />{{ '{0:s}'.format(Ti) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_V.html'>V </a></b><br />{{ '{0:s}'.format(V) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Cr.html'>Cr</a></b><br />{{ '{0:s}'.format(Cr) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Mn.html'>Mn</a></b><br />{{ '{0:s}'.format(Mn) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Fe.html'>Fe</a></b><br />{{ '{0:s}'.format(Fe) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Co.html'>Co</a></b><br />{{ '{0:s}'.format(Co) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ni.html'>Ni</a></b><br />{{ '{0:s}'.format(Ni) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Cu.html'>Cu</a></b><br />{{ '{0:s}'.format(Cu) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Zn.html'>Zn</a></b><br />{{ '{0:s}'.format(Zn) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ga.html'>Ga</a></b><br />{{ '{0:s}'.format(Ga) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ge.html'>Ge</a></b><br />{{ '{0:s}'.format(Ge) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_As.html'>As</a></b><br />{{ '{0:s}'.format(As) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Se.html'>Se</a></b><br />{{ '{0:s}'.format(Se) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Br.html'>Br</a></b><br />{{ '{0:s}'.format(Br) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Kr.html'>Kr</a></b><br />{{ '{0:s}'.format(Kr) }}</td> </tr> 
       <tr> 
-        <td><b>Rb</b><br />{{ '{0:s}'.format(Rb) }}</td> 
-        <td><b>Sr</b><br />{{ '{0:s}'.format(Sr) }}</td> 
-        <td><b>Y </b><br />{{ '{0:s}'.format(Y) }}</td> 
-        <td><b>Zr</b><br />{{ '{0:s}'.format(Zr) }}</td> 
-        <td><b>Nb</b><br />{{ '{0:s}'.format(Nb) }}</td> 
-        <td><b>Mo</b><br />{{ '{0:s}'.format(Mo) }}</td> 
-        <td><b>Tc</b><br />{{ '{0:s}'.format(Tc) }}</td> 
-        <td><b>Ru</b><br />{{ '{0:s}'.format(Ru) }}</td> 
-        <td><b>Rh</b><br />{{ '{0:s}'.format(Rh) }}</td> 
-        <td><b>Pd</b><br />{{ '{0:s}'.format(Pd) }}</td> 
-        <td><b>Ag</b><br />{{ '{0:s}'.format(Ag) }}</td> 
-        <td><b>Cd</b><br />{{ '{0:s}'.format(Cd) }}</td> 
-        <td><b>In</b><br />{{ '{0:s}'.format(In) }}</td> 
-        <td><b>Sn</b><br />{{ '{0:s}'.format(Sn) }}</td> 
-        <td><b>Sb</b><br />{{ '{0:s}'.format(Sb) }}</td> 
-        <td><b>Te</b><br />{{ '{0:s}'.format(Te) }}</td> 
-        <td><b>I </b><br />{{ '{0:s}'.format(I) }}</td> 
-        <td><b>Xe</b><br />{{ '{0:s}'.format(Xe) }}</td> </tr> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Rb.html'>Rb</a></b><br />{{ '{0:s}'.format(Rb) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Sr.html'>Sr</a></b><br />{{ '{0:s}'.format(Sr) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Y.html'>Y</a> </b><br />{{ '{0:s}'.format(Y) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Zr.html'>Zr</a></b><br />{{ '{0:s}'.format(Zr) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Nb.html'>Nb</a></b><br />{{ '{0:s}'.format(Nb) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Mo.html'>Mo</a></b><br />{{ '{0:s}'.format(Mo) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Tc.html'>Tc</a></b><br />{{ '{0:s}'.format(Tc) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ru.html'>Ru</a></b><br />{{ '{0:s}'.format(Ru) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Rh.html'>Rh</a></b><br />{{ '{0:s}'.format(Rh) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Pd.html'>Pd</a></b><br />{{ '{0:s}'.format(Pd) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ag.html'>Ag</a></b><br />{{ '{0:s}'.format(Ag) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Cd.html'>Cd</a></b><br />{{ '{0:s}'.format(Cd) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_In.html'>In</a></b><br />{{ '{0:s}'.format(In) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Sn.html'>Sn</a></b><br />{{ '{0:s}'.format(Sn) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Sb.html'>Sb</a></b><br />{{ '{0:s}'.format(Sb) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Te.html'>Te</a></b><br />{{ '{0:s}'.format(Te) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_I.html'>I </a></b><br />{{ '{0:s}'.format(I) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Xe.html'>Xe</a></b><br />{{ '{0:s}'.format(Xe) }}</td> </tr> 
       <tr> 
-        <td><b>Cs</b><br />{{ '{0:s}'.format(Cs) }}</td> 
-        <td><b>Ba</b><br />{{ '{0:s}'.format(Ba) }}</td> 
-        <td><b>La</b><br />{{ '{0:s}'.format(La) }}</td> 
-        <td><b>Hf</b><br />{{ '{0:s}'.format(Hf) }}</td> 
-        <td><b>Ta</b><br />{{ '{0:s}'.format(Ta) }}</td> 
-        <td><b>W </b><br />{{ '{0:s}'.format(W) }}</td> 
-        <td><b>Re</b><br />{{ '{0:s}'.format(Re) }}</td> 
-        <td><b>Os</b><br />{{ '{0:s}'.format(Os) }}</td> 
-        <td><b>Ir</b><br />{{ '{0:s}'.format(Ir) }}</td> 
-        <td><b>Pt</b><br />{{ '{0:s}'.format(Pt) }}</td> 
-        <td><b>Au</b><br />{{ '{0:s}'.format(Au) }}</td> 
-        <td><b>Hg</b><br />{{ '{0:s}'.format(Hg) }}</td> 
-        <td><b>Tl</b><br />{{ '{0:s}'.format(Tl) }}</td> 
-        <td><b>Pb</b><br />{{ '{0:s}'.format(Pb) }}</td> 
-        <td><b>Bi</b><br />{{ '{0:s}'.format(Bi) }}</td> 
-        <td><b>Po</b><br />{{ '{0:s}'.format(Po) }}</td> 
-        <td><b>At</b><br />{{ '{0:s}'.format(At) }}</td> 
-        <td><b>Rn</b><br />{{ '{0:s}'.format(Rn) }}</td> </tr> 
-      <tr> <td colspan=18 style="text-align: left; font-size: 14; border: none"><a href="{{ backlink }}">List View</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="index.html">Home</a>  </td></tr>
+        <td class='q'><b><a href='../html-by-test/deltatest_Cs.html'>Cs</a></b><br />{{ '{0:s}'.format(Cs) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ba.html'>Ba</a></b><br />{{ '{0:s}'.format(Ba) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_La.html'>La</a></b><br />{{ '{0:s}'.format(La) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Hf.html'>Hf</a></b><br />{{ '{0:s}'.format(Hf) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ta.html'>Ta</a></b><br />{{ '{0:s}'.format(Ta) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_W.html'>W </a></b><br />{{ '{0:s}'.format(W) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Re.html'>Re</a></b><br />{{ '{0:s}'.format(Re) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Os.html'>Os</a></b><br />{{ '{0:s}'.format(Os) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Ir.html'>Ir</a></b><br />{{ '{0:s}'.format(Ir) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Pt.html'>Pt</a></b><br />{{ '{0:s}'.format(Pt) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Au.html'>Au</a></b><br />{{ '{0:s}'.format(Au) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Hg.html'>Hg</a></b><br />{{ '{0:s}'.format(Hg) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Tl.html'>Tl</a></b><br />{{ '{0:s}'.format(Tl) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Pb.html'>Pb</a></b><br />{{ '{0:s}'.format(Pb) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Bi.html'>Bi</a></b><br />{{ '{0:s}'.format(Bi) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Po.html'>Po</a></b><br />{{ '{0:s}'.format(Po) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_At.html'>At</a></b><br />{{ '{0:s}'.format(At) }}</td> 
+        <td class='q'><b><a href='../html-by-test/deltatest_Rn.html'>Rn</a></b><br />{{ '{0:s}'.format(Rn) }}</td> </tr> 
   </table>
     </body></html>
 """
@@ -371,7 +372,7 @@ class HTMLReport(deltaReport):
         for f,v in features[1::2]:
             line2 += r"<TD> <b>{:s}</b>: {:s} </TD>".format(f,v)
 
-        text  = r"""<TABLE width="1100px" frame="box" align="center">"""
+        text  = r"""<TABLE width="1350px" frame="box" align="center">"""
         text += r"""<TR><TD><font size=4> {:s}</font></TD> {:s}</TR>""".format(code,line1)
         text += r"""<TR><TD>{:s}</TD> {:s}</TR>""".format(subtitle, line2)
 
@@ -392,7 +393,7 @@ class HTMLReport(deltaReport):
 
     def add_link_headers(self):
         text = """
-                   <TABLE width="1100px" align="center"><TR><TD>Subgroups:
+                   <TABLE width="1350px" align="center"><TR><TD>Subgroups:
                """
         self.output += text
         self.added_link_headers = True
@@ -444,7 +445,7 @@ class HTMLReport(deltaReport):
         self.output  += text
 
     def get_tableheaders(self, dataline):
-        text = "\n\n <br/> <TABLE width=\"1100px\" align=\"center\" id=\"resultsTable\" class=\"tablesorter\" style=\"border-collapse:collapse;\"> \n<THEAD><TR style=\"border-top:1px solid;border-bottom:1px solid;\">"
+        text = "\n\n <br/> <TABLE width=\"1350px\" align=\"center\" id=\"resultsTable\" class=\"tablesorter\" style=\"border-collapse:collapse;\"> \n<THEAD><TR style=\"border-top:1px solid;border-bottom:1px solid;\">"
         keys = [x[0] for x in dataline]
 
         for k in keys:
@@ -498,22 +499,24 @@ def create_html_comparison(idlist = None):
             if idlist is not None and not (m_id_1 in idlist or m_id_2 in idlist):
                 continue
 
-            full_compare(m_id_1, m_id_2, writefile=True)
+            #full_compare(m_id_1, m_id_2, writefile=True)
 
             pt_results = blank_pt.copy()
-            pt_results['m1'] = m_id_1
-            pt_results['m2'] = m_id_2
             pt_results['backlink'] = "{:04d}-{:04d}.html".format(m_id_1, m_id_2)
 
             detailreport = HTMLReport(path.join(REPORTS_BASE_DIR, "html", "{:04d}-{:04d}.html".format(m_id_1, m_id_2)))
-            detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[('View', '<a href="{:}">PT</a>'.format("{:04d}-{:04d}-pt.html".format(m_id_1, m_id_2)))])
-            #detailreport.
+            detailreport.set_report_header(code=desc_1, subtitle=desc_2, features=[('View', '<a href="{:}">PT</a>&nbsp;&nbsp;<a href="index.html">Home</a>'.format("{:04d}-{:04d}-pt.html".format(m_id_1, m_id_2)))])
+            pt_results['toptable'] = detailreport.get_method_description(code=desc_1, subtitle=desc_2, features=[('View', '<a href="{:}">List</a>&nbsp;&nbsp;<a href="index.html">Home</a>'.format("{:04d}-{:04d}.html".format(m_id_1, m_id_2)))])
+
             for t, line in a["test"].items():
                 if "deltatest_" in t:
                     element = t.replace("deltatest_","")
-                    pt_results[element] = '{:4.3f}'.format(line[6])
+                    picture = "img/{:04d}_{:04d}_{:s}.png".format(m_id_1, m_id_2, element)
+                    pt_results[element] = '<A HREF={:s}>{:4.3f}</a>'.format(picture,line[6])
+                else:
+                    picture=""
+                    element=""
                 
-                picture = "img/{:04d}_{:04d}_{:s}.png".format(m_id_1, m_id_2, element)
 
                 dataline = [("z", str(elements[element])),
                             ("Element", "<a href='{:}'>{:}</a>".format(picture, element)),
