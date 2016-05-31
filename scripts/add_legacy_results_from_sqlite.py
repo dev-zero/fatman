@@ -1,4 +1,18 @@
 #!/usr/bin/env/python
+"""add_legacy_results_from_sqlite.py <filename> - populate the FATMAN database with old pre-FATMAN data.
+
+Runs on the FATMAN server, accesses the database directly through the ORM, and requires
+the sqlite3 database that stored all the deltatest data before FATMAN existed.
+Everything is hardcoded.
+
+Since the data has already been added the script is obsolescent.
+
+Parameters:
+    <filename>  location of the sqlite3 file
+    -h          show this help.
+"""
+
+from __future__ import print_function
 import sys
 import sqlite3
 from fatman.models import *
@@ -69,7 +83,7 @@ def abinit_results(conn,cur):
                            energy = line[11]*natom,
                            task = T,
                            filename = "not available")
-        print "Created Task: ", Tc, "     Created Result: ", Rc
+        print("Created Task: ", Tc, "     Created Result: ", Rc)
 
 def espresso_results(conn,cur):
     edb = dcdft.DeltaCodesDFTCollection()
@@ -115,7 +129,7 @@ def espresso_results(conn,cur):
                            energy = line[11]*natom,
                            task = T,
                            filename = "not available")
-        print "Created Task: ", Tc, "     Created Result: ", Rc
+        print("Created Task: ", Tc, "     Created Result: ", Rc)
         #quit()
 
 def cp2k_results(conn,cur):
@@ -163,6 +177,9 @@ def cp2k_results(conn,cur):
                            energy = line[11]*natom,
                            task = T,
                            filename = "not available")
-        print "Created Task: ", Tc, "     Created Result: ", Rc
+        print("Created Task: ", Tc, "     Created Result: ", Rc)
 
-main(sys.argv[1])
+if len(sys.argv) == 2 and '-h' not in sys.argv:
+    main(sys.argv[1:])
+else:
+    print (__doc__)

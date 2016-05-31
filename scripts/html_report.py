@@ -1,12 +1,24 @@
 #!/usr/bin/python
+"""The HTML report tool goes through the FATMAN database and creates a set of static HTML files with the results.
 
+The location of the reports is hardcoded, requires a few external files (stylesheet, jQuery...) and the whole process
+is rather slow due to the fact that reports are generated for all combinations of methods, many of which will be 
+useless for the user. Queries are done via FATMAN's REST API, with all URLs and parameters hardcoded.
+Both a flat table and a `periodic table` view are created for each pair of Methods, including the average Delta score.
+If specified, the script also generates plots of the energy-volume curves for each element in the deltatest and each
+pair of Methods. This is _very_ slow and produces a very large number of static png images.
+
+This script should be replaced by a dynamic web view or re-engineered to work as a CGI script to create only the 
+required reports on demand.
+"""
+
+import argparse
 import sys
 from os import path
 
 import numpy as np
 import requests
 import matplotlib.pyplot as plt
-
 
 from jinja2 import Template
 
@@ -455,9 +467,14 @@ class HTMLReport(deltaReport):
         return text
 
 
-def create_html_comparison(idlist = None):
+def create_html_comparison(args):
     """make a bunch of comparative html outputs"""
     elements =  { "H":1, "He":2, "Li":3, "Be":4, "B":5, "C":6, "N":7, "O":8, "F":9, "Ne":10, "Na":11, "Mg":12, "Al":13, "Si":14, "P":15, "S":16, "Cl":17, "Ar":18, "K":19, "Ca":20, "Sc":21, "Ti":22, "V":23, "Cr":24, "Mn":25, "Fe":26, "Co":27, "Ni":28, "Cu":29, "Zn":30, "Ga":31, "Ge":32, "As":33, "Se":34, "Br":35, "Kr":36, "Rb":37, "Sr":38, "Y":39, "Zr":40, "Nb":41, "Mo":42, "Tc":43, "Ru":44, "Rh":45, "Pd":46, "Ag":47, "Cd":48, "In":49, "Sn":50, "Sb":51,  "Te":52, "I":53, "Xe":54, "Cs":55, "Ba":56, "Hf":72, "Ta":73, "W":74, "Re":75, "Os":76, "Ir":77, "Pt":78, "Au":79, "Hg":80, "Tl":81, "Pb":82, "Bi":83,  "Po":84, "Rn":86 }
+
+    if args.methods is not None and len(args.methods) > 0:
+        idlist = [int(x) for x in args.methods]
+    else:
+        idlist = None
 
     req = requests.get(METHODS_URL, verify = False)
     req.raise_for_status()
@@ -499,7 +516,8 @@ def create_html_comparison(idlist = None):
             if idlist is not None and not (m_id_1 in idlist or m_id_2 in idlist):
                 continue
 
-            #full_compare(m_id_1, m_id_2, writefile=True)
+            if args.make_plots:
+                full_compare(m_id_1, m_id_2, writefile=True)
 
             pt_results = blank_pt.copy()
             pt_results['backlink'] = "{:04d}-{:04d}.html".format(m_id_1, m_id_2)
@@ -619,11 +637,17 @@ def create_html_comparison(idlist = None):
     of.close()
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if len(args) > 0:
-        idlist = [int(x) for x in args]
-        create_html_comparison(idlist)
-    else:
-        create_html_comparison()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--make-plots',
+                        help='(Re-)create the bulk modulus plots when creating the reports. Slow.',
+                        action='store_true',
+                        dest='make_plots')
 
+    parser.add_argument('-m','--methods',
+                        help='Specify the method(s) for which to recreate the html files.',
+                        nargs='*',
+                        dest='methods')
 
+    args = parser.parse_args(sys.argv[1:])
+
+    create_html_comparison(args)

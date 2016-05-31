@@ -1,7 +1,21 @@
 #!/usr/bin/env python
+"""add_gmtkn30_to_db.py - populate the FATMAN database with the GMTKN30 dataset(s).
 
+Runs on the FATMAN server, accesses the database directly through the ORM, and requires
+a specially prepared directory 'gmtkn30' that contains the various datasets as subfolders.
+Everything is hardcoded.
+
+Since the data has already been added the script is obsolescent.
+
+Parameters:
+    -h          show this help.
+"""
+
+from __future__ import print_function
 from ase import io
 from string import find
+from sys import argv
+
 import os
 
 from fatman.tools import Atoms2Json, Json2Atoms
@@ -57,4 +71,7 @@ def main():
 
 
 if __name__=="__main__":
-    main()
+    if len(argv) == 1 and '-h' not in argv:
+        main()
+    else:
+        print (__doc__)

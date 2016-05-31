@@ -1,4 +1,19 @@
 #!/usr/bin/env python
+"""create_tasks.py - Server-side tool to add Deltatest Tasks to FATMAN.
+
+Create Task entries for deltatest calculations on the FATMAN server by
+direct database access through the ORM. Everything is hardcoded.
+The Method must already exist in the DB and is specified through its id.
+
+The tool is mostly obsolete, since the REST API now supports convenient
+Task creation remotely.
+
+Parameters:
+    -h          show this help.
+"""
+
+from __future__ import print_function
+from sys import argv
 from datetime import datetime
 from fatman import db
 from fatman.models import Task, Test, TestStructure, Method, TaskStatus
@@ -46,5 +61,8 @@ def main():
     return created_count
 
 if __name__=="__main__":
-    c = main()
-    print "CREATED {} NEW TASKS".format(c)
+    if len(argv) == 1 and '-h' not in argv:
+        c = main()
+        print("CREATED {} NEW TASKS".format(c))
+    else:
+        print (__doc__)

@@ -2,7 +2,7 @@
 """add_basissets.py <filename> - parse a cp2k BASIS file and add the basissets to FATMAN
 
 Use this script on the FATMAN server to populate the database with orbital basis sets
-from a file with pseudos in cp2k-compatible format.
+from a file with basissets in cp2k-compatible format.
 
 Parameters:
     <filename>  path to the basisset file to be parsed.
