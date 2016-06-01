@@ -21,36 +21,36 @@ export class DeltavaluePipe implements PipeTransform {
   <table class="periodictable table table-bordered table-striped table-condensed" *ngIf="elements">
       <tr> 
         <td>H <br />{{ elements.test?.deltatest_H[6]  | deltavalue}}</td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
         <td>He <br />{{ elements.test.deltatest_He[6] | number:'.3'}}</td> </tr> 
       <tr> 
         <td>Li <br />{{ elements.test.deltatest_Li[6] | number:'.3'}}</td> 
         <td>Be <br />{{ elements.test.deltatest_Be[6] | number:'.3'}}</td> 
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
+        <td style='border:0'></td>
         <td>B <br />{{elements.text.deltatest_B[6] | number:'.3'}}</td> 
         <td>C <br />{{elements.text.deltatest_C[6] | number:'.3'}}</td> 
         <td>N <br />{{elements.text.deltatest_N[6] | number:'.3'}}</td> 
@@ -60,16 +60,16 @@ export class DeltavaluePipe implements PipeTransform {
       <tr> 
         <td>Na <br />{{elements.text.deltatest_Na[6] | number:'.3'}}</td> 
         <td>Mg <br />{{elements.text.deltatest_Mg[6] | number:'.3'}}</td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
-        <td> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
+        <td style='border:0'> </td> 
         <td>Al <br />{{elements.text.deltatest_Al[6] | number:'.3'}}</td> 
         <td>Si <br />{{elements.text.deltatest_Si[6] | number:'.3'}}</td> 
         <td>P <br />{{elements.text.deltatest_P[6] | number:'.3'}}</td> 
@@ -149,13 +149,13 @@ export class Periodictable implements OnInit {
 
   constructor(private _PeriodictableService: PeriodictableService) { }
 
-  getPeriodictable() {
-    this._PeriodictableService.getPeriodictable().subscribe(
+  getPeriodictable(method1, method2) {
+    this._PeriodictableService.getPeriodictable(method1, method2).subscribe(
       elements => this.elements = elements,
       error => this.errorMessage = <any>error);
   }
 
   ngOnInit() {
-    this.getPeriodictable();
+    this.getPeriodictable(3,72);
   }
 }
