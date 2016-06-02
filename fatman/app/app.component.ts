@@ -27,7 +27,7 @@ import {Periodictable} from './periodictable/periodictable-list.component';
             <li><a [routerLink]="['/tasks']">Tasks</a></li>
             <li><a [routerLink]="['/reports']">Reports</a></li>
             <li><a [routerLink]="['/machinestatus']">Machine Status</a></li>
-            <li><a [routerLink]="['/periodictable']">Periodic Table</a></li>
+            <li><a [routerLink]="['/periodictable/3/72']">Periodic Table</a></li>
           </ul>
         </div> <!--/.navbar-collapse -->
       </div>
@@ -45,7 +45,8 @@ import {Periodictable} from './periodictable/periodictable-list.component';
   { path: '/reports/comparison/:id1/:id2', component: ReportsComparison },
   { path: '/reports', component: Reports },
   { path: '/machinestatus', component: MachineStatus },
-  { path: '/periodictable', component: Periodictable },
+  { path: '/periodictable/:method1/:method2', component: Periodictable },
+  { path: '/periodictable/', component: Home },
 ])
 
 export class FatmanApp {}

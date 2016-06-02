@@ -1,12 +1,13 @@
-import {Component, OnInit, Pipe, PipeTransform} from '@angular/core';
+import {Component, OnInit, Pipe, PipeTransform, ViewChild, AfterViewChecked} from '@angular/core';
+import {OnActivate, Router, RouteSegment} from '@angular/router';
 
 import {PeriodictableService} from './periodictable.service';
 
 @Pipe({name: 'deltavalue'})
 export class DeltavaluePipe implements PipeTransform {
     transform(value) {
-        if (value === null) {
-            return "";
+        if (value == -1.0) {
+            return "-";
         }
         else {
             return value.toFixed(3);
@@ -14,13 +15,14 @@ export class DeltavaluePipe implements PipeTransform {
     }
 }
 
+
 @Component({
   selector: 'decimal-pipe',
   template: `
-  <h3 *ngIf="elements">Comparing methods {{ elements.methods[0] }} and  {{ elements.methods[1] }}.</h3>
-  <table class="periodictable table table-bordered table-striped table-condensed" *ngIf="elements">
+  <h3 *ngIf="elements">Comparing methods {{ f_elements.methods[0] }} and  {{ f_elements.methods[1] }}.</h3>
+  <table class="periodictable table table-bordered table-striped table-condensed" *ngIf="f_elements">
       <tr> 
-        <td>H <br />{{ elements.test?.deltatest_H[6]  | deltavalue}}</td> 
+        <td>H <br />{{ f_elements.test.deltatest_H  | deltavalue}}</td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
@@ -37,10 +39,10 @@ export class DeltavaluePipe implements PipeTransform {
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
-        <td>He <br />{{ elements.test.deltatest_He[6] | number:'.3'}}</td> </tr> 
+        <td>He <br />{{ f_elements.test.deltatest_He | deltavalue}}</td> </tr> 
       <tr> 
-        <td>Li <br />{{ elements.test.deltatest_Li[6] | number:'.3'}}</td> 
-        <td>Be <br />{{ elements.test.deltatest_Be[6] | number:'.3'}}</td> 
+        <td>Li <br />{{ f_elements.test.deltatest_Li | deltavalue }}</td> 
+        <td>Be <br />{{ f_elements.test.deltatest_Be | deltavalue}}</td> 
         <td style='border:0'></td>
         <td style='border:0'></td>
         <td style='border:0'></td>
@@ -51,15 +53,15 @@ export class DeltavaluePipe implements PipeTransform {
         <td style='border:0'></td>
         <td style='border:0'></td>
         <td style='border:0'></td>
-        <td>B <br />{{elements.text.deltatest_B[6] | number:'.3'}}</td> 
-        <td>C <br />{{elements.text.deltatest_C[6] | number:'.3'}}</td> 
-        <td>N <br />{{elements.text.deltatest_N[6] | number:'.3'}}</td> 
-        <td>O <br />{{elements.text.deltatest_O[6] | number:'.3'}}</td> 
-        <td>F <br />{{elements.text.deltatest_F[6] | number:'.3'}}</td> 
-        <td>Ne <br />{{elements.text.deltatest_Ne[6] | number:'.3'}}</td> </tr> 
+        <td>B <br />{{ f_elements.test.deltatest_B | deltavalue}}</td> 
+        <td>C <br />{{ f_elements.test.deltatest_C | deltavalue}}</td> 
+        <td>N <br />{{ f_elements.test.deltatest_N | deltavalue}}</td> 
+        <td>O <br />{{ f_elements.test.deltatest_O | deltavalue}}</td> 
+        <td>F <br />{{ f_elements.test.deltatest_F | deltavalue}}</td> 
+        <td>Ne <br />{{ f_elements.test.deltatest_Ne | deltavalue}}</td> </tr> 
       <tr> 
-        <td>Na <br />{{elements.text.deltatest_Na[6] | number:'.3'}}</td> 
-        <td>Mg <br />{{elements.text.deltatest_Mg[6] | number:'.3'}}</td> 
+        <td>Na <br />{{ f_elements.test.deltatest_Na | deltavalue}}</td> 
+        <td>Mg <br />{{ f_elements.test.deltatest_Mg | deltavalue}}</td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
@@ -70,92 +72,155 @@ export class DeltavaluePipe implements PipeTransform {
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
-        <td>Al <br />{{elements.text.deltatest_Al[6] | number:'.3'}}</td> 
-        <td>Si <br />{{elements.text.deltatest_Si[6] | number:'.3'}}</td> 
-        <td>P <br />{{elements.text.deltatest_P[6] | number:'.3'}}</td> 
-        <td>S <br />{{elements.text.deltatest_S[6] | number:'.3'}}</td> 
-        <td>Cl<br />{{elements.text.deltatest_Cl[6] | number:'.3'}}</td> 
-        <td>Ar<br />{{elements.text.deltatest_Ar[6] | number:'.3'}}</td> </tr> 
+        <td>Al <br />{{ f_elements.test.deltatest_Al | deltavalue}}</td> 
+        <td>Si <br />{{ f_elements.test.deltatest_Si | deltavalue}}</td> 
+        <td>P <br />{{ f_elements.test.deltatest_P | deltavalue}}</td> 
+        <td>S <br />{{ f_elements.test.deltatest_S | deltavalue}}</td> 
+        <td>Cl<br />{{ f_elements.test.deltatest_Cl | deltavalue}}</td> 
+        <td>Ar<br />{{ f_elements.test.deltatest_Ar | deltavalue}}</td> </tr> 
       <tr> 
-        <td>K <br />{{elements.text.deltatest_K[6] | number:'.3'}}</td> 
-        <td>Ca<br />{{elements.text.deltatest_Ca[6] | number:'.3'}}</td> 
-        <td>Sc<br />{{elements.text.deltatest_Sc[6] | number:'.3'}}</td> 
-        <td>Ti<br />{{elements.text.deltatest_Ti[6] | number:'.3'}}</td> 
-        <td>V <br />{{elements.text.deltatest_V[6] | number:'.3'}}</td> 
-        <td>Cr<br />{{elements.text.deltatest_Cr[6] | number:'.3'}}</td> 
-        <td>Mn<br />{{elements.text.deltatest_Mn[6] | number:'.3'}}</td> 
-        <td>Fe<br />{{elements.text.deltatest_Fe[6] | number:'.3'}}</td> 
-        <td>Co<br />{{elements.text.deltatest_Co[6] | number:'.3'}}</td> 
-        <td>Ni<br />{{elements.text.deltatest_Ni[6] | number:'.3'}}</td> 
-        <td>Cu<br />{{elements.text.deltatest_Cu[6] | number:'.3'}}</td> 
-        <td>Zn<br />{{elements.text.deltatest_Zn[6] | number:'.3'}}</td> 
-        <td>Ga<br />{{elements.text.deltatest_Ga[6] | number:'.3'}}</td> 
-        <td>Ge<br />{{elements.text.deltatest_Ge[6] | number:'.3'}}</td> 
-        <td>As<br />{{elements.text.deltatest_As[6] | number:'.3'}}</td> 
-        <td>Se<br />{{elements.text.deltatest_Se[6] | number:'.3'}}</td> 
-        <td>Br<br />{{elements.text.deltatest_Br[6] | number:'.3'}}</td> 
-        <td>Kr<br />{{elements.text.deltatest_Kr[6] | number:'.3'}}</td> </tr> 
+        <td>K <br />{{ f_elements.test.deltatest_K | deltavalue}}</td> 
+        <td>Ca<br />{{ f_elements.test.deltatest_Ca | deltavalue}}</td> 
+        <td>Sc<br />{{ f_elements.test.deltatest_Sc | deltavalue}}</td> 
+        <td>Ti<br />{{ f_elements.test.deltatest_Ti | deltavalue}}</td> 
+        <td>V <br />{{ f_elements.test.deltatest_V | deltavalue}}</td> 
+        <td>Cr<br />{{ f_elements.test.deltatest_Cr | deltavalue}}</td> 
+        <td>Mn<br />{{ f_elements.test.deltatest_Mn | deltavalue}}</td> 
+        <td>Fe<br />{{ f_elements.test.deltatest_Fe | deltavalue}}</td> 
+        <td>Co<br />{{ f_elements.test.deltatest_Co | deltavalue}}</td> 
+        <td>Ni<br />{{ f_elements.test.deltatest_Ni | deltavalue}}</td> 
+        <td>Cu<br />{{ f_elements.test.deltatest_Cu | deltavalue}}</td> 
+        <td>Zn<br />{{ f_elements.test.deltatest_Zn | deltavalue}}</td> 
+        <td>Ga<br />{{ f_elements.test.deltatest_Ga | deltavalue}}</td> 
+        <td>Ge<br />{{ f_elements.test.deltatest_Ge | deltavalue}}</td> 
+        <td>As<br />{{ f_elements.test.deltatest_As | deltavalue}}</td> 
+        <td>Se<br />{{ f_elements.test.deltatest_Se | deltavalue}}</td> 
+        <td>Br<br />{{ f_elements.test.deltatest_Br | deltavalue}}</td> 
+        <td>Kr<br />{{ f_elements.test.deltatest_Kr | deltavalue}}</td> </tr> 
       <tr> 
-        <td>Rb <br />{{elements.text.deltatest_Rb[6] | number:'.3'}}</td> 
-        <td>Sr<br />{{elements.text.deltatest_Sr[6] | number:'.3'}}</td> 
-        <td>Y <br />{{elements.text.deltatest_Y[6] | number:'.3'}}</td> 
-        <td>Zr<br />{{elements.text.deltatest_Zr[6] | number:'.3'}}</td> 
-        <td>Nb<br />{{elements.text.deltatest_Nb[6] | number:'.3'}}</td> 
-        <td>Mo<br />{{elements.text.deltatest_Mo[6] | number:'.3'}}</td> 
-        <td>Tc<br />{{elements.text.deltatest_Tc[6] | number:'.3'}}</td> 
-        <td>Ru<br />{{elements.text.deltatest_Ru[6] | number:'.3'}}</td> 
-        <td>Rh<br />{{elements.text.deltatest_Rh[6] | number:'.3'}}</td> 
-        <td>Pd<br />{{elements.text.deltatest_Pd[6] | number:'.3'}}</td> 
-        <td>Ag<br />{{elements.text.deltatest_Ag[6] | number:'.3'}}</td> 
-        <td>Cd<br />{{elements.text.deltatest_Cd[6] | number:'.3'}}</td> 
-        <td>In<br />{{elements.text.deltatest_In[6] | number:'.3'}}</td> 
-        <td>Sn<br />{{elements.text.deltatest_Sn[6] | number:'.3'}}</td> 
-        <td>Sb<br />{{elements.text.deltatest_Sb[6] | number:'.3'}}</td> 
-        <td>Te<br />{{elements.text.deltatest_Te[6] | number:'.3'}}</td> 
-        <td>I <br />{{elements.text.deltatest_I[6] | number:'.3'}}</td> 
-        <td>Xe<br />{{elements.text.deltatest_Xe[6] | number:'.3'}}</td> </tr> 
+        <td>Rb <br />{{ f_elements.test.deltatest_Rb | deltavalue}}</td> 
+        <td>Sr<br />{{ f_elements.test.deltatest_Sr | deltavalue}}</td> 
+        <td>Y <br />{{ f_elements.test.deltatest_Y | deltavalue}}</td> 
+        <td>Zr<br />{{ f_elements.test.deltatest_Zr | deltavalue}}</td> 
+        <td>Nb<br />{{ f_elements.test.deltatest_Nb | deltavalue}}</td> 
+        <td>Mo<br />{{ f_elements.test.deltatest_Mo | deltavalue}}</td> 
+        <td>Tc<br />{{ f_elements.test.deltatest_Tc | deltavalue}}</td> 
+        <td>Ru<br />{{ f_elements.test.deltatest_Ru | deltavalue}}</td> 
+        <td>Rh<br />{{ f_elements.test.deltatest_Rh | deltavalue}}</td> 
+        <td>Pd<br />{{ f_elements.test.deltatest_Pd | deltavalue}}</td> 
+        <td>Ag<br />{{ f_elements.test.deltatest_Ag | deltavalue}}</td> 
+        <td>Cd<br />{{ f_elements.test.deltatest_Cd | deltavalue}}</td> 
+        <td>In<br />{{ f_elements.test.deltatest_In | deltavalue}}</td> 
+        <td>Sn<br />{{ f_elements.test.deltatest_Sn | deltavalue}}</td> 
+        <td>Sb<br />{{ f_elements.test.deltatest_Sb | deltavalue}}</td> 
+        <td>Te<br />{{ f_elements.test.deltatest_Te | deltavalue}}</td> 
+        <td>I <br />{{ f_elements.test.deltatest_I | deltavalue}}</td> 
+        <td>Xe<br />{{ f_elements.test.deltatest_Xe | deltavalue}}</td> </tr> 
       <tr> 
-        <td>Cs <br />{{elements.text.deltatest_Cs[6] | number:'.3'}}</td> 
-        <td>Ba<br />{{elements.text.deltatest_Ba[6] | number:'.3'}}</td> 
-        <td>La<br />{{elements.text.deltatest_La[6] | number:'.3'}}</td> 
-        <td>Hf<br />{{elements.text.deltatest_Hf[6] | number:'.3'}}</td> 
-        <td>Ta<br />{{elements.text.deltatest_Ta[6] | number:'.3'}}</td> 
-        <td>W <br />{{elements.text.deltatest_W[6] | number:'.3'}}</td> 
-        <td>Re<br />{{elements.text.deltatest_Re[6] | number:'.3'}}</td> 
-        <td>Os<br />{{elements.text.deltatest_Os[6] | number:'.3'}}</td> 
-        <td>Ir<br />{{elements.text.deltatest_Ir[6] | number:'.3'}}</td> 
-        <td>Pt<br />{{elements.text.deltatest_Pt[6] | number:'.3'}}</td> 
-        <td>Au<br />{{elements.text.deltatest_Au[6] | number:'.3'}}</td> 
-        <td>Hg<br />{{elements.text.deltatest_Hg[6] | number:'.3'}}</td> 
-        <td>Tl<br />{{elements.text.deltatest_Tl[6] | number:'.3'}}</td> 
-        <td>Pb<br />{{elements.text.deltatest_Pb[6] | number:'.3'}}</td> 
-        <td>Bi<br />{{elements.text.deltatest_Bi[6] | number:'.3'}}</td> 
-        <td>Po<br />{{elements.text.deltatest_Po[6] | number:'.3'}}</td> 
-        <td>At<br />{{elements.text.deltatest_At[6] | number:'.3'}}</td> 
-        <td>Rn<br />{{elements.text.deltatest_Rn[6] | number:'.3'}}</td> </tr> 
+        <td>Cs <br />{{ f_elements.test.deltatest_Cs | deltavalue}}</td> 
+        <td>Ba<br />{{ f_elements.test.deltatest_Ba | deltavalue}}</td> 
+        <td>La<br />{{ f_elements.test.deltatest_La | deltavalue}}</td> 
+        <td>Hf<br />{{ f_elements.test.deltatest_Hf | deltavalue}}</td> 
+        <td>Ta<br />{{ f_elements.test.deltatest_Ta | deltavalue}}</td> 
+        <td>W <br />{{ f_elements.test.deltatest_W | deltavalue}}</td> 
+        <td>Re<br />{{ f_elements.test.deltatest_Re | deltavalue}}</td> 
+        <td>Os<br />{{ f_elements.test.deltatest_Os | deltavalue}}</td> 
+        <td>Ir<br />{{ f_elements.test.deltatest_Ir | deltavalue}}</td> 
+        <td>Pt<br />{{ f_elements.test.deltatest_Pt | deltavalue}}</td> 
+        <td>Au<br />{{ f_elements.test.deltatest_Au | deltavalue}}</td> 
+        <td>Hg<br />{{ f_elements.test.deltatest_Hg | deltavalue}}</td> 
+        <td>Tl<br />{{ f_elements.test.deltatest_Tl | deltavalue}}</td> 
+        <td>Pb<br />{{ f_elements.test.deltatest_Pb | deltavalue}}</td> 
+        <td>Bi<br />{{ f_elements.test.deltatest_Bi | deltavalue}}</td> 
+        <td>Po<br />{{ f_elements.test.deltatest_Po | deltavalue}}</td> 
+        <td>At<br />{{ f_elements.test.deltatest_At | deltavalue}}</td> 
+        <td>Rn<br />{{ f_elements.test.deltatest_Rn | deltavalue}}</td> </tr> 
   </table>
-  <h4>TODO: Dropdown boxes to choose the two methods to compare; currently hardcoded :(</h4>
-  <h4>TODO: Angular can't handle binding of non-existant dictionary items.</h4>
+  <div style="font-size: 16pt">
+    Go to Comparison:
+      <select #meth1 (change)="onSelect(meth1.value,meth2.value);">
+          <option *ngFor="let method of methods">{{ method.id }}</option>
+      </select>
+      <select #meth2 (change)="onSelect(meth1.value,meth2.value);">
+          <option *ngFor="let method of methods">{{ method.id }}</option>
+      </select>
+  </div>
   <h4>TODO: Clicking on an element should take the user to a 'Details' page.</h4>`,
+  <h4>TODO: Proper description of method/settings.</h4>`,
   providers: [PeriodictableService],
   pipes: [DeltavaluePipe],
 })
 
-export class Periodictable implements OnInit {
+export class Periodictable {
+  @ViewChild('meth1') mymeth1;
+  @ViewChild('meth2') mymeth2;
   title = 'Periodic Table';
+  //  blank_pt: Object[];
+  
+  f_elements=  {'test':{'deltatest_H'  : -1.0, 'deltatest_He' : -1.0, 'deltatest_Li' : -1.0, 'deltatest_Be' : -1.0, 'deltatest_B'  : -1.0, 'deltatest_C'  : -1.0, 'deltatest_N'  : -1.0,
+                        'deltatest_O'  : -1.0, 'deltatest_F'  : -1.0, 'deltatest_Ne' : -1.0, 'deltatest_Na' : -1.0, 'deltatest_Mg' : -1.0, 'deltatest_Al' : -1.0, 'deltatest_Si' : -1.0,
+                        'deltatest_P'  : -1.0, 'deltatest_S'  : -1.0, 'deltatest_Cl' : -1.0, 'deltatest_Ar' : -1.0, 'deltatest_K'  : -1.0, 'deltatest_Ca' : -1.0, 'deltatest_Sc' : -1.0,
+                        'deltatest_Ti' : -1.0, 'deltatest_V'  : -1.0, 'deltatest_Cr' : -1.0, 'deltatest_Mn' : -1.0, 'deltatest_Fe' : -1.0, 'deltatest_Co' : -1.0, 'deltatest_Ni' : -1.0,
+                        'deltatest_Cu' : -1.0, 'deltatest_Zn' : -1.0, 'deltatest_Ga' : -1.0, 'deltatest_Ge' : -1.0, 'deltatest_As' : -1.0, 'deltatest_Se' : -1.0, 'deltatest_Br' : -1.0,
+                        'deltatest_Kr' : -1.0, 'deltatest_Rb' : -1.0, 'deltatest_Sr' : -1.0, 'deltatest_Y'  : -1.0, 'deltatest_Zr' : -1.0, 'deltatest_Nb' : -1.0, 'deltatest_Mo' : -1.0,
+                        'deltatest_Tc' : -1.0, 'deltatest_Ru' : -1.0, 'deltatest_Rh' : -1.0, 'deltatest_Pd' : -1.0, 'deltatest_Ag' : -1.0, 'deltatest_Cd' : -1.0, 'deltatest_In' : -1.0,
+                        'deltatest_Sn' : -1.0, 'deltatest_Sb' : -1.0, 'deltatest_Te' : -1.0, 'deltatest_I'  : -1.0, 'deltatest_Xe' : -1.0, 'deltatest_Cs' : -1.0, 'deltatest_Ba' : -1.0,
+                        'deltatest_La' : -1.0, 'deltatest_Hf' : -1.0, 'deltatest_Ta' : -1.0, 'deltatest_W'  : -1.0, 'deltatest_Re' : -1.0, 'deltatest_Os' : -1.0, 'deltatest_Ir' : -1.0,
+                        'deltatest_Pt' : -1.0, 'deltatest_Au' : -1.0, 'deltatest_Hg' : -1.0, 'deltatest_Tl' : -1.0, 'deltatest_Pb' : -1.0, 'deltatest_Bi' : -1.0, 'deltatest_Po' : -1.0,
+                        'deltatest_At' : -1.0, 'deltatest_Rn' : -1.0 },
+                'methods': [0, 1]};
 
-  errorMessage: string;
-  elements: Object[];
+  errorMessage:  string;
+  elements:      Object[];
+  methods:       Object[];
+  method1:       number;
+  method2:       number;
 
-  constructor(private _PeriodictableService: PeriodictableService) { }
+  constructor(private _PeriodictableService: PeriodictableService,
+              private _router: Router) { };
+
+  myComplete() { 
+     this.f_elements['methods'][0] = this.method1;
+     this.f_elements['methods'][1] = this.method2;
+     for (var t in this.elements['test']) {
+        this.f_elements['test'][t] = this.elements['test'][t][6];
+     }
+
+     var opts = this.mymeth1.nativeElement.options;
+     for(var j = 0; j<opts.length; j++) {
+        var opt = opts[j];
+        if(opt.value == this.method1) {
+            this.mymeth1.nativeElement.selectedIndex = j;
+        }
+        if(opt.value == this.method2) {
+            this.mymeth2.nativeElement.selectedIndex = j;
+        }
+    }
+  };
 
   getPeriodictable(method1, method2) {
     this._PeriodictableService.getPeriodictable(method1, method2).subscribe(
       elements => this.elements = elements,
-      error => this.errorMessage = <any>error);
+      error => this.errorMessage = <any>error,
+         () =>   this.myComplete());
   }
 
-  ngOnInit() {
-    this.getPeriodictable(3,72);
+  routerOnActivate(curr: RouteSegment): void {
+    this.method1 = +curr.getParam('method1');
+    this.method2 = +curr.getParam('method2');
+
+    this.getMethodlist();
+    this.getPeriodictable(this.method1, this.method2);
+  }
+
+  getMethodlist() {
+    this._PeriodictableService.getMethodlist().subscribe(
+      methods => this.methods = methods,
+      error => this.errorMessage = <any>error);
+  };
+
+
+  onSelect(method1, method2){
+    this._router.navigate(['/periodictable', method1, method2]);
   }
 }
