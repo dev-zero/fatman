@@ -1,10 +1,13 @@
 import {Component} from '@angular/core';
-import {OnActivate, Router, RouteSegment} from '@angular/router';
+import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {ReportService} from './reports.service';
 
 @Component({
+  directives: [ROUTER_DIRECTIVES],
   template: `
+    <h3 *ngIf="method1">Comparing methods {{ method1 }} and  {{ method2 }}.</h3>
+    <a [routerLink]="['/periodictable', method1, method2]">Go to periodic table view</a>
     <table class="table table-bordered table-striped table-condensed">
       <thead>
         <th (click)="re_sort(0)">z</th>
@@ -79,6 +82,10 @@ export class ReportsComparison implements OnActivate {
 
   gotoReports() {
     this._router.navigate(['/reports']);
+  }
+
+  gotoPT() {
+    this._router.navigate(['/periodictable', this.method1, this.method2]);
   }
 }
 //  vim: set ts=2 sw=2 tw=0 :

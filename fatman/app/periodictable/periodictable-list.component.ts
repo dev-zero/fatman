@@ -22,6 +22,7 @@ export class DeltavaluePipe implements PipeTransform {
   directives: [ROUTER_DIRECTIVES],
   template: `
   <h3 *ngIf="elements">Comparing methods {{ f_elements.methods[0] }} and  {{ f_elements.methods[1] }}.</h3>
+  <a [routerLink]="['/reports/comparison', method1, method2]">Go to list view</a>
   <table class="periodictable table table-bordered table-striped table-condensed" *ngIf="f_elements">
       <tr> 
           <td>H <br /><a [routerLink]="['../../details/H', f_elements.methods[0], f_elements.methods[1]]">{{ f_elements.test.deltatest_H  | deltavalue}}</a></td> 
