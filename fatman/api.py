@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
+from flask import make_response
 from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
@@ -10,7 +11,7 @@ from datetime import datetime
 from fatman import app, resultfiles
 from fatman.models import *
 from fatman.utils import route_from
-from fatman.tools import calcDelta
+from fatman.tools import calcDelta, eos, Json2Atoms
 
 import numpy as np
 
@@ -413,6 +414,86 @@ class TestResultResource(Resource):
 
         return ret
 
+class Plot(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('method', type=int, action="append")
+        parser.add_argument('test', type=str, required=True)
+        args = parser.parse_args()
+
+        test1 = Test.get(Test.name==args["test"])
+
+        import StringIO
+
+        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+       #from matplotlib.figure import Figure
+       #from matplotlib.dates import DateFormatter
+        import matplotlib.pyplot as plt
+        import itertools
+        colors = itertools.cycle(["#1D0662", "#8F1E00", "#00662C", "#8F7700", "#3E1BA7", "#F33D0D", "#0AAD51", "#F3CD0D", "#8E7BC5", "#FFAA93", "#75CA9A", "#FFED93"])
+
+
+        fig = plt.figure(figsize=(12,8))
+        ax = plt.subplot(111)
+        stride = 35./len(args['method'])
+        print stride
+        label_xpos = 5
+
+        for m in sorted(args['method']):
+            meth = Method.get(Method.id==m)
+            mycolor = next(colors)
+
+            #here the curve, based on the fitted data
+            r = TestResult.get((TestResult.method==meth) & (TestResult.test==test1))
+            V0 = r.result_data['V']
+            B0 = r.result_data['B0']
+            B1 = r.result_data['B1']
+            xfit,yfit = eos(V0,B0,B1)
+            ax.plot(xfit,yfit, color=mycolor)
+
+
+            #here the points
+            q = Result.select(Result, Task, TaskStatus, Method, Structure, Test) \
+                .join(Task) \
+                   .join(TaskStatus).switch(Task) \
+                   .join(Method).switch(Task) \
+                   .join(Structure).switch(Task) \
+                   .join(Test).switch(Task) \
+                   .switch(Result) \
+                .order_by(Result.id.asc()) \
+                .where(Task.method == meth) \
+                .where(Task.test == test1)
+
+            E = []
+            V = []
+            for x in q:
+                natom = len(Json2Atoms(x.task.structure.ase_structure).get_masses())
+                V.append(Json2Atoms(x.task.structure.ase_structure).get_volume()/natom)
+                E.append(x.energy/natom)
+            x2 = np.array(V)
+            y2 = np.array(E)
+
+            if 'E0' in r.result_data.keys():
+                E0 = r.result_data['E0']
+                y2 -= E0
+
+            ax.plot(x2,y2, 's', color=mycolor)
+             
+
+            ax.annotate("Method {:}".format(m), xy= (xfit[label_xpos], yfit[label_xpos]), xytext = (-5,-30), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right')
+            print label_xpos
+            label_xpos += stride
+
+        canvas=FigureCanvas(fig)
+        png_output = StringIO.StringIO()
+        canvas.print_png(png_output)
+        response=make_response(png_output.getvalue())
+        response.headers['Content-Type'] = 'image/png'
+        return response
+
+    
+
+
 class Comparison(Resource):
     def get(self):
         parser = reqparse.RequestParser()
@@ -507,4 +588,5 @@ api.add_resource(Comparison, '/compare')
 api.add_resource(MethodResource, '/methods/<int:id>')
 api.add_resource(MethodList, '/methods')
 api.add_resource(TestList, '/tests')
+api.add_resource(Plot, '/plot')
 
