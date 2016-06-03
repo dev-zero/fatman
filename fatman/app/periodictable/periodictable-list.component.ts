@@ -1,5 +1,5 @@
 import {Component, OnInit, Pipe, PipeTransform, ViewChild, AfterViewChecked} from '@angular/core';
-import {OnActivate, Router, RouteSegment} from '@angular/router';
+import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {PeriodictableService} from './periodictable.service';
 
@@ -15,14 +15,16 @@ export class DeltavaluePipe implements PipeTransform {
     }
 }
 
+//<td>H <br /><a [routerLink]="['details/H/{{ f_elements.methods[0] }}/{{ f_elements.methods[1] }}']">{{ f_elements.test.deltatest_H  | deltavalue}}</a></td> 
 
 @Component({
   selector: 'decimal-pipe',
+  directives: [ROUTER_DIRECTIVES],
   template: `
   <h3 *ngIf="elements">Comparing methods {{ f_elements.methods[0] }} and  {{ f_elements.methods[1] }}.</h3>
   <table class="periodictable table table-bordered table-striped table-condensed" *ngIf="f_elements">
       <tr> 
-        <td>H <br />{{ f_elements.test.deltatest_H  | deltavalue}}</td> 
+          <td>H <br /><a [routerLink]="['../../details/H', f_elements.methods[0], f_elements.methods[1]]">{{ f_elements.test.deltatest_H  | deltavalue}}</a></td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
@@ -58,10 +60,10 @@ export class DeltavaluePipe implements PipeTransform {
         <td>N <br />{{ f_elements.test.deltatest_N | deltavalue}}</td> 
         <td>O <br />{{ f_elements.test.deltatest_O | deltavalue}}</td> 
         <td>F <br />{{ f_elements.test.deltatest_F | deltavalue}}</td> 
-        <td>Ne <br />{{ f_elements.test.deltatest_Ne | deltavalue}}</td> </tr> 
+        <td>Ne<br />{{ f_elements.test.deltatest_Ne | deltavalue}}</td> </tr> 
       <tr> 
-        <td>Na <br />{{ f_elements.test.deltatest_Na | deltavalue}}</td> 
-        <td>Mg <br />{{ f_elements.test.deltatest_Mg | deltavalue}}</td> 
+        <td>Na<br />{{ f_elements.test.deltatest_Na | deltavalue}}</td> 
+        <td>Mg<br />{{ f_elements.test.deltatest_Mg | deltavalue}}</td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
@@ -72,18 +74,18 @@ export class DeltavaluePipe implements PipeTransform {
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
         <td style='border:0'> </td> 
-        <td>Al <br />{{ f_elements.test.deltatest_Al | deltavalue}}</td> 
-        <td>Si <br />{{ f_elements.test.deltatest_Si | deltavalue}}</td> 
-        <td>P <br />{{ f_elements.test.deltatest_P | deltavalue}}</td> 
-        <td>S <br />{{ f_elements.test.deltatest_S | deltavalue}}</td> 
+        <td>Al<br />{{ f_elements.test.deltatest_Al | deltavalue}}</td> 
+        <td>Si<br />{{ f_elements.test.deltatest_Si | deltavalue}}</td> 
+        <td>P <br />{{ f_elements.test.deltatest_P  | deltavalue}}</td> 
+        <td>S <br />{{ f_elements.test.deltatest_S  | deltavalue}}</td> 
         <td>Cl<br />{{ f_elements.test.deltatest_Cl | deltavalue}}</td> 
         <td>Ar<br />{{ f_elements.test.deltatest_Ar | deltavalue}}</td> </tr> 
       <tr> 
-        <td>K <br />{{ f_elements.test.deltatest_K | deltavalue}}</td> 
+        <td>K <br />{{ f_elements.test.deltatest_K  | deltavalue}}</td> 
         <td>Ca<br />{{ f_elements.test.deltatest_Ca | deltavalue}}</td> 
         <td>Sc<br />{{ f_elements.test.deltatest_Sc | deltavalue}}</td> 
         <td>Ti<br />{{ f_elements.test.deltatest_Ti | deltavalue}}</td> 
-        <td>V <br />{{ f_elements.test.deltatest_V | deltavalue}}</td> 
+        <td>V <br />{{ f_elements.test.deltatest_V  | deltavalue}}</td> 
         <td>Cr<br />{{ f_elements.test.deltatest_Cr | deltavalue}}</td> 
         <td>Mn<br />{{ f_elements.test.deltatest_Mn | deltavalue}}</td> 
         <td>Fe<br />{{ f_elements.test.deltatest_Fe | deltavalue}}</td> 
@@ -98,9 +100,9 @@ export class DeltavaluePipe implements PipeTransform {
         <td>Br<br />{{ f_elements.test.deltatest_Br | deltavalue}}</td> 
         <td>Kr<br />{{ f_elements.test.deltatest_Kr | deltavalue}}</td> </tr> 
       <tr> 
-        <td>Rb <br />{{ f_elements.test.deltatest_Rb | deltavalue}}</td> 
+        <td>Rb <br />{{ f_elements.test.deltatest_Rb| deltavalue}}</td> 
         <td>Sr<br />{{ f_elements.test.deltatest_Sr | deltavalue}}</td> 
-        <td>Y <br />{{ f_elements.test.deltatest_Y | deltavalue}}</td> 
+        <td>Y <br />{{ f_elements.test.deltatest_Y  | deltavalue}}</td> 
         <td>Zr<br />{{ f_elements.test.deltatest_Zr | deltavalue}}</td> 
         <td>Nb<br />{{ f_elements.test.deltatest_Nb | deltavalue}}</td> 
         <td>Mo<br />{{ f_elements.test.deltatest_Mo | deltavalue}}</td> 
@@ -114,15 +116,15 @@ export class DeltavaluePipe implements PipeTransform {
         <td>Sn<br />{{ f_elements.test.deltatest_Sn | deltavalue}}</td> 
         <td>Sb<br />{{ f_elements.test.deltatest_Sb | deltavalue}}</td> 
         <td>Te<br />{{ f_elements.test.deltatest_Te | deltavalue}}</td> 
-        <td>I <br />{{ f_elements.test.deltatest_I | deltavalue}}</td> 
+        <td>I <br />{{ f_elements.test.deltatest_I  | deltavalue}}</td> 
         <td>Xe<br />{{ f_elements.test.deltatest_Xe | deltavalue}}</td> </tr> 
       <tr> 
-        <td>Cs <br />{{ f_elements.test.deltatest_Cs | deltavalue}}</td> 
+        <td>Cs<br />{{ f_elements.test.deltatest_Cs | deltavalue}}</td> 
         <td>Ba<br />{{ f_elements.test.deltatest_Ba | deltavalue}}</td> 
         <td>La<br />{{ f_elements.test.deltatest_La | deltavalue}}</td> 
         <td>Hf<br />{{ f_elements.test.deltatest_Hf | deltavalue}}</td> 
         <td>Ta<br />{{ f_elements.test.deltatest_Ta | deltavalue}}</td> 
-        <td>W <br />{{ f_elements.test.deltatest_W | deltavalue}}</td> 
+        <td>W <br />{{ f_elements.test.deltatest_W  | deltavalue}}</td> 
         <td>Re<br />{{ f_elements.test.deltatest_Re | deltavalue}}</td> 
         <td>Os<br />{{ f_elements.test.deltatest_Os | deltavalue}}</td> 
         <td>Ir<br />{{ f_elements.test.deltatest_Ir | deltavalue}}</td> 
@@ -145,7 +147,7 @@ export class DeltavaluePipe implements PipeTransform {
           <option *ngFor="let method of methods">{{ method.id }}</option>
       </select>
   </div>
-  <h4>TODO: Clicking on an element should take the user to a 'Details' page.</h4>`,
+  <h4>TODO: Clicking on an element should take the user to a 'Details' page.</h4>
   <h4>TODO: Proper description of method/settings.</h4>`,
   providers: [PeriodictableService],
   pipes: [DeltavaluePipe],
@@ -218,7 +220,6 @@ export class Periodictable {
       methods => this.methods = methods,
       error => this.errorMessage = <any>error);
   };
-
 
   onSelect(method1, method2){
     this._router.navigate(['/periodictable', method1, method2]);

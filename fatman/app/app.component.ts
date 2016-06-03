@@ -11,6 +11,7 @@ import {MachineStatus} from './machinestatus/machinestatus-list.component';
 import {Reports} from './reports/reports-list.component';
 import {ReportsComparison} from './reports/reports-comparison.component';
 import {Periodictable} from './periodictable/periodictable-list.component';
+import {Details} from './details/details-list.component';
 
 @Component({
   selector: 'fatman-app',
