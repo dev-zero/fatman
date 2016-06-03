@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, ViewChild} from '@angular/core';
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {ReportService} from './reports.service';
@@ -6,7 +6,15 @@ import {ReportService} from './reports.service';
 @Component({
   directives: [ROUTER_DIRECTIVES],
   template: `
-    <h3 *ngIf="method1">Comparing methods {{ method1 }} and  {{ method2 }}.</h3>
+    <div style="font-size: 16pt">
+      Comparing Methods:
+        <select #meth1 (change)="onSelect(meth1.value,meth2.value);">
+            <option *ngFor="let method of methods">{{ method.id }}</option>
+        </select> and 
+        <select #meth2 (change)="onSelect(meth1.value,meth2.value);">
+            <option *ngFor="let method of methods">{{ method.id }}</option>
+        </select>.
+    </div>
     <a [routerLink]="['/periodictable', method1, method2]">Go to periodic table view</a>
     <table class="table table-bordered table-striped table-condensed">
       <thead>
@@ -30,7 +38,7 @@ import {ReportService} from './reports.service';
           <td> {{ line[5] | number:'.4-4'  }} </td>
           <td> {{ line[6] | number:'.4-4'  }} </td>
           <td> {{ line[7] | number:'.4-4'  }} </td>
-          <td> {{ line[8] | number:'.4-4' }} </td>
+          <td><a href="../plot?test=deltatest_{{ line[1] }}&method={{ method1 }}&method={{ method2 }}"> {{ line[8] | number:'.4-4' }}</a></td>
         </tr>
       </tbody>
     </table>
@@ -38,6 +46,8 @@ import {ReportService} from './reports.service';
 })
 
 export class ReportsComparison implements OnActivate {
+  @ViewChild('meth1') mymeth1;
+  @ViewChild('meth2') mymeth2;
 
   constructor(
     private _service: ReportService,
@@ -49,14 +59,22 @@ export class ReportsComparison implements OnActivate {
   method2:       number;
   comparetable:      Object[];
   comparelist = [];
+  methods:       Object[];
 
   routerOnActivate(curr: RouteSegment): void {
     this.method1 = +curr.getParam('id1');
     this.method2 = +curr.getParam('id2');
 
     // TODO
+    this.getMethods();
     this.getComparison(this.method1, this.method2);
   }
+
+  getMethods() {
+    this._service.getMethods().subscribe(
+      methods => this.methods = methods,
+      error => this.errorMessage = <any>error);
+  };
 
   getComparison(method1, method2) {
     this._service.getComparison(method1, method2).subscribe(
@@ -78,6 +96,16 @@ export class ReportsComparison implements OnActivate {
      };
      this.re_sort(0);
 
+     var opts = this.mymeth1.nativeElement.options;
+     for(var j = 0; j<opts.length; j++) {
+        var opt = opts[j];
+        if(opt.value == this.method1) {
+            this.mymeth1.nativeElement.selectedIndex = j;
+        }
+        if(opt.value == this.method2) {
+            this.mymeth2.nativeElement.selectedIndex = j;
+        }
+    }
   };
 
   gotoReports() {
@@ -86,6 +114,10 @@ export class ReportsComparison implements OnActivate {
 
   gotoPT() {
     this._router.navigate(['/periodictable', this.method1, this.method2]);
+  }
+
+  onSelect(method1, method2){
+    this._router.navigate(['/periodictable', method1, method2]);
   }
 }
 //  vim: set ts=2 sw=2 tw=0 :
