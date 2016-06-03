@@ -987,6 +987,44 @@ def randomword(length=8):
     return ''.join(random.choice(string.lowercase + string.digits) for i in range(length))
 
 
+def energies_for_test(method, test):
+    V = []
+    E = []
+    r = result(method=method,test=test)
+    for x in r:
+        natom = len(Json2Atoms(x["task"]['structure']['ase_structure']).get_masses())
+        V.append(Json2Atoms(x["task"]['structure']['ase_structure']).get_volume()/natom)
+        E.append(x['energy']/natom)
+        
+    return np.array(V),np.array(E)
+
+
+def full_plot_data(method, test=None):
+    a = tresult(method, test)
+    V0 = a[test]['V']
+    B0 = a[test]['B0']
+    B1 = a[test]['B1']
+    
+        
+    xfit,yfit = eos(V0,B0,B1)
+    
+    x2,y2 = energies_for_test(method=method, test=test)
+    if 'E0' in a[test].keys():
+        E0 = a[test]['E0']
+        y2 -= E0
+    
+    return [xfit,yfit, x2,y2]
+
+def eos(V0,B0, B1, E0=0.):
+    import numpy as np
+
+    B0 = B0 * 1e9 / 1.602176565e-19 / 1e30
+    rng = np.linspace(0.93*V0, 1.07*V0, 40)
+    E = [ E0 + 9./16. * V0 * B0 *  ( ((V0/v)**(2./3.) -1)**3 * B1 +
+                                     ((V0/v)**(2./3.) -1)**2 * (6-4*(V0/v)**(2./3.)) ) for v in rng]
+    return rng, np.array(E)
+
+
 def test1():
     from ase import Atoms
     teststructure = Atoms('N2',[(0,0,0),(0,0,1.1)])
