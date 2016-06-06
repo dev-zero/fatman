@@ -10,6 +10,7 @@ export class ReportService {
 
   private _methodsUrl = '../methods';
   private _compareUrl = '../compare';
+  private _testlistUrl = '../tests';
 
   getMethods(): Observable<Object[]> {
     return this._http.get(this._methodsUrl)
@@ -17,9 +18,25 @@ export class ReportService {
       .catch(this.handleError);
   }
 
+  getTests(): Observable<Object[]> {
+    return this._http.get(this._testlistUrl)
+      .map((response) => response.json())
+      .catch(this.handleError);
+  }
+
   getComparison(method1, method2): Observable<Object[]> {
     let myoptions = new RequestOptions ({
       search: new URLSearchParams(`method1=${method1}&method2=${method2}`)
+    });
+
+    return this._http.get(this._compareUrl, myoptions)
+       .map((response) => response.json())
+       .catch(this.handleError);
+  }
+
+  getElementComparison(method1, test1): Observable<Object[]> {
+    let myoptions = new RequestOptions ({
+      search: new URLSearchParams(`method1=${method1}&test=${test1}`)
     });
 
     return this._http.get(this._compareUrl, myoptions)
