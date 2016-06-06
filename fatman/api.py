@@ -419,7 +419,11 @@ class Plot(Resource):
 
         test1 = Test.get(Test.name==args["test"])
 
-        import StringIO
+        try:
+            from StringIO import StringIO
+        except ImportError:
+            # Python 3
+            from io import StringIO
 
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
        #from matplotlib.figure import Figure
@@ -491,7 +495,7 @@ class Plot(Resource):
             label_xpos += stride
 
         canvas=FigureCanvas(fig)
-        png_output = StringIO.StringIO()
+        png_output = StringIO()
         canvas.print_png(png_output)
         response=make_response(png_output.getvalue())
         response.headers['Content-Type'] = 'image/png'
@@ -632,3 +636,4 @@ api.add_resource(MethodList, '/methods')
 api.add_resource(TestList, '/tests')
 api.add_resource(Plot, '/plot')
 
+#  vim: set ts=4 sw=4 tw=0 :
