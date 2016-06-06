@@ -1,4 +1,4 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component, ViewChild, AfterViewChecked} from '@angular/core';
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {ReportService} from './reports.service';
@@ -38,7 +38,7 @@ import {ReportService} from './reports.service';
           <td> {{ line[5] | number:'.4-4'  }} </td>
           <td> {{ line[6] | number:'.4-4'  }} </td>
           <td> {{ line[7] | number:'.4-4'  }} </td>
-          <td><a href="../plot?test=deltatest_{{ line[1] }}&method={{ method1 }}&method={{ method2 }}"> {{ line[8] | number:'.4-4' }}</a></td>
+          <td><a href="details/{{ method1 }}/{{ method2 }}/deltatest_{{ line[1] }}"> {{ line[8] | number:'.4-4' }}</a></td>
         </tr>
       </tbody>
     </table>
@@ -72,7 +72,8 @@ export class ReportsComparison implements OnActivate {
   getMethods() {
     this._service.getMethods().subscribe(
       methods => this.methods = methods,
-      error => this.errorMessage = <any>error);
+      error => this.errorMessage = <any>error,
+        () => this.CompleteMethod());
   };
 
   getComparison(method1, method2) {
@@ -94,7 +95,9 @@ export class ReportsComparison implements OnActivate {
         this.comparelist.push(a);
      };
      this.re_sort(0);
+  };
 
+  CompleteMethod(){
      var opts = this.mymeth1.nativeElement.options;
      for(var j = 0; j<opts.length; j++) {
         var opt = opts[j];
@@ -106,6 +109,10 @@ export class ReportsComparison implements OnActivate {
         }
     }
   };
+
+  ngAfterViewChecked() {
+    this.CompleteMethod();
+  }
 
   gotoReports() {
     this._router.navigate(['/reports']);
