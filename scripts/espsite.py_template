@@ -1,0 +1,31 @@
+# This is a placeholder espsite.py
+# Replace this with one of the example files and adjust
+# to your cluster.
+import os
+
+class config:
+    def __init__(self):
+        self.scratch = '/data/ralph/deltatests/espresso/scratch'
+        self.submitdir = '.'
+        self.batch = True
+
+        if not os.environ.has_key('ESP_PSP_PATH'):
+            os.environ['ESP_PSP_PATH'] = '/users/ralph/work/espresso/PP_LIBRARY'
+
+        self.nnodes = 8 
+        self.jobid = "delta"
+        self.perHostMpiExec = '' #'mpirun -np '+str(self.nnodes)
+        self.perProcMpiExec = 'OMP_NUM_THREADS=1 mpirun -np '+str(self.nnodes)+' -wdir %s %s'
+        self.perSpecProcMpiExec = 'OMP_NUM_THREADS=1 mpirun -np %d -wdir %s %s'
+
+    def do_perProcMpiExec(self, workdir, program):
+        return os.popen2(self.perProcMpiExec % (workdir, program))
+
+    def do_perProcMpiExec_outputonly(self, workdir, program):
+        return os.popen2(self.perProcMpiExec % (workdir, program), 'r')
+
+    def runonly_perProcMpiExec(self, workdir, program):
+        return os.popen2(self.perProcMpiExec % (workdir, program))
+
+    def do_perSpecProcMpiExec(self, machinefile, nproc, workdir, program):
+        return os.popen3(self.perSpecProcMpiExec % (nproc, workdir, program))
