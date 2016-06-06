@@ -439,7 +439,7 @@ class Plot(Resource):
         print stride
         label_xpos = 5
 
-        for m in sorted(args['method']):
+        for m in args['method']:
             meth = Method.get(Method.id==m)
             mycolor = next(colors)
 
