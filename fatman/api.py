@@ -433,18 +433,30 @@ class Plot(Resource):
         colors = itertools.cycle(["#1D0662", "#8F1E00", "#00662C", "#8F7700", "#3E1BA7", "#F33D0D", "#0AAD51", "#F3CD0D", "#8E7BC5", "#FFAA93", "#75CA9A", "#FFED93"])
 
 
-        fig = plt.figure(figsize=(12,8))
+        fig = plt.figure(figsize=(12,8),dpi=200, facecolor="#FFFFFF")
         ax = plt.subplot(111)
         stride = 35./len(args['method'])
         print stride
         label_xpos = 5
+        warning_yshift = 0
 
         for m in args['method']:
             meth = Method.get(Method.id==m)
-            mycolor = next(colors)
 
             #here the curve, based on the fitted data
-            r = TestResult.get((TestResult.method==meth) & (TestResult.test==test1))
+            try:
+                r = TestResult.get((TestResult.method==meth) & (TestResult.test==test1))
+            except TestResult.DoesNotExist:
+                ax.text(0.5,0.5+warning_yshift, "No data for method {:}".format(m), transform=ax.transAxes, color="#FF0000")
+                warning_yshift+=0.05
+                continue
+
+            if not (r.result_data['_status']=='fitted' or r.result_data['_status']=='reference'):
+                ax.text(0.5,0.5+warning_yshift, "Fitting problem for method {:}".format(m), transform=ax.transAxes, color="#FF0000")
+                warning_yshift+=0.05
+                continue
+
+            mycolor = next(colors)
             V0 = r.result_data['V']
             B0 = r.result_data['B0']
             B1 = r.result_data['B1']
@@ -480,7 +492,7 @@ class Plot(Resource):
             ax.plot(x2,y2, 's', color=mycolor)
              
 
-            ax.annotate("Method {:}".format(m), xy= (xfit[label_xpos], yfit[label_xpos]), xytext = (-5,-30), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right')
+            ax.annotate("Method {:}".format(m), xy= (xfit[label_xpos], yfit[label_xpos]), xytext = (-5,-30), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right', color=mycolor)
             print label_xpos
             label_xpos += stride
 
