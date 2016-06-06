@@ -284,8 +284,6 @@ class MethodList(Resource):
         b = BasissetFamily.get(BasissetFamily.id==args['basis_set'])
         p = PseudopotentialFamily.get(PseudopotentialFamily.id==args['pseudopotential'])
 
-        print(args)
-        print(json.loads(args['settings']))
         m,created = Method.get_or_create(code = args['code'],
                                          basis_set = b,
                                          pseudopotential = p,
@@ -327,8 +325,6 @@ class Pseudopotentials(Resource):
         args = parser.parse_args()
 
         ret = {}
-        print("HERE")
-        print(args)
         if not args['element'] is None:
             for element in args['element']:
                 f = PseudopotentialFamily.get(PseudopotentialFamily.name==args['family'])
@@ -435,8 +431,7 @@ class Plot(Resource):
 
         fig = plt.figure(figsize=(12,8),dpi=200, facecolor="#FFFFFF")
         ax = plt.subplot(111)
-        stride = 35./len(args['method'])
-        print stride
+        stride = min(35./len(args['method']),7)
         label_xpos = 5
         warning_yshift = 0
 
@@ -493,7 +488,6 @@ class Plot(Resource):
              
 
             ax.annotate("Method {:}".format(m), xy= (xfit[label_xpos], yfit[label_xpos]), xytext = (-5,-30), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right', color=mycolor)
-            print label_xpos
             label_xpos += stride
 
         canvas=FigureCanvas(fig)
@@ -560,7 +554,6 @@ class Comparison(Resource):
 
         all_delta = np.array(all_delta)
         ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
-        print ret
         return ret
     
     def _getResultData(self, method1, method2, test):
@@ -571,7 +564,6 @@ class Comparison(Resource):
         except:
             return False
             #ret["test"][test.name] = "N/A"
-        print(r1, r2)
 
         data_f = []
         data_w = []
