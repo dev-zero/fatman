@@ -498,63 +498,97 @@ class Comparison(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('method1', type=int, required=True)
-        parser.add_argument('method2', type=int, required=True)
+        parser.add_argument('method2', type=int, required=False)
         parser.add_argument('test', type=str, action="append")
         args = parser.parse_args()
 
-        method1 = Method.get(Method.id==args["method1"])
-        method2 = Method.get(Method.id==args["method2"])
-
-        ret={"test": {}, "methods": [method1.id, method2.id]}
+        by_test = False
         all_delta = []
 
-        if args["test"] is not None:
-            testlist = args["test"]
+        #need at least one method, which will be the 'reference' method
+        method1 = Method.get(Method.id==args["method1"])
+
+        #if a second method is specified, we compare all tests for the pair of methods
+        if args["method2"] is not None:
+            method2 = Method.get(Method.id==args["method2"])
         else:
-            testlist = [t.name for t in Test.select()]
+            by_test = True
 
-        for testname in testlist:
-            dontadd = False
+        ret={"test": {}, "methods": [], "method":{}}
+
+        if by_test:
+            ret["methods"] = [method1.id]
+            if args["test"] is not None and len(args["test"])==1:
+                testname = args["test"][0]
+            else:
+                return errors["ParameterError"]
+
             test = Test.get(Test.name==testname)
-            print(test.name)
 
-            try:
-                r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))
-                r2 = TestResult.get((TestResult.method==method2) & (TestResult.test==test))
-            except:
-                continue
-                #ret["test"][test.name] = "N/A"
-            print(r1, r2)
+            q = Method.select()
 
-            if "deltatest" in testname:
-                try:
-                    data_f = [r1.result_data["V"], r1.result_data["B0"], r1.result_data["B1"]]
-                    data_w = [r2.result_data["V"], r2.result_data["B0"], r2.result_data["B1"]]
-                
-                    delta = calcDelta(data_f, data_w)
-                except:
-                    dontadd = True
+            for method2 in q:
+                result_data = self._getResultData(method1, method2, test)
+                if not result_data == False:
+                    ret["method"][method2.id] = [str(method2)] + result_data
+                    all_delta.append(result_data[-1])
 
-            elif "GMTKN" in testname:
-                try:
-                    n=0
-                    mad=0.
-                    for e1, e2 in zip(r1.result_data["energies"], r2.result_data["energies"]):
-                        mad+= abs(e1-e2)
-                        n+=1
+        else:
+            if args["test"] is not None:
+                testlist = args["test"]
+            else:
+                testlist = [t.name for t in Test.select()]
 
-                    delta=mad/n
-                except:
-                    dontadd = True
+            for testname in testlist:
+                test = Test.get(Test.name==testname)
+                result_data = self._getResultData(method1, method2, test)
+                if not result_data == False:
+                    ret["test"][testname] = result_data
+                    all_delta.append(result_data[-1])
 
-            if not dontadd:
-                ret["test"][test.name] = data_f + data_w +  [delta]
-                all_delta.append(delta)
-
-            
         all_delta = np.array(all_delta)
         ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
+        print ret
         return ret
+    
+    def _getResultData(self, method1, method2, test):
+        dontadd = False
+        try:
+            r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))
+            r2 = TestResult.get((TestResult.method==method2) & (TestResult.test==test))
+        except:
+            return False
+            #ret["test"][test.name] = "N/A"
+        print(r1, r2)
+
+        data_f = []
+        data_w = []
+        if "deltatest" in test.name:
+            try:
+                data_f = [r1.result_data["V"], r1.result_data["B0"], r1.result_data["B1"]]
+                data_w = [r2.result_data["V"], r2.result_data["B0"], r2.result_data["B1"]]
+            
+                delta = calcDelta(data_f, data_w)
+            except:
+                dontadd = True
+
+        elif "GMTKN" in test.name:
+            try:
+                n=0
+                mad=0.
+                for e1, e2 in zip(r1.result_data["energies"], r2.result_data["energies"]):
+                    mad+= abs(e1-e2)
+                    n+=1
+
+                delta=mad/n
+            except:
+                dontadd = True
+
+        if not dontadd:
+            return data_f + data_w +  [delta]
+        else:
+            return False
+
 
 # Catch common exceptions in the REST dispatcher
 errors = {
@@ -568,6 +602,10 @@ errors = {
             },
         'ResultDoesNotExist': {
             'message': "Result with the specified ID does not exist.",
+            'status': 404,
+            },
+        'ParameterError': {
+            'message': "Specify either 2 methods and optionally a list of tests, or 1 method and 1 test.",
             'status': 404,
             },
         }
