@@ -10,3 +10,4 @@ Flask-Uploads>=0.2.0
 numpy>=1.10.4
 Flask-Security>=1.7.5
 matplotlib>=1.5.1
+ase>=3.11.0
