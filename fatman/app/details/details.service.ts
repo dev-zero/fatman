@@ -17,6 +17,12 @@ export class DetailsService {
       .catch(this.handleError);
   }
 
+  getMethodDetails(method_id): Observable<Object[]> {
+    return this._http.get(this._methodsUrl + '/' + method_id)
+      .map((response) => response.json())
+      .catch(this.handleError);
+  }
+
   getTests(): Observable<Object[]> {
     return this._http.get(this._testlistUrl)
       .map((response) => response.json())

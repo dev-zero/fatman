@@ -2,6 +2,7 @@ import {Component, OnInit, Pipe, PipeTransform, ViewChild, AfterViewChecked} fro
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {PeriodictableService} from './periodictable.service';
+import {MethoddetailsComponent} from '../details/methoddetails.component';
 
 @Pipe({name: 'deltavalue'})
 export class DeltavaluePipe implements PipeTransform {
@@ -19,7 +20,7 @@ export class DeltavaluePipe implements PipeTransform {
 
 @Component({
   selector: 'decimal-pipe',
-  directives: [ROUTER_DIRECTIVES],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   template: `
   <div style="font-size: 16pt">
     Comparing Methods:
@@ -30,6 +31,8 @@ export class DeltavaluePipe implements PipeTransform {
           <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
       </select>.
   </div>
+  <methoddetails method_id="{{ method1 }}"></methoddetails>
+  <methoddetails method_id="{{ method2 }}"></methoddetails>
   <a [routerLink]="['/reports/comparison', method1, method2]">Go to list view</a>
   <table class="periodictable table table-bordered table-striped table-condensed" *ngIf="f_elements">
       <tr> 
@@ -150,7 +153,7 @@ export class DeltavaluePipe implements PipeTransform {
   <div style="font-size: 16pt">
       Average Delta: {{ f_elements.summary.avg | number: ".3" }} &plusmn; {{ f_elements.summary.stdev | number: ".3" }} (N = {{ f_elements.summary.N }})
   </div>
-  <h4>TODO: Proper description of method/settings.</h4>`,
+  `,
   providers: [PeriodictableService],
   pipes: [DeltavaluePipe],
 })

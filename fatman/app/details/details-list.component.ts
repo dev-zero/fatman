@@ -2,9 +2,10 @@ import {Component, OnInit, ViewChild, AfterViewChecked} from '@angular/core';
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {DetailsService} from './details.service';
+import {MethoddetailsComponent} from '../details/methoddetails.component';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   providers: [DetailsService],
    template: `
    <table><tr>
@@ -32,6 +33,7 @@ import {DetailsService} from './details.service';
      </div>
    </td>
  </tr></table>
+    <methoddetails *ngFor="let method of selectedmethods" method_id="{{ method }}"></methoddetails>
     <div class="container">
       <router-outlet></router-outlet>
     </div>

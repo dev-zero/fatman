@@ -2,9 +2,10 @@ import {Component, ViewChild, AfterViewChecked} from '@angular/core';
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {ReportService} from './reports.service';
+import {MethoddetailsComponent} from '../details/methoddetails.component';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   template: `
     <div style="font-size: 16pt">
       Comparing all 
@@ -15,6 +16,7 @@ import {ReportService} from './reports.service';
             <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
         </select>.
     </div>
+    <methoddetails method_id="{{ method1 }}"></methoddetails>
     <table class="table table-bordered table-striped table-condensed">
       <thead>
         <th (click)="re_sort(0)">Method ID</th>
