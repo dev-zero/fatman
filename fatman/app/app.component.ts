@@ -13,6 +13,7 @@ import {ReportsComparison} from './reports/reports-comparison.component';
 import {ReportsElementComparison} from './reports/reports-elementcomparison.component';
 import {Periodictable} from './periodictable/periodictable-list.component';
 import {Details} from './details/details-list.component';
+import {MethodList} from './methods/methods-list.component';
 
 @Component({
   selector: 'fatman-app',
@@ -30,6 +31,7 @@ import {Details} from './details/details-list.component';
             <li><a [routerLink]="['/reports']">Reports</a></li>
             <li><a [routerLink]="['/machinestatus']">Machine Status</a></li>
             <li><a [routerLink]="['/periodictable/3/72']">Periodic Table</a></li>
+            <li><a [routerLink]="['/methodlist']">Method Overview</a></li>
           </ul>
         </div> <!--/.navbar-collapse -->
       </div>
@@ -51,6 +53,7 @@ import {Details} from './details/details-list.component';
   { path: '/periodictable/:method1/:method2', component: Periodictable },
   { path: '/periodictable/', component: Home },
   { path: '/details/', component: Home },
+  { path: '/methodlist', component: MethodList },
   { path: '/details/:method1/:method2/:test1', component: Details },
 ])
 
