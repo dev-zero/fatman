@@ -12,7 +12,7 @@ import {ReportService} from './reports.service';
             <option *ngFor="let test of tests" value="{{ test[1] }}">{{ test[1] }}</option>
         </select> to reference method 
         <select #meth1 (change)="onSelect(meth1.value,testselect.value);">
-            <option *ngFor="let method of methods">{{ method.id }}</option>
+            <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
         </select>.
     </div>
     <table class="table table-bordered table-striped table-condensed">
