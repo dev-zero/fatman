@@ -408,12 +408,12 @@ class TestResultResource(Resource):
             method1 = Method.get(Method.id==args["method"])
 
             r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
-            ret={r.test.name: {'result_data': r.result_data,'method': r.method_id, 'test': r.test.name}}
+            ret={r.test.name: r.result_data}
         else:
             q = TestResult.select().where((TestResult.test==test1))
             ret={}
             for r in q:
-                ret[r.test.name] = {'result_data': r.result_data,'method': r.method_id, 'test': r.test.name}
+                ret[r.method_id] = r.result_data
 
         return ret
 
