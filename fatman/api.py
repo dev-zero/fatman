@@ -266,12 +266,23 @@ class TestList(Resource):
 
 class MethodList(Resource):
     def get(self):
-        q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
-            .join(PseudopotentialFamily).switch(Method) \
-            .join(BasissetFamily).switch(Method) \
-            .order_by(Method.id)
+        parser = reqparse.RequestParser()
+        parser.add_argument('test', type=str)
+        args = parser.parse_args()
 
-        return [marshal(model_to_dict(m), method_list_fields) for m in q]
+        if args['test'] is not None:
+            test = Test.get(Test.name==args['test'])
+            tr = TestResult.select().where(TestResult.test == test)
+            
+            return [marshal(model_to_dict(x.method), method_list_fields) for x in tr]
+
+        else:
+            q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
+                .join(PseudopotentialFamily).switch(Method) \
+                .join(BasissetFamily).switch(Method) \
+                .order_by(Method.id)
+
+            return [marshal(model_to_dict(m), method_list_fields) for m in q]
 
     def post(self):
         parser = reqparse.RequestParser()
@@ -408,12 +419,12 @@ class TestResultResource(Resource):
             method1 = Method.get(Method.id==args["method"])
 
             r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
-            ret={r.test.name: r.result_data}
+            ret=[{r.test.name: r.result_data}]
         else:
             q = TestResult.select().where((TestResult.test==test1))
-            ret={}
+            ret=[]
             for r in q:
-                ret[r.method_id] = r.result_data
+                ret.append({r.method_id: r.result_data})
 
         return ret
 

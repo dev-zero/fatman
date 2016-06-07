@@ -229,7 +229,7 @@ def eos(V0,B0, B1, E0=0.):
 
 def tresult(method, test):
     r= requests.get(TESTRESULT_URL, data={'method':method, 'test':test}, verify=False)
-    return r.json()
+    return r.json()[0]
     
 def result(method, test=None):
     r= requests.get(RESULT_URL, data={'method':method, 'test':test}, verify=False)
