@@ -272,7 +272,7 @@ class MethodList(Resource):
 
         if args['test'] is not None:
             test = Test.get(Test.name==args['test'])
-            tr = TestResult.select().where(TestResult.test == test)
+            tr = TestResult.select().where(TestResult.test == test).order_by(TestResult.method)
             
             return [marshal(model_to_dict(x.method), method_list_fields) for x in tr]
 
