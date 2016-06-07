@@ -74,14 +74,14 @@ export class Details implements OnActivate {
 
     this.selectedmethods.push(this.method1);
     this.selectedmethods.push(this.method2);
-    this.getMethods();
+    this.getMethods(this.test1);
     this.getTests();
 
     this.img_url = this.getImgURL();
   }
 
-  getMethods() {
-    this._service.getMethods().subscribe(
+  getMethods(test) {
+    this._service.getMethods(test).subscribe(
       methods => this.methods = methods,
       error => this.errorMessage = <any>error);
   };
@@ -96,6 +96,7 @@ export class Details implements OnActivate {
   onSelect(test){
     this.test1 = test; 
     this.img_url = this.getImgURL();
+    this.getMethods(this.test1);
   }
 
   myComplete() {

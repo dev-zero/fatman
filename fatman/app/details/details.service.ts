@@ -11,8 +11,11 @@ export class DetailsService {
   private _methodsUrl = '../methods';
   private _testlistUrl = '../tests';
 
-  getMethods(): Observable<Object[]> {
-    return this._http.get(this._methodsUrl)
+  getMethods(test): Observable<Object[]> {
+    let myoptions = new RequestOptions ({
+      search: new URLSearchParams(`test=${test}`)
+    });
+    return this._http.get(this._methodsUrl, myoptions)
       .map((response) => response.json())
       .catch(this.handleError);
   }
