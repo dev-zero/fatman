@@ -16,6 +16,8 @@ from fatman.tools import calcDelta, eos, Json2Atoms
 import numpy as np
 
 import json
+import pickle
+import os
 
 method_resource_fields = {
     'id': fields.Raw,
@@ -448,6 +450,7 @@ class Plot(Resource):
 
 
         fig = plt.figure(figsize=(12,8),dpi=200, facecolor="#FFFFFF")
+        fig.subplots_adjust(left=0.07,right=0.98,top=0.99,bottom=0.04)
         ax = plt.subplot(111)
         stride = min(35./len(args['method']),7)
         label_xpos = 5
@@ -584,9 +587,16 @@ class Comparison(Resource):
             print ret
 
         elif mode=="1method":
-            #loop over method2
+            cachefilename = '/tmp/apicache_{:}'.format(method1.id)
+            if os.path.exists(cachefilename) and (datetime.fromtimestamp(os.path.getmtime(cachefilename))-datetime.now()).total_seconds()<60*60*3   :
+                with open(cachefilename) as infile:
+                    ret = pickle.load(infile)
+                    return ret
+            print "no cache available"
+
             testlist = [t.name for t in Test.select()]
 
+            #loop over method2
             q2 = Method.select().order_by(Method.id)
             for method2 in q2:
                 ret["methods"].append(method2.id)
@@ -605,6 +615,8 @@ class Comparison(Resource):
                 else:
                     ret['method'][method2.id] = [str(method2), -1, -1, 0] 
 
+            with open(cachefilename, 'w') as outfile:
+                pickle.dump(ret, outfile)
 
         return ret
     

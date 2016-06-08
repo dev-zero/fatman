@@ -30,25 +30,31 @@ export class SettingsPipe implements PipeTransform {
 
 @Component({
   selector:'methoddetails', 
-  inputs: ['method_id'],
+  inputs: ['method_id', 'small'],
   providers: [DetailsService],
   pipes: [SettingsPipe],
   template: `
-     <div *ngIf='method' style="margin-bottom: 20px; margin-top:20px; padding:5px; border: 1px solid; width: 1000px; border-color: #777777">
-       <table border=0 width="100%" style='padding-left: 5px'>
-         <tr><td rowspan=2 width=60px style='text-align: center'>
-             <div style='height:12px; font-size: 10pt'>Method</div><div style='color: #AAAAAA; font-weight:bold; font-size:32pt'>{{ method.id }}</div> </td>
-         
-           <td style='padding-left: 15px; width: 1px; white-space: nowrap' > Code: <b>{{ method.code }}</b> </td>
-           <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Pseudopotential: <b>{{ method.pseudopotential }}</b> </td>
-           <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Basis Set: <b>{{ method.basis_set }}</b></td>
-           <td></td>
-        </tr>
-       <tr>
-        <td  style='padding-left: 15px' colspan=4>{{ method.settings | settingspipe}}&nbsp;</td>
-   </tr>
- </table>
-     </div>
+    <span *ngIf='method'>
+      <span *ngIf='!small'>
+          <div class="panel panel-default">
+            <table border=0 width="100%" style='padding-left: 5px'>
+              <tr>
+                <td rowspan=2 width=60px style='text-align: center'><div style='height:12px; font-size: 10pt'>Method</div><div style='color: #AAAAAA; font-weight:bold; font-size:32pt'>{{ method.id }}</div> </td>
+                <td style='padding-left: 15px; width: 1px; white-space: nowrap' > Code: <b>{{ method.code }}</b> </td>
+                <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Pseudopotential: <b>{{ method.pseudopotential }}</b> </td>
+                <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Basis Set: <b>{{ method.basis_set }}</b> </td>
+                <td> </td>
+              </tr>
+              <tr>
+                <td  style='padding-left: 15px' colspan=4>{{ method.settings | settingspipe}}&nbsp;</td>
+              </tr>
+            </table>
+          </div>
+      </span>
+      <span *ngIf='small' title="{{ method.settings | settingspipe }}">
+        <b><span title="{{ method.settings | settingspipe }}">{{ method.code }}</span></b>:  PP: {{ method.pseudopotential }}, Basis: {{ method.basis_set }} (id {{ method.id }})
+      </span>
+    </span>
   `,
 })
 export class MethoddetailsComponent implements OnInit {
@@ -68,6 +74,5 @@ export class MethoddetailsComponent implements OnInit {
   ngOnInit(){
     this.getMethodDetails(this.method_id);
   }
-
 }
 //  vim: set ts=2 sw=2 tw=0 :

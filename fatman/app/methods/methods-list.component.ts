@@ -6,7 +6,8 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
 @Component({
   directives: [MethoddetailsComponent],
   template: `
-     <div class="form-group container" style="width: 1100px; height: 900px; overflow-y: scroll; border: 2px solid">
+  <!-- <div class="form-group container" style="width: 1100px; height: 900px; overflow-y: scroll; border: 2px solid">-->
+     <div class="container">
         <methoddetails *ngFor="let method of methods" method_id="{{ method.id }}"></methoddetails>
 
      </div>`,
