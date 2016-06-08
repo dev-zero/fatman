@@ -52,8 +52,7 @@ export class SettingsPipe implements PipeTransform {
           </div>
       </span>
       <span *ngIf='small' title="{{ method.settings | settingspipe }}">
-        <b><span title="{{ method.settings | settingspipe }}"> <span class="text-muted">{{ method.id }}</span></b> <span class="small"> {{ method.basis_set }} / {{ method.pseudopotential }} ({{ method.code }})</span></span>
-      </span>
+        <span title="{{ method.settings | settingspipe }}"> <span class="text-muted">{{ method.id }}</span> <span class="small"> {{ method.basis_set }} / {{ method.pseudopotential }} ({{ method.code }})</span> 
     </span>
   `,
 })
