@@ -521,26 +521,33 @@ class Plot(Resource):
 class Comparison(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('method1', type=int, required=True)
+        parser.add_argument('method1', type=int, required=False)
         parser.add_argument('method2', type=int, required=False)
         parser.add_argument('test', type=str, action="append")
         args = parser.parse_args()
 
-        by_test = False
         all_delta = []
 
-        #need at least one method, which will be the 'reference' method
-        method1 = Method.get(Method.id==args["method1"])
-
-        #if a second method is specified, we compare all tests for the pair of methods
-        if args["method2"] is not None:
+        if args["method1"] is not None and args["method2"] is not None and args["test"] is None:
+            #COMPARE 2 METHODS
+            mode = "2methods"
             method2 = Method.get(Method.id==args["method2"])
+            method1 = Method.get(Method.id==args["method1"])
+        elif args["method1"] is not None and args["method2"] is None and args["test"] is not None:
+            #COMPARE all tests for 1 reference method
+            mode = "methodbytest"
+            method1 = Method.get(Method.id==args["method1"])
+        elif args["method1"] is not None and args["method2"] is None and args["test"] is None:
+            #COMPARE all tests for 1 reference method
+            mode = "1method"
+            method1 = Method.get(Method.id==args["method1"])
         else:
-            by_test = True
+            return errors["ParameterError"]
 
-        ret={"test": {}, "methods": [], "method":{}}
 
-        if by_test:
+        ret={"test": {}, "methods": [], "method":{}, "summary": {}}
+
+        if mode=="methodbytest":
             ret["methods"] = [method1.id]
             if args["test"] is not None and len(args["test"])==1:
                 testname = args["test"][0]
@@ -557,7 +564,9 @@ class Comparison(Resource):
                     ret["method"][method2.id] = [str(method2)] + result_data
                     all_delta.append(result_data[-1])
 
-        else:
+            ret["summary"] = {}
+
+        elif mode=="2methods":
             if args["test"] is not None:
                 testlist = args["test"]
             else:
@@ -570,11 +579,37 @@ class Comparison(Resource):
                     ret["test"][testname] = result_data
                     all_delta.append(result_data[-1])
 
-        all_delta = np.array(all_delta)
-        ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
+            all_delta = np.array(all_delta)
+            ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
+            print ret
+
+        elif mode=="1method":
+            #loop over method2
+            testlist = [t.name for t in Test.select()]
+
+            q2 = Method.select().order_by(Method.id)
+            for method2 in q2:
+                ret["methods"].append(method2.id)
+                matrixline = []
+
+                all_delta = []
+                for testname in testlist:
+                    test = Test.get(Test.name==testname)
+                    result_data = self._getResultData(method1, method2, test)
+                    if not result_data == False:
+                        all_delta.append(result_data[-1])
+
+                if len(all_delta) > 0: 
+                    all_delta = np.array(all_delta)
+                    ret['method'][method2.id] = [str(method2), np.average(all_delta), np.std(all_delta), len(all_delta)] 
+                else:
+                    ret['method'][method2.id] = [str(method2), -1, -1, 0] 
+
+
         return ret
     
     def _getResultData(self, method1, method2, test):
+        #implement some kind of caching here?
         dontadd = False
         try:
             r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))
