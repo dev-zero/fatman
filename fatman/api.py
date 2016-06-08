@@ -584,7 +584,6 @@ class Comparison(Resource):
 
             all_delta = np.array(all_delta)
             ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
-            print ret
 
         elif mode=="1method":
             cachefilename = '/tmp/apicache_{:}'.format(method1.id)
@@ -592,7 +591,6 @@ class Comparison(Resource):
                 with open(cachefilename) as infile:
                     ret = pickle.load(infile)
                     return ret
-            print "no cache available"
 
             testlist = [t.name for t in Test.select()]
 
