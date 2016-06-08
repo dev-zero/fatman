@@ -22,7 +22,7 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
              name="selectedboxes"
              value="{{ method.id }}"
              [checked]="selectedmethods.indexOf(method.id)>=0"
-             (change)="updateSelectedMethods(method,$event)" /> Method {{ method.id }} <font size=1>{{ method.pseudopotential }} </font>
+             (change)="updateSelectedMethods(method,$event)" /><methoddetails method_id="{{ method.id }}" small=True></methoddetails>
          </div>
        </div>
      </div>
@@ -122,3 +122,4 @@ export class Details implements OnActivate {
 
 }
 //  vim: set ts=2 sw=2 tw=0 :
+//           (change)="updateSelectedMethods(method,$event)" /> Method {{ method.id }} <font size=1>{{ method.pseudopotential }} </font>
