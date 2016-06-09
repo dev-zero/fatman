@@ -24,12 +24,12 @@ def main():
     available_elements = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn"]
 
     available_elements = ["H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr"]
-    #available_elements = ["Cr","Mn","Fe","Co","Ni"]
+#   available_elements = ["Ni", "S", "Si", "Cu", "B", "Be", "P", "Pd", "As", "C"]
 
 
     ####################
     #EDIT HERE:
-    desired_methods = [44]
+    desired_methods = [78]
     desired_tests = ["deltatest_"+x for x in available_elements]
     ############
 
@@ -53,7 +53,8 @@ def main():
                                    status    = status_new,
                                    ctime     = datetime.now(),
                                    mtime     = datetime.now(),
-                                   machine   = "-")
+                                   machine   = "-",
+                                   priority  = 9999)
                                )
             if created:
                 created_count +=1
