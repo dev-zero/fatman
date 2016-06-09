@@ -183,6 +183,7 @@ result_resource_fields = {
    'energy': fields.Float,
    'task': fields.Nested(task_resource_fields),
    '_links': { 'self': fields.Url('resultresource') },
+   'filename': fields.String,
    }
 
 class ResultResource(Resource):
@@ -452,7 +453,7 @@ class Plot(Resource):
         fig = plt.figure(figsize=(12,8),dpi=200, facecolor="#FFFFFF")
         fig.subplots_adjust(left=0.07,right=0.98,top=0.99,bottom=0.04)
         ax = plt.subplot(111)
-        stride = min(35./len(args['method']),7)
+        stride = int(min(35./len(args['method']),7))
         label_xpos = 5
         warning_yshift = 0
 
