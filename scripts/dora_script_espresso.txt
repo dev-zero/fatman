@@ -67,7 +67,7 @@ slurm_startjob() {{
   if [ $? -eq 0 ]
   then
       echo 'No Error'
-      en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654 / {natom} }}'` 
+      en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654}}'` 
 
       echo "# {workdir}   " `date`  >> /users/rkoitz/deltatests/update_fatman.py
       echo "req = requests.post(RESULTS_URL, data={{'energy': $en, 'task_id': {id} }}, verify=False); req.raise_for_status(); done_task = req.json();" >> /users/rkoitz/deltatests/update_fatman.py

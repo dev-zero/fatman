@@ -34,7 +34,7 @@ def Json2Atoms(jsonstring):
     return row.toatoms(attach_calculator=False, add_additional_information=True)
 
 SERVER = 'https://172.23.64.223/fatman'
-SERVER = 'http://127.0.0.1:5001'
+SERVER = 'http://127.0.0.1:5000'
 
 COMPARE_URL    = SERVER + '/compare'
 METHODS_URL    = SERVER + '/methods'
@@ -229,7 +229,7 @@ def eos(V0,B0, B1, E0=0.):
 
 def tresult(method, test):
     r= requests.get(TESTRESULT_URL, data={'method':method, 'test':test}, verify=False)
-    return r.json()
+    return r.json()[0]
     
 def result(method, test=None):
     r= requests.get(RESULT_URL, data={'method':method, 'test':test}, verify=False)

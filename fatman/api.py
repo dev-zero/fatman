@@ -16,6 +16,8 @@ from fatman.tools import calcDelta, eos, Json2Atoms
 import numpy as np
 
 import json
+import pickle
+import os
 
 method_resource_fields = {
     'id': fields.Raw,
@@ -181,6 +183,7 @@ result_resource_fields = {
    'energy': fields.Float,
    'task': fields.Nested(task_resource_fields),
    '_links': { 'self': fields.Url('resultresource') },
+   'filename': fields.String,
    }
 
 class ResultResource(Resource):
@@ -266,12 +269,23 @@ class TestList(Resource):
 
 class MethodList(Resource):
     def get(self):
-        q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
-            .join(PseudopotentialFamily).switch(Method) \
-            .join(BasissetFamily).switch(Method) \
-            .order_by(Method.id)
+        parser = reqparse.RequestParser()
+        parser.add_argument('test', type=str)
+        args = parser.parse_args()
 
-        return [marshal(model_to_dict(m), method_list_fields) for m in q]
+        if args['test'] is not None:
+            test = Test.get(Test.name==args['test'])
+            tr = TestResult.select().where(TestResult.test == test).order_by(TestResult.method)
+            
+            return [marshal(model_to_dict(x.method), method_list_fields) for x in tr]
+
+        else:
+            q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
+                .join(PseudopotentialFamily).switch(Method) \
+                .join(BasissetFamily).switch(Method) \
+                .order_by(Method.id)
+
+            return [marshal(model_to_dict(m), method_list_fields) for m in q]
 
     def post(self):
         parser = reqparse.RequestParser()
@@ -398,15 +412,22 @@ class CalcStatus(Resource):
 class TestResultResource(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('method', type=int, required=True)
+        parser.add_argument('method', type=int, required=False)
         parser.add_argument('test', type=str, required=True)
         args = parser.parse_args()
 
-        method1 = Method.get(Method.id==args["method"])
-
         test1 = Test.get(Test.name==args["test"])
-        r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
-        ret={r.test.name: r.result_data}
+
+        if args['method'] is not None:
+            method1 = Method.get(Method.id==args["method"])
+
+            r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
+            ret=[{r.test.name: r.result_data}]
+        else:
+            q = TestResult.select().where((TestResult.test==test1))
+            ret=[]
+            for r in q:
+                ret.append({r.method_id: r.result_data})
 
         return ret
 
@@ -430,8 +451,9 @@ class Plot(Resource):
 
 
         fig = plt.figure(figsize=(12,8),dpi=200, facecolor="#FFFFFF")
+        fig.subplots_adjust(left=0.07,right=0.98,top=0.99,bottom=0.04)
         ax = plt.subplot(111)
-        stride = min(35./len(args['method']),7)
+        stride = int(min(35./len(args['method']),7))
         label_xpos = 5
         warning_yshift = 0
 
@@ -503,26 +525,33 @@ class Plot(Resource):
 class Comparison(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('method1', type=int, required=True)
+        parser.add_argument('method1', type=int, required=False)
         parser.add_argument('method2', type=int, required=False)
         parser.add_argument('test', type=str, action="append")
         args = parser.parse_args()
 
-        by_test = False
         all_delta = []
 
-        #need at least one method, which will be the 'reference' method
-        method1 = Method.get(Method.id==args["method1"])
-
-        #if a second method is specified, we compare all tests for the pair of methods
-        if args["method2"] is not None:
+        if args["method1"] is not None and args["method2"] is not None and args["test"] is None:
+            #COMPARE 2 METHODS
+            mode = "2methods"
             method2 = Method.get(Method.id==args["method2"])
+            method1 = Method.get(Method.id==args["method1"])
+        elif args["method1"] is not None and args["method2"] is None and args["test"] is not None:
+            #COMPARE all tests for 1 reference method
+            mode = "methodbytest"
+            method1 = Method.get(Method.id==args["method1"])
+        elif args["method1"] is not None and args["method2"] is None and args["test"] is None:
+            #COMPARE all tests for 1 reference method
+            mode = "1method"
+            method1 = Method.get(Method.id==args["method1"])
         else:
-            by_test = True
+            return errors["ParameterError"]
 
-        ret={"test": {}, "methods": [], "method":{}}
 
-        if by_test:
+        ret={"test": {}, "methods": [], "method":{}, "summary": {}}
+
+        if mode=="methodbytest":
             ret["methods"] = [method1.id]
             if args["test"] is not None and len(args["test"])==1:
                 testname = args["test"][0]
@@ -539,7 +568,9 @@ class Comparison(Resource):
                     ret["method"][method2.id] = [str(method2)] + result_data
                     all_delta.append(result_data[-1])
 
-        else:
+            ret["summary"] = {}
+
+        elif mode=="2methods":
             if args["test"] is not None:
                 testlist = args["test"]
             else:
@@ -552,11 +583,44 @@ class Comparison(Resource):
                     ret["test"][testname] = result_data
                     all_delta.append(result_data[-1])
 
-        all_delta = np.array(all_delta)
-        ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
+            all_delta = np.array(all_delta)
+            ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
+
+        elif mode=="1method":
+            cachefilename = '/tmp/apicache_{:}'.format(method1.id)
+            if os.path.exists(cachefilename) and (datetime.fromtimestamp(os.path.getmtime(cachefilename))-datetime.now()).total_seconds()<60*60*3   :
+                with open(cachefilename) as infile:
+                    ret = pickle.load(infile)
+                    return ret
+
+            testlist = [t.name for t in Test.select()]
+
+            #loop over method2
+            q2 = Method.select().order_by(Method.id)
+            for method2 in q2:
+                ret["methods"].append(method2.id)
+                matrixline = []
+
+                all_delta = []
+                for testname in testlist:
+                    test = Test.get(Test.name==testname)
+                    result_data = self._getResultData(method1, method2, test)
+                    if not result_data == False:
+                        all_delta.append(result_data[-1])
+
+                if len(all_delta) > 0: 
+                    all_delta = np.array(all_delta)
+                    ret['method'][method2.id] = [str(method2), np.average(all_delta), np.std(all_delta), len(all_delta)] 
+                else:
+                    ret['method'][method2.id] = [str(method2), -1, -1, 0] 
+
+            with open(cachefilename, 'w') as outfile:
+                pickle.dump(ret, outfile)
+
         return ret
     
     def _getResultData(self, method1, method2, test):
+        #implement some kind of caching here?
         dontadd = False
         try:
             r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))

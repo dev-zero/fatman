@@ -4,32 +4,27 @@ import { Http, Response, RequestOptions, URLSearchParams } from '@angular/http';
 import { Observable } from 'rxjs/Observable';
 
 @Injectable()
-export class DetailsService {
+export class HomeService {
   constructor(private _http: Http) {
   }
 
   private _methodsUrl = '../methods';
-  private _testlistUrl = '../tests';
+  private _compareUrl = '../compare';
 
-  getMethods(test): Observable<Object[]> {
+  getMethods(): Observable<Object[]> {
+    return this._http.get(this._methodsUrl)
+      .map((response) => response.json())
+      .catch(this.handleError);
+  }
+
+  getResults(method1): Observable<Object[]> {
     let myoptions = new RequestOptions ({
-      search: new URLSearchParams(`test=${test}`)
+      search: new URLSearchParams(`method1=${method1}`)
     });
-    return this._http.get(this._methodsUrl, myoptions)
-      .map((response) => response.json())
-      .catch(this.handleError);
-  }
 
-  getMethodDetails(method_id): Observable<Object[]> {
-    return this._http.get(this._methodsUrl + '/' + method_id)
-      .map((response) => response.json())
-      .catch(this.handleError);
-  }
-
-  getTests(): Observable<Object[]> {
-    return this._http.get(this._testlistUrl)
-      .map((response) => response.json())
-      .catch(this.handleError);
+    return this._http.get(this._compareUrl, myoptions)
+       .map((response) => response.json())
+       .catch(this.handleError);
   }
 
   private handleError(error: any) {

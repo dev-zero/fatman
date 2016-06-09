@@ -2,19 +2,22 @@ import {Component, ViewChild, AfterViewChecked} from '@angular/core';
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {ReportService} from './reports.service';
+import {MethoddetailsComponent} from '../details/methoddetails.component';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   template: `
     <div style="font-size: 16pt">
       Comparing Methods:
         <select #meth1 (change)="onSelect(meth1.value,meth2.value);">
-            <option *ngFor="let method of methods">{{ method.id }}</option>
+          <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
         </select> and 
         <select #meth2 (change)="onSelect(meth1.value,meth2.value);">
-            <option *ngFor="let method of methods">{{ method.id }}</option>
+            <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
         </select>.
     </div>
+    <methoddetails method_id="{{ method1 }}"></methoddetails>
+    <methoddetails method_id="{{ method2 }}"></methoddetails>
     <a [routerLink]="['/periodictable', method1, method2]">Go to periodic table view</a>
     <table class="table table-bordered table-striped table-condensed">
       <thead>
@@ -42,6 +45,9 @@ import {ReportService} from './reports.service';
         </tr>
       </tbody>
     </table>
+  <div style="font-size: 16pt">
+      Average Delta: {{ summary.avg | number: ".3" }} &plusmn; {{ summary.stdev | number: ".3" }} (N = {{ summary.N }})
+  </div>
   `,
 })
 
@@ -60,6 +66,7 @@ export class ReportsComparison implements OnActivate {
   comparetable:      Object[];
   comparelist = [];
   methods:       Object[];
+  summary = {'N':0, 'avg': 0., 'stdev':0. };
 
   routerOnActivate(curr: RouteSegment): void {
     this.method1 = +curr.getParam('id1');
@@ -95,6 +102,10 @@ export class ReportsComparison implements OnActivate {
         this.comparelist.push(a);
      };
      this.re_sort(0);
+
+     this.summary['N'] = this.comparetable['summary']['N'];
+     this.summary['avg'] = this.comparetable['summary']['avg'];
+     this.summary['stdev'] = this.comparetable['summary']['stdev'];
   };
 
   CompleteMethod(){

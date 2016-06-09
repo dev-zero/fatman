@@ -2,6 +2,7 @@ import {Component, OnInit, Pipe, PipeTransform, ViewChild, AfterViewChecked} fro
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {PeriodictableService} from './periodictable.service';
+import {MethoddetailsComponent} from '../details/methoddetails.component';
 
 @Pipe({name: 'deltavalue'})
 export class DeltavaluePipe implements PipeTransform {
@@ -19,17 +20,19 @@ export class DeltavaluePipe implements PipeTransform {
 
 @Component({
   selector: 'decimal-pipe',
-  directives: [ROUTER_DIRECTIVES],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   template: `
   <div style="font-size: 16pt">
     Comparing Methods:
       <select #meth1 (change)="onSelect(meth1.value,meth2.value);">
-          <option *ngFor="let method of methods">{{ method.id }}</option>
+          <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
       </select> and 
       <select #meth2 (change)="onSelect(meth1.value,meth2.value);">
-          <option *ngFor="let method of methods">{{ method.id }}</option>
+          <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
       </select>.
   </div>
+  <methoddetails method_id="{{ method1 }}"></methoddetails>
+  <methoddetails method_id="{{ method2 }}"></methoddetails>
   <a [routerLink]="['/reports/comparison', method1, method2]">Go to list view</a>
   <table class="periodictable table table-bordered table-striped table-condensed" *ngIf="f_elements">
       <tr> 
@@ -147,8 +150,10 @@ export class DeltavaluePipe implements PipeTransform {
           <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_At">At</a><br /><a href="details/{{ f_elements.methods[0] }}/{{ f_elements.methods[1] }}/deltatest_At">{{ f_elements.test.deltatest_At | deltavalue}}</a></td> 
           <td><a href="/reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Rn">Rn</a><br /><a href="details/{{ f_elements.methods[0] }}/{{ f_elements.methods[1] }}/deltatest_Rn">{{ f_elements.test.deltatest_Rn | deltavalue}}</a></td></tr> 
   </table>
-  <h4>TODO: Clicking on an element should take the user to a 'Details' page.</h4>
-  <h4>TODO: Proper description of method/settings.</h4>`,
+  <div style="font-size: 16pt">
+      Average Delta: {{ f_elements.summary.avg | number: ".3" }} &plusmn; {{ f_elements.summary.stdev | number: ".3" }} (N = {{ f_elements.summary.N }})
+  </div>
+  `,
   providers: [PeriodictableService],
   pipes: [DeltavaluePipe],
 })
@@ -170,7 +175,8 @@ export class Periodictable {
                         'deltatest_La' : -1.0, 'deltatest_Hf' : -1.0, 'deltatest_Ta' : -1.0, 'deltatest_W'  : -1.0, 'deltatest_Re' : -1.0, 'deltatest_Os' : -1.0, 'deltatest_Ir' : -1.0,
                         'deltatest_Pt' : -1.0, 'deltatest_Au' : -1.0, 'deltatest_Hg' : -1.0, 'deltatest_Tl' : -1.0, 'deltatest_Pb' : -1.0, 'deltatest_Bi' : -1.0, 'deltatest_Po' : -1.0,
                         'deltatest_At' : -1.0, 'deltatest_Rn' : -1.0 },
-                'methods': [0, 1]};
+                'methods': [0, 1],
+                'summary': {'N':0, 'avg': 0., 'stdev':0. }};
 
   errorMessage:  string;
   elements:      Object[];
@@ -187,6 +193,9 @@ export class Periodictable {
      for (var t in this.elements['test']) {
         this.f_elements['test'][t] = this.elements['test'][t][6];
      }
+     this.f_elements['summary']['N'] = this.elements['summary']['N'];
+     this.f_elements['summary']['avg'] = this.elements['summary']['avg'];
+     this.f_elements['summary']['stdev'] = this.elements['summary']['stdev'];
 
      var opts = this.mymeth1.nativeElement.options;
      for(var j = 0; j<opts.length; j++) {

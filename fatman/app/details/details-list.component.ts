@@ -2,36 +2,36 @@ import {Component, OnInit, ViewChild, AfterViewChecked} from '@angular/core';
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {DetailsService} from './details.service';
+import {MethoddetailsComponent} from '../details/methoddetails.component';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   providers: [DetailsService],
    template: `
-   <table><tr>
-   <td width="1000px">
-       <img width="1000px" src="{{ img_url }}">
-   </td>
-   <td width="200px">
-     <div class="form-group container" style="border: 2px solid; width: 200px">
-       <label>
-      <select #testselect (change)="onSelect(testselect.value);">
-          <option *ngFor="let test of tests" value="{{ test[1] }}">{{ test[1] }}</option>
-      </select>
-       </label>
+   <div class="row row-centered">
+     <div class="col-md-9 container">
+       <img style="max-width:100%;max-height:100%" src="{{ img_url }}" />
      </div>
-     <div class="form-group container" style="width: 200px; height: 600px; overflow-y: scroll; border: 2px solid">
-       <div *ngFor="let method of methods">
-         <label>
+     <div class="col-md-3 container-fluid">
+      <select #testselect (change)="onSelect(testselect.value);" class="form-control">
+        <option *ngFor="let test of tests" value="{{ test[1] }}">{{ test[1] }}</option>
+      </select>
+      <div class="panel panel-default">
+        <div *ngFor="let method of methods">
            <input type="checkbox" 
              name="selectedboxes"
              value="{{ method.id }}"
              [checked]="selectedmethods.indexOf(method.id)>=0"
-             (change)="updateSelectedMethods(method,$event)" /> Method {{ method.id }} <br /> <font size=1>{{ method.pseudopotential }} </font>
-         </label>
+             (change)="updateSelectedMethods(method,$event)" /><methoddetails method_id="{{ method.id }}" small=True></methoddetails>
+         </div>
        </div>
      </div>
-   </td>
- </tr></table>
+   </div>
+   <div class="row">
+     <div class="container">
+       <methoddetails *ngFor="let method of selectedmethods" method_id="{{ method }}"></methoddetails>
+     </div>
+   </div>
     <div class="container">
       <router-outlet></router-outlet>
     </div>
@@ -72,14 +72,14 @@ export class Details implements OnActivate {
 
     this.selectedmethods.push(this.method1);
     this.selectedmethods.push(this.method2);
-    this.getMethods();
+    this.getMethods(this.test1);
     this.getTests();
 
     this.img_url = this.getImgURL();
   }
 
-  getMethods() {
-    this._service.getMethods().subscribe(
+  getMethods(test) {
+    this._service.getMethods(test).subscribe(
       methods => this.methods = methods,
       error => this.errorMessage = <any>error);
   };
@@ -94,6 +94,7 @@ export class Details implements OnActivate {
   onSelect(test){
     this.test1 = test; 
     this.img_url = this.getImgURL();
+    this.getMethods(this.test1);
   }
 
   myComplete() {
@@ -121,3 +122,4 @@ export class Details implements OnActivate {
 
 }
 //  vim: set ts=2 sw=2 tw=0 :
+//           (change)="updateSelectedMethods(method,$event)" /> Method {{ method.id }} <font size=1>{{ method.pseudopotential }} </font>
