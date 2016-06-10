@@ -182,7 +182,7 @@ result_resource_fields = {
    'id': fields.Raw,
    'energy': fields.Float,
    'task': fields.Nested(task_resource_fields),
-   '_links': { 'self': fields.Url('resultresource') },
+   '_links': { 'self': fields.Url('resultresource'), '_file': fields.Url('resultresource')+'/file' },
    'filename': fields.String,
    }
 
@@ -216,7 +216,7 @@ class ResultFileResource(Resource):
             abort(400, message="No data available")
 
         #return the file
-        return send_file(resultfiles.path(result.filename))
+        return send_file(resultfiles.path(result.filename), as_attachment=True)
 
 class ResultList(Resource):
     def get(self):
