@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
-from flask import make_response
+from flask import make_response, send_file
 from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
@@ -208,6 +208,15 @@ class ResultFileResource(Resource):
 
         # use a raw werkzeug Response object to return 201 status code without a body
         return Response(status=201)
+
+    def get(self, id):
+        result = Result.get(Result.id == id)
+
+        if result.filename is None:
+            abort(400, message="No data available")
+
+        #return the file
+        return send_file(resultfiles.path(result.filename))
 
 class ResultList(Resource):
     def get(self):
