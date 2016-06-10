@@ -18,6 +18,7 @@ import numpy as np
 import json
 import pickle
 import os
+import bz2
 
 method_resource_fields = {
     'id': fields.Raw,
@@ -216,7 +217,8 @@ class ResultFileResource(Resource):
             abort(400, message="No data available")
 
         #return the file
-        return send_file(resultfiles.path(result.filename), as_attachment=True)
+        with bz2.BZ2File(resultfiles.path(result.filename)) as infile:
+            return send_file(infile, as_attachment=True, attachment_filename = os.path.splitext(result.filename)[0])
 
 class ResultList(Resource):
     def get(self):
