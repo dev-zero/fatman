@@ -39,7 +39,7 @@ export class SettingsPipe implements PipeTransform {
           <div class="panel panel-default">
             <table border=0 width="100%" style='padding-left: 5px'>
               <tr>
-                <td rowspan=2 width=60px style='text-align: center'><div style='height:12px; font-size: 10pt'>Method</div><div style='color: #AAAAAA; font-weight:bold; font-size:32pt'>{{ method.id }}</div> </td>
+                <td rowspan=2 width=60px style='text-align: center'><div style='height:12px; font-size: 10pt'>Method</div><div style='font-weight:bold; font-size:32pt'>{{ method.id }}</div> </td>
                 <td style='padding-left: 15px; width: 1px; white-space: nowrap' > Code: <b>{{ method.code }}</b> </td>
                 <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Pseudopotential: <b>{{ method.pseudopotential }}</b> </td>
                 <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Basis Set: <b>{{ method.basis_set }}</b> </td>

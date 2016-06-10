@@ -10,6 +10,7 @@ export class DetailsService {
 
   private _methodsUrl = '../methods';
   private _testlistUrl = '../tests';
+  private _resultsUrl = '../results';
 
   getMethods(test): Observable<Object[]> {
     let myoptions = new RequestOptions ({
@@ -28,6 +29,15 @@ export class DetailsService {
 
   getTests(): Observable<Object[]> {
     return this._http.get(this._testlistUrl)
+      .map((response) => response.json())
+      .catch(this.handleError);
+  }
+
+  getResults(method, test): Observable<Object[]> {
+    let myoptions = new RequestOptions ({
+      search: new URLSearchParams(`test=${test}&method=${method}`)
+    });
+    return this._http.get(this._resultsUrl, myoptions)
       .map((response) => response.json())
       .catch(this.handleError);
   }

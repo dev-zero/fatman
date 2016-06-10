@@ -3,9 +3,10 @@ import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/rout
 
 import {DetailsService} from './details.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
+import {TestdetailsComponent} from '../details/testdetails.component';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent, TestdetailsComponent],
   providers: [DetailsService],
    template: `
    <div class="row row-centered">
@@ -27,9 +28,14 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
        </div>
      </div>
    </div>
-   <div class="row">
+<!--<div class="row">
      <div class="container">
        <methoddetails *ngFor="let method of selectedmethods" method_id="{{ method }}"></methoddetails>
+     </div>
+   </div>-->
+   <div class="row">
+     <div class="container">
+       <testdetails *ngFor="let method of selectedmethods" method_id="{{ method }}" test="{{ test1 }}"></testdetails>
      </div>
    </div>
     <div class="container">
