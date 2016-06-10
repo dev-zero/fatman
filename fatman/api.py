@@ -218,7 +218,7 @@ class ResultFileResource(Resource):
 
         #return the file
         with bz2.BZ2File(resultfiles.path(result.filename)) as infile:
-            return send_file(infile, as_attachment=True, attachment_filename = os.path.splitext(result.filename)[0])
+            return send_file(infile, as_attachment=True, attachment_filename = os.path.splitext(result.filename)[0], mimetype='text/plain')
 
 class ResultList(Resource):
     def get(self):
