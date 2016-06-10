@@ -182,7 +182,7 @@ result_resource_fields = {
    'id': fields.Raw,
    'energy': fields.Float,
    'task': fields.Nested(task_resource_fields),
-   '_links': { 'self': fields.Url('resultresource'), '_file': fields.Url('resultresource')+'/file' },
+   '_links': { 'self': fields.Url('resultresource'), 'file': fields.Url('resultfileresource') },
    'filename': fields.String,
    }
 
