@@ -1,5 +1,7 @@
 import {Component, OnInit, ViewChild, AfterViewChecked} from '@angular/core';
 import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
+import {Location} from '@angular/common';
+//had 
 
 import {DetailsService} from './details.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
@@ -7,8 +9,13 @@ import {TestdetailsComponent} from '../details/testdetails.component';
 
 @Component({
   directives: [ROUTER_DIRECTIVES, MethoddetailsComponent, TestdetailsComponent],
+  inputs: ['test1'],
   providers: [DetailsService],
    template: `
+   <p>
+   <a [routerLink]="['/periodictable/', selectedmethods[0], selectedmethods[1]]"><button type="button" class="btn btn-sm btn-primary">Back to Periodic Table</button></a>
+   <a [routerLink]="['/reports/comparison/', selectedmethods[0], selectedmethods[1]]"><button type="button" class="btn btn-sm btn-info">Back to List View</button></a>
+   </p>
    <div class="row row-centered">
      <div class="col-md-9 container">
        <img style="max-width:100%;max-height:100%" src="{{ img_url }}" />
@@ -18,6 +25,13 @@ import {TestdetailsComponent} from '../details/testdetails.component';
         <option *ngFor="let test of tests" value="{{ test[1] }}">{{ test[1] }}</option>
       </select>
       <div class="panel panel-default">
+        <div *ngFor="let method of unavailablemethods">
+           <input type="checkbox" 
+             name="selectedboxes"
+             value="{{ method }}"
+             [checked]="selectedmethods.indexOf(method)>=0"
+             (change)="updateSelectedMethods(method,$event)" /><span style='text-decoration: line-through'> <methoddetails method_id="{{ method }}" small=True></methoddetails></span>
+         </div>
         <div *ngFor="let method of methods">
            <input type="checkbox" 
              name="selectedboxes"
@@ -28,11 +42,6 @@ import {TestdetailsComponent} from '../details/testdetails.component';
        </div>
      </div>
    </div>
-<!--<div class="row">
-     <div class="container">
-       <methoddetails *ngFor="let method of selectedmethods" method_id="{{ method }}"></methoddetails>
-     </div>
-   </div>-->
    <div class="row">
      <div class="container">
        <testdetails *ngFor="let method of selectedmethods" method_id="{{ method }}" test="{{ test1 }}"></testdetails>
@@ -48,16 +57,20 @@ export class Details implements OnActivate {
   @ViewChild('testselect') mytest1;
   constructor(
     private _service: DetailsService,
-    private _router: Router) { }
+    private _router: Router,
+    private location: Location) { this.location = location; }
+
 
   errorMessage: string;
   method1: number;
   method2: number;
+
   test1:   string;
   methods: Object[];
   tests:   Object[];
   selectedmethods = [];
   img_url: string;
+  unavailablemethods = [];
 
   updateSelectedMethods(method, event) {
     if (event.target.checked) {
@@ -67,28 +80,64 @@ export class Details implements OnActivate {
       var idx = this.selectedmethods.indexOf(parseInt(event.target.value));
       this.selectedmethods.splice(idx,1);
     }
+    this.location.go(
+      this._router.serializeUrl(
+        this._router.createUrlTree(['details', this.test1, {methods: this.selectedmethods}])
+      )
+    );
     this.img_url = this.getImgURL();
-    //nothing for now;
+    this.updateUnavailableMethods();
   }
 
   routerOnActivate(curr: RouteSegment): void {
-    this.method1 = +curr.getParam('method1');
-    this.method2 = +curr.getParam('method2');
+    this.selectedmethods= [];
+    
+    var ms = curr.getParam('methods');
+
+    if (typeof(ms)=='string') {
+      var methods_str = ms.split(',');
+      for (var i =0;i<methods_str.length;i++) {
+        this.selectedmethods.push(+methods_str[i]);
+      }
+    }
+    else {
+      for (var i =0;i<ms.length;i++) {
+        this.selectedmethods.push(+ms[i]);
+      }
+    }
+
     this.test1 = curr.getParam('test1');
-
-    this.selectedmethods.push(this.method1);
-    this.selectedmethods.push(this.method2);
     this.getMethods(this.test1);
-    this.getTests();
 
+    this.getTests();
     this.img_url = this.getImgURL();
   }
 
   getMethods(test) {
     this._service.getMethods(test).subscribe(
       methods => this.methods = methods,
-      error => this.errorMessage = <any>error);
+      error => this.errorMessage = <any>error,
+      () => this.updateUnavailableMethods());
   };
+
+  updateUnavailableMethods() {
+    console.log(this.methods);
+    console.log("selected");
+    console.log(this.selectedmethods);
+    this.unavailablemethods = [];
+    //    console.log(i + ': ' + this.methods[i]['id'] + ' -- ' +  this.selectedmethods.indexOf(this.methods[i]['id']))
+    for (var i=0; i<this.selectedmethods.length; i++) {
+      var found=false;
+      for (var j=0; j<this.methods.length; j++) {
+        if (this.methods[j]['id'] == this.selectedmethods[i])  {
+          found=true;
+          console.log('found: ' + this.selectedmethods[i] + '  i=' + i);
+        }
+      }
+      if (!found) this.unavailablemethods.push(this.selectedmethods[i]);
+    }
+    console.log(this.unavailablemethods);
+  }
 
   getTests() {
     this._service.getTests().subscribe(
@@ -98,9 +147,7 @@ export class Details implements OnActivate {
   };
 
   onSelect(test){
-    this.test1 = test; 
-    this.img_url = this.getImgURL();
-    this.getMethods(this.test1);
+    this._router.navigate(['details', test, {methods: this.selectedmethods}])
   }
 
   myComplete() {
@@ -129,3 +176,4 @@ export class Details implements OnActivate {
 }
 //  vim: set ts=2 sw=2 tw=0 :
 //           (change)="updateSelectedMethods(method,$event)" /> Method {{ method.id }} <font size=1>{{ method.pseudopotential }} </font>
+//           (change)="updateSelectedMethods(method,$event)" /><span style='text-decoration: line-through'> <methoddetails method_id="{{ method.id }}" small=True></methoddetails></span>

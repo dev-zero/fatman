@@ -4,10 +4,22 @@ import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/rout
 import {DetailsService} from './details.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
 
+@Pipe({
+  name: 'truncate'
+})
+export class TruncatePipe {
+  transform(value: string, args: string[]) : string {
+    let limit = args.length > 0 ? parseInt(args[0], 10) : 16;
+
+    return value.length > limit ? value.substring(0, limit) : value;
+  }
+}
+
 @Component({
   selector:'testdetails', 
   inputs: ['method_id', 'test'],
   directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
+  pipes: [TruncatePipe],
   providers: [DetailsService],
   template: `
   <div class='panel panel-info'>
@@ -16,7 +28,7 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
     </div>
     <ul class='list-group'>
       <li class='list-group-item' *ngFor='let res of results'>
-        <span class='text-muted'><a href='../results/{{ res.id }}/file'> {{ res.task.structure.name }}</a>:</span> <span class='small'>{{ res.energy }} eV, finished: {{ res.task.mtime }}</span>
+        <span class='text-muted'><a href='../results/{{ res.id }}/file'> {{ res.task.structure.name }}</a>:</span> <span class='small'><b>{{ res.energy }} eV</b>, update: <b>{{ res.task.mtime |truncate:16 }}</b> on <b>{{ res.task.machine }}</b></span>
       </li>
     </ul>
   </div>

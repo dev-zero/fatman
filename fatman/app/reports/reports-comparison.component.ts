@@ -8,6 +8,7 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
   directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   template: `
     <div style="font-size: 16pt">
+      <p>
       Comparing Methods:
         <select #meth1 (change)="onSelect(meth1.value,meth2.value);">
           <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
@@ -15,10 +16,13 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
         <select #meth2 (change)="onSelect(meth1.value,meth2.value);">
             <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
         </select>.
+      </p>
     </div>
     <methoddetails method_id="{{ method1 }}"></methoddetails>
     <methoddetails method_id="{{ method2 }}"></methoddetails>
-    <a [routerLink]="['/periodictable', method1, method2]">Go to periodic table view</a>
+    <p>
+      <a [routerLink]="['/periodictable/', method1, method2]"><button type="button" class="btn btn-sm btn-primary">Periodic Table View</button></a>
+     </p>
     <table class="table table-bordered table-striped table-condensed">
       <thead>
         <th (click)="re_sort(0)">z</th>
@@ -41,7 +45,8 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
           <td> {{ line[5] | number:'.4-4'  }} </td>
           <td> {{ line[6] | number:'.4-4'  }} </td>
           <td> {{ line[7] | number:'.4-4'  }} </td>
-          <td><a href="details/{{ method1 }}/{{ method2 }}/deltatest_{{ line[1] }}"> {{ line[8] | number:'.4-4' }}</a></td>
+          <!--      <td><a href="details/{{ method1 }}/{{ method2 }}/deltatest_{{ line[1] }}"> {{ line[8] | number:'.4-4' }}</a></td>-->
+          <td><a href="details/deltatest_{{ line[1] }};methods={{ method1 }},{{ method2 }}"> {{ line[8] | number:'.4-4' }}</a></td>
         </tr>
       </tbody>
     </table>

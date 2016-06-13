@@ -53,8 +53,8 @@ import {MethodList} from './methods/methods-list.component';
   { path: '/periodictable/:method1/:method2', component: Periodictable },
   { path: '/periodictable/', component: Home },
   { path: '/details/', component: Home },
+  { path: '/details/:test1', component: Details },
   { path: '/methodlist', component: MethodList },
-  { path: '/details/:method1/:method2/:test1', component: Details },
 ])
 
 export class FatmanApp {}

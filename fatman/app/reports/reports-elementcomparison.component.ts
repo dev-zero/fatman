@@ -7,16 +7,20 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
 @Component({
   directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   template: `
-    <div style="font-size: 16pt">
-      Comparing all 
-        <select #testselect (change)="onSelect(meth1.value,testselect.value);">
-            <option *ngFor="let test of tests" value="{{ test[1] }}">{{ test[1] }}</option>
-        </select> to reference method 
-        <select #meth1 (change)="onSelect(meth1.value,testselect.value);">
-            <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
-        </select>.
-    </div>
-    <methoddetails method_id="{{ method1 }}"></methoddetails>
+      <div style="font-size: 16pt">
+        <p>
+        Comparing all 
+          <select #testselect (change)="onSelect(meth1.value,testselect.value);">
+              <option *ngFor="let test of tests" value="{{ test[1] }}">{{ test[1] }}</option>
+          </select> to reference method 
+          <select #meth1 (change)="onSelect(meth1.value,testselect.value);">
+              <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
+          </select>.
+        </p>
+      </div>
+    <p>
+     <methoddetails method_id="{{ method1 }}"></methoddetails>
+    </p>
     <table class="table table-bordered table-striped table-condensed">
       <thead>
         <th (click)="re_sort(0)">Method ID</th>
@@ -39,7 +43,7 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
           <td> {{ line[5] | number:'.4-4'  }} </td>
           <td> {{ line[6] | number:'.4-4'  }} </td>
           <td> {{ line[7] | number:'.4-4'  }} </td>
-          <td><a href="details/{{ method1 }}/{{ line[0] }}/{{ test1 }}"> {{ line[8] | number:'.4-4' }}</a></td>
+          <td><a href="details/{{ test1 }};methods={{ method1 }},{{ line[0] }}"> {{ line[8] | number:'.4-4' }}</a></td>
         </tr>
       </tbody>
     </table>
