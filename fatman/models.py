@@ -159,6 +159,7 @@ class Result(BaseModel):
     energy = DoubleField()
     task = ForeignKeyField(Task, related_name='results')
     filename = CharField(null=True)
+    data = BinaryJSONField(null=True)
 
 class ResultWithoutTestResult(BaseModel):
     # need to create a VIEW in postgres that feeds into this model
