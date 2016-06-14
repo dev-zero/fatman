@@ -185,6 +185,7 @@ result_resource_fields = {
    'task': fields.Nested(task_resource_fields),
    '_links': { 'self': fields.Url('resultresource'), 'file': fields.Url('resultfileresource') },
    'filename': fields.String,
+   'data': fields.Raw,
    }
 
 class ResultResource(Resource):
