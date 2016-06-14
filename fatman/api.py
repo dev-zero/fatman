@@ -193,6 +193,27 @@ class ResultResource(Resource):
     def get(self, id):
         return model_to_dict(Result.get(Result.id == id))
 
+    @marshal_with(result_resource_fields)
+    def patch(self, id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('data', type=str, required=False)
+        parser.add_argument('energy', type=float, required=False)
+        parser.add_argument('task', type=int, required=False)
+        args = parser.parse_args()
+
+        res = Result.get(Result.id==id)
+
+        if args['data'] is not None:
+            res.data = json.loads(args['data'])
+        if args['energy'] is not None:
+            res.energy = args['energy']
+        if args['task'] is not None:
+            res.task = Task.get(Task.id == args['task'])
+
+        res.save()
+
+        return model_to_dict(res)
+
 class ResultFileResource(Resource):
     def post(self, id):
         result = Result.get(Result.id == id)
@@ -260,6 +281,7 @@ class ResultList(Resource):
         parser.add_argument('energy', type=float, required=True)
         parser.add_argument('task', type=str)
         parser.add_argument('task_id', type=int)
+        parser.add_argument('data', type=str)
         args = parser.parse_args()
 
         if args['task'] is not None:
@@ -273,7 +295,12 @@ class ResultList(Resource):
         if task_id is None:
             abort(400, message="Either task or task_id must be specified")
 
-        result = Result(task=Task.get(Task.id==task_id), energy=args['energy'])
+        if args['data'] is not None:
+            extradata = json.loads(args['data'])
+        else:
+            extradata = None
+
+        result = Result(task=Task.get(Task.id==task_id), energy=args['energy'], data=extradata)
         result.save()
 
         return model_to_dict(result), 201, {'Location': api.url_for(ResultResource, id=result.id)}
