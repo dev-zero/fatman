@@ -7,8 +7,9 @@ import argparse
 import os
 import requests
 import sys
+import json
 
-from fatman.tools import Json2Atoms, randomword
+from fatman.tools import Json2Atoms, randomword, get_data_from_outputfile
 from codehandling import HandlerFactory
 from time import sleep
 from datetime import datetime
@@ -178,8 +179,13 @@ def main(args):
 
                 print('{:}: Task {:} done. Energy: {:18.12f}'.format(datetime.now(), task['id'], e))
 
+                extradata = get_data_from_outputfile(output_file_path, mymethod['code'])
+
                 # REMOTE: throw the energy into the DB, get the id of the stored result
-                req = requests.post(RESULTS_URL, data={'energy': e, 'task_id': task['id']}, verify=False)
+                if extradata is not None:
+                    req = requests.post(RESULTS_URL, data={'energy': e, 'task_id': task['id'], 'data': json.dumps(extradata, sort_keys=True)}, verify=False)
+                else:
+                    req = requests.post(RESULTS_URL, data={'energy': e, 'task_id': task['id']}, verify=False)
                 req.raise_for_status()
                 done_task = req.json()
 

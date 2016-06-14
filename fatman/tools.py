@@ -1025,6 +1025,44 @@ def eos(V0,B0, B1, E0=0.):
     return rng, np.array(E)
 
 
+def get_data_from_outputfile(fn, code):
+    data = {}
+
+    with open(fn) as infile:
+        try:
+            if code == 'cp2k':
+                for line in infile:
+                    if 'source code revision number' in line:
+                        data['version'] = line.split()[-1]
+                    if 'Total number of message passing processes' in line:
+                        data['mpiranks'] = int(line.split()[-1])
+                    if 'Number of threads for this process' in line:
+                        data['threads'] = int(line.split()[-1])
+                    if 'PROGRAM STARTED BY' in line:
+                        data['username'] = line.split()[-1]
+                    if 'List of Kpoints' in line:
+                        data['nkpoints'] = int(line.split()[-1])
+                    if 'qs_forces' in line:
+                        data['runtime'] = float(line.split()[-1])
+
+            elif code == 'espresso':
+                for line in infile:
+                    if 'Program PWSCF v' in line:
+                        data['version'] = line.split()[2]
+                    if 'Number of MPI processes:' in line:
+                        data['mpiranks'] = int(line.split()[-1])
+                    if 'Threads/MPI process:' in line:
+                        data['threads'] = int(line.split()[-1])
+                    if 'number of k points=' in line:
+                        data['nkpoints'] = int(line.split()[4])
+                    if 'total cpu time spent up to now is' in line:
+                        data['runtime'] = float(line.split()[-2])
+
+            return data
+
+        except Exception as e:
+            return None
+
 def test1():
     from ase import Atoms
     teststructure = Atoms('N2',[(0,0,0),(0,0,1.1)])
