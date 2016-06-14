@@ -28,7 +28,19 @@ export class TruncatePipe {
     </div>
     <ul class='list-group'>
       <li class='list-group-item' *ngFor='let res of results'>
-        <span class='text-muted'><a href='../results/{{ res.id }}/file'> {{ res.task.structure.name }}</a>:</span> <span class='small'><b>{{ res.energy }} eV</b>, update: <b>{{ res.task.mtime |truncate:16 }}</b> on <b>{{ res.task.machine }}</b></span>
+        <span class='text-muted'>
+          <a href='../results/{{ res.id }}/file'> {{ res.task.structure.name }}</a>:
+          </span> 
+          <span class='small'>
+            <b>{{ res.energy }} eV</b>, update: 
+            <b>{{ res.task.mtime |truncate:16 }}</b> on 
+            <b>{{ res.task.machine }}</b> 
+            <span *ngIf='res.data?.mpiranks>0'>with <b>{{ res.data?.mpiranks }}</b> ranks</span>
+            <span *ngIf='res.data?.runtime>0'>, runtime <b>{{ res.data?.runtime | number:'.0-0'}} s</b></span>
+            .
+            <span *ngIf='res.data?.user'> User: <b>{{ res.data?.username }}</b></span>
+            <span *ngIf='res.data?.nkpoints>0'> k-points: <b>{{ res.data?.nkpoints }}</b></span>
+        </span>
       </li>
     </ul>
   </div>

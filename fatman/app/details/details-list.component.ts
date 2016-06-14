@@ -121,22 +121,16 @@ export class Details implements OnActivate {
   };
 
   updateUnavailableMethods() {
-    console.log(this.methods);
-    console.log("selected");
-    console.log(this.selectedmethods);
     this.unavailablemethods = [];
-    //    console.log(i + ': ' + this.methods[i]['id'] + ' -- ' +  this.selectedmethods.indexOf(this.methods[i]['id']))
     for (var i=0; i<this.selectedmethods.length; i++) {
       var found=false;
       for (var j=0; j<this.methods.length; j++) {
         if (this.methods[j]['id'] == this.selectedmethods[i])  {
           found=true;
-          console.log('found: ' + this.selectedmethods[i] + '  i=' + i);
         }
       }
       if (!found) this.unavailablemethods.push(this.selectedmethods[i]);
     }
-    console.log(this.unavailablemethods);
   }
 
   getTests() {
