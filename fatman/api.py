@@ -13,6 +13,8 @@ from fatman.models import *
 from fatman.utils import route_from
 from fatman.tools import calcDelta, eos, Json2Atoms
 
+from io import BytesIO
+
 import numpy as np
 
 import json
@@ -482,7 +484,6 @@ class Plot(Resource):
 
         test1 = Test.get(Test.name==args["test"])
 
-        from io import BytesIO
 
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
        #from matplotlib.figure import Figure
@@ -561,8 +562,50 @@ class Plot(Resource):
         response.headers['Content-Type'] = 'image/png'
         return response
 
-    
 
+class StructureResource(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('id', type=int, required=False)
+        parser.add_argument('test', type=str, required=False)
+        parser.add_argument('repeat', type=int, required=False, default=1)
+        parser.add_argument('viewer', type=bool, required=False, default=False)
+        parser.add_argument('size', type=int, required=False, default=300)
+        args = parser.parse_args()
+    
+        if args['id'] is not None:
+            s = Structure.get(Structure.id==args['id'])
+        elif args['test'] is not None:
+            s = TestStructure.get(TestStructure.test == Test.get(Test.name == args['test'])).structure
+
+        atoms = Json2Atoms(s.ase_structure)
+        
+        if args['viewer']:
+            from ase.io import cif
+            mycif = BytesIO()
+            cif.write_cif(mycif, atoms)         
+            viewer_html = """<HTML><HEAD><link rel=\"stylesheet\" href=\"http://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.css\" type=\"text/css\"><script type=\"text/javascript\" src=\"http://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.js\"></script> </HEAD><BODY><script>var t = new ChemDoodle.TransformCanvas3D('transformBallAndStick', {0:d}, {0:d});
+  t.specs.projectionPerspective_3D = false;  
+  t.specs.atoms_font_size_2D = 12;
+  t.specs.atoms_useVDWDiameters_3D = true;
+  t.specs.atoms_vdwMultiplier_3D = 8;
+  t.specs.set3DRepresentation('Ball and Stick'); 
+  t.specs.backgroundColor = 'white'; 
+  t.specs.atoms_displayLabels_3D = true;
+cif=`{1:}`; var molecule = ChemDoodle.readCIF(cif, {2:d},{2:d},{2:d}); t.loadContent([molecule.molecule],[molecule.unitCell]);</script><br/><a href='https://web.chemdoodle.com/'><small>Powered by ChemDoodle Web Components (GPL)</small></a></BODY></HTML>""".format(args['size'],mycif.getvalue(), args['repeat'])
+
+            response = make_response(viewer_html)
+
+        else:
+            atoms_rep = atoms.repeat(args['repeat'])
+            xyz_output = ""
+            xyz_output += "{:d}\n".format(len(atoms_rep.numbers))
+            xyz_output += "CELL: {:}\n".format(str(atoms.get_cell()).replace('\n',';'))
+            xyz_output += "\n".join(["{:}   {:10.6f} {:10.6f} {:10.6f}".format(x[0],x[1][0],x[1][1],x[1][2]) for x in zip(atoms_rep.get_chemical_symbols(),atoms_rep.get_positions())])
+            response = make_response(xyz_output)
+            response.headers["Content-Type"] = "text/plain"
+
+        return response
 
 class Comparison(Resource):
     def get(self):
@@ -737,5 +780,6 @@ api.add_resource(MethodResource, '/methods/<int:id>')
 api.add_resource(MethodList, '/methods')
 api.add_resource(TestList, '/tests')
 api.add_resource(Plot, '/plot')
+api.add_resource(StructureResource, '/structure')
 
 #  vim: set ts=4 sw=4 tw=0 :
