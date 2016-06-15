@@ -47,6 +47,10 @@ import {TestdetailsComponent} from '../details/testdetails.component';
        <testdetails *ngFor="let method of selectedmethods" method_id="{{ method }}" test="{{ test1 }}"></testdetails>
      </div>
    </div>
+   <div class="container col-md-9">
+     <!-- this iframe solution is obviously ugly, but it avoids intermixing 'external' javascript from the Chemdoodle WebGL stuff with angular2 -->
+     <iframe seamless frameborder=0 marginheight=0 marginwidth=0 src="../structure?test={{ test1 }}&repeat=2&viewer=True&size=600" width=620 height=630></iframe>
+   </div>
     <div class="container">
       <router-outlet></router-outlet>
     </div>
