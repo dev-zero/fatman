@@ -13,7 +13,7 @@ from fatman.models import *
 from fatman.utils import route_from
 from fatman.tools import calcDelta, eos, Json2Atoms
 
-from io import BytesIO
+from io import BytesIO, StringIO
 
 import numpy as np
 
@@ -582,7 +582,7 @@ class StructureResource(Resource):
         
         if args['viewer']:
             from ase.io import cif
-            mycif = BytesIO()
+            mycif = StringIO()
             cif.write_cif(mycif, atoms)         
             viewer_html = """<HTML><HEAD><link rel=\"stylesheet\" href=\"https://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.css\" type=\"text/css\"><script type=\"text/javascript\" src=\"https://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.js\"></script> </HEAD><BODY><script>var t = new ChemDoodle.TransformCanvas3D('transformBallAndStick', {0:d}, {0:d});
   t.specs.projectionPerspective_3D = false;  
