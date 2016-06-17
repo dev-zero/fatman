@@ -24,7 +24,6 @@ from sys import argv
 from ase.calculators.cp2k import CP2K
 from ase import Atoms
 import requests, os, json, hashlib
-from base64 import urlsafe_b64encode
 from jinja2 import Template
 from fatman.tools import randomword
 
@@ -121,11 +120,6 @@ upf_template_str = """
 """
 upf_template = Template(upf_template_str)
 
-conf_a_d  = 1.0
-rc_factor = 3.00
-conf_n_d  = 10
-
-
 atoms_db_largecore ={  
             'Li' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Li/q1/GTH-PARAMETER"   , "2s1"                ,  "[He]"          ] , 
             'Be' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Be/q2/GTH-PARAMETER"   , "2s2"                ,  "[He]"          ] , 
@@ -174,120 +168,119 @@ atoms_db_largecore ={
             }
 
 atoms_db_mediumcore ={  
-            'Cu' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cu/q11/GTH-PARAMETER"  , "4s1 3d10"           ,  "[Ar]"          ] ,
-            'Zn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zn/q12/GTH-PARAMETER"  , "4s2 3d10"           ,  "[Ar]"          ] ,
-            'Ag' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ag/q11/GTH-PARAMETER"  , "5s1 4d10"           ,  "[Kr]"          ] ,
-            'Au' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Au/q11/GTH-PARAMETER"  , "6s1 5d10"           ,  "[Kr] 4d10 4f14 5s2 5p6"] }
+            'Cu' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Cu/q11/GTH-PARAMETER"  , "4s1 3d10"           ,  "[Ar]"          ] ,
+            'Zn' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Zn/q12/GTH-PARAMETER"  , "4s2 3d10"           ,  "[Ar]"          ] ,
+            'Ag' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ag/q11/GTH-PARAMETER"  , "5s1 4d10"           ,  "[Kr]"          ] ,
+            'Au' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Au/q11/GTH-PARAMETER"  , "6s1 5d10"           ,  "[Kr] 4d10 4f14 5s2 5p6"] }
 
             
 atoms_db_smallcore ={  
-            'H'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/H/q1/GTH-PARAMETER"    , "1s1"                ,  "none"          ] , 
-            'He' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/He/q2/GTH-PARAMETER"   , "1s2"                ,  "none"          ] , 
-            'Li' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Li/q3/GTH-PARAMETER"   , "1s2 2s1"            ,  "none"          ] , 
-            'Be' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Be/q4/GTH-PARAMETER"   , "1s2 2s2"            ,  "none"          ] , 
-            'B'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/B/q3/GTH-PARAMETER"    , "2s2 2p1"            ,  "[He]"          ] , 
-            'C'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/C/q4/GTH-PARAMETER"    , "2s2 2p2"            ,  "[He]"          ] , 
-            'N'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/N/q5/GTH-PARAMETER"    , "2s2 2p3"            ,  "[He]"          ] , 
-            'O'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/O/q6/GTH-PARAMETER"    , "2s2 2p4"            ,  "[He]"          ] , 
-            'F'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/F/q7/GTH-PARAMETER"    , "2s2 2p5"            ,  "[He]"          ] , 
-            'Ne' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ne/q8/GTH-PARAMETER"   , "2s2 2p6"            ,  "[He]"          ] , 
-            'Na' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Na/q9/GTH-PARAMETER"   , "2s2 2p6 3s1"        ,  "[He]"          ] , 
-            'Mg' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Mg/q10/GTH-PARAMETER"  , "2s2 2p6 3s2"        ,  "[He]"          ] , 
-            'Al' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Al/q3/GTH-PARAMETER"   , "3s2 3p1"            ,  "[Ne]"          ] , 
-            'Si' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Si/q4/GTH-PARAMETER"   , "3s2 3p2"            ,  "[Ne]"          ] , 
-            'P'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/P/q5/GTH-PARAMETER"    , "3s2 3p3"            ,  "[Ne]"          ] , 
-            'S'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/S/q6/GTH-PARAMETER"    , "3s2 3p4"            ,  "[Ne]"          ] , 
-            'Cl' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cl/q7/GTH-PARAMETER"   , "3s2 3p5"            ,  "[Ne]"          ] , 
-            'Ar' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ar/q8/GTH-PARAMETER"   , "3s2 3p6"            ,  "[Ne]"          ] , 
-            'K'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/K/q9/GTH-PARAMETER"    , "3s2 3p6 4s1"        ,  "[Ne]"          ] ,
-            'Ca' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ca/q10/GTH-PARAMETER"  , "3s2 3p6 4s2"        ,  "[Ne]"          ] ,
-            'Sc' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sc/q11/GTH-PARAMETER"  , "3s2 3p6 4s2 3d1"    ,  "[Ne]"          ] ,
-            'Ti' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ti/q12/GTH-PARAMETER"  , "3s2 3p6 4s2 3d2"    ,  "[Ne]"          ] ,
-            'V'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/V/q13/GTH-PARAMETER"   , "3s2 3p6 4s2 3d3"    ,  "[Ne]"          ] ,
-            'Cr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cr/q14/GTH-PARAMETER"  , "3s2 3p6 4s2 3d4"    ,  "[Ne]"          ] ,
-            'Mn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Mn/q15/GTH-PARAMETER"  , "3s2 3p6 4s2 3d5"    ,  "[Ne]"          ] ,
-            'Fe' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Fe/q16/GTH-PARAMETER"  , "3s2 3p6 4s2 3d6"    ,  "[Ne]"          ] ,
-            'Co' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Co/q17/GTH-PARAMETER"  , "3s2 3p6 4s2 3d7"    ,  "[Ne]"          ] ,
-            'Ni' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ni/q18/GTH-PARAMETER"  , "3s2 3p6 4s2 3d8"    ,  "[Ne]"          ] ,
-            'Cu' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cu/q19/GTH-PARAMETER"  , "3s2 3p6 4s1 3d10"   ,  "[Ne]"          ] ,
-            'Zn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zn/q20/GTH-PARAMETER"  , "3s2 3p6 4s2 3d10"   ,  "[Ne]"          ] ,
-            'Ga' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ga/q13/GTH-PARAMETER"  , "3d10 4s2 4p1"       ,  "[Ar]"          ] ,
-            'Ge' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ge/q4/GTH-PARAMETER"   , "4s2 4p2"            ,  "[Ar] 3d10"     ] ,
-            'As' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/As/q5/GTH-PARAMETER"   , "4s2 4p3"            ,  "[Ar] 3d10"     ] ,
-            'Se' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Se/q6/GTH-PARAMETER"   , "4s2 4p4"            ,  "[Ar] 3d10"     ] ,
-            'Br' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Br/q7/GTH-PARAMETER"   , "4s2 4p5"            ,  "[Ar] 3d10"     ] ,
-            'Kr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Kr/q8/GTH-PARAMETER"   , "4s2 4p6"            ,  "[Ar] 3d10"     ] ,
-            'Rb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Rb/q9/GTH-PARAMETER"   , "4s2 4p6 5s1"        ,  "[Ar] 3d10"     ] ,
-            'Sr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sr/q10/GTH-PARAMETER"  , "4s2 4p6 5s2"        ,  "[Ar] 3d10"     ] ,
-            'Y'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Y/q11/GTH-PARAMETER"   , "4s2 4p6 5s2 4d1"    ,  "[Ar] 3d10"     ] ,
-            'Zr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Zr/q12/GTH-PARAMETER"  , "4s2 4p6 5s2 4d2"    ,  "[Ar] 3d10"     ] ,
-            'Nb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Nb/q13/GTH-PARAMETER"  , "4s2 4p6 5s2 4d3"    ,  "[Ar] 3d10"     ] ,
-            'Mo' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Mo/q14/GTH-PARAMETER"  , "4s2 4p6 5s1 4d5"    ,  "[Ar] 3d10"     ] ,
-            'Tc' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Tc/q15/GTH-PARAMETER"  , "4s2 4p6 5s2 4d5"    ,  "[Ar] 3d10"     ] ,
-            'Ru' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ru/q16/GTH-PARAMETER"  , "4s2 4p6 5s2 4d6"    ,  "[Ar] 3d10"     ] ,
-            'Rh' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Rh/q17/GTH-PARAMETER"  , "4s2 4p6 5s2 4d7"    ,  "[Ar] 3d10"     ] ,
-            'Pd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Pd/q18/GTH-PARAMETER"  , "4s2 4p6 5s2 4d8"    ,  "[Ar] 3d10"     ] ,
-            'Ag' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ag/q19/GTH-PARAMETER"  , "5s1 4d10"           ,  "[Kr]"          ] ,
-            'Cd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cd/q12/GTH-PARAMETER"  , "5s2 4d10"           ,  "[Kr]"          ] ,
-            'In' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/In/q13/GTH-PARAMETER"  , "5s2 5p1 4d10"       ,  "[Kr]"          ] ,
-            'Sn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sn/q4/GTH-PARAMETER"   , "5s2 5p2"            ,  "[Kr] 4d10"     ] ,
-            'Sb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sb/q5/GTH-PARAMETER"   , "5s2 5p3"            ,  "[Kr] 4d10"     ] ,
-            'Te' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Te/q6/GTH-PARAMETER"   , "5s2 5p4"            ,  "[Kr] 4d10"     ] ,
-            'I'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/I/q7/GTH-PARAMETER"    , "5s2 5p5"            ,  "[Kr] 4d10"     ] ,
-            'Xe' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Xe/q8/GTH-PARAMETER"   , "5s2 5p6"            ,  "[Kr] 4d10"     ] ,
-            'Cs' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Cs/q9/GTH-PARAMETER"   , "5s2 5p6 6s1"        ,  "[Kr] 5d10"     ] ,
-            'Ba' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ba/q10/GTH-PARAMETER"  , "5s2 5p6 6s2"        ,  "[Kr] 5d10"     ] ,
+            'H'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/H/q1/GTH-PARAMETER"    , "1s1"                ,  "none"          ] , 
+            'He' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/He/q2/GTH-PARAMETER"   , "1s2"                ,  "none"          ] , 
+            'Li' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Li/q3/GTH-PARAMETER"   , "1s2 2s1"            ,  "none"          ] , 
+            'Be' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Be/q4/GTH-PARAMETER"   , "1s2 2s2"            ,  "none"          ] , 
+            'B'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/B/q3/GTH-PARAMETER"    , "2s2 2p1"            ,  "[He]"          ] , 
+            'C'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/C/q4/GTH-PARAMETER"    , "2s2 2p2"            ,  "[He]"          ] , 
+            'N'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/N/q5/GTH-PARAMETER"    , "2s2 2p3"            ,  "[He]"          ] , 
+            'O'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/O/q6/GTH-PARAMETER"    , "2s2 2p4"            ,  "[He]"          ] , 
+            'F'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/F/q7/GTH-PARAMETER"    , "2s2 2p5"            ,  "[He]"          ] , 
+            'Ne' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ne/q8/GTH-PARAMETER"   , "2s2 2p6"            ,  "[He]"          ] , 
+            'Na' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Na/q9/GTH-PARAMETER"   , "2s2 2p6 3s1"        ,  "[He]"          ] , 
+            'Mg' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Mg/q10/GTH-PARAMETER"  , "2s2 2p6 3s2"        ,  "[He]"          ] , 
+            'Al' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Al/q3/GTH-PARAMETER"   , "3s2 3p1"            ,  "[Ne]"          ] , 
+            'Si' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Si/q4/GTH-PARAMETER"   , "3s2 3p2"            ,  "[Ne]"          ] , 
+            'P'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/P/q5/GTH-PARAMETER"    , "3s2 3p3"            ,  "[Ne]"          ] , 
+            'S'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/S/q6/GTH-PARAMETER"    , "3s2 3p4"            ,  "[Ne]"          ] , 
+            'Cl' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Cl/q7/GTH-PARAMETER"   , "3s2 3p5"            ,  "[Ne]"          ] , 
+            'Ar' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ar/q8/GTH-PARAMETER"   , "3s2 3p6"            ,  "[Ne]"          ] , 
+            'K'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/K/q9/GTH-PARAMETER"    , "3s2 3p6 4s1"        ,  "[Ne]"          ] ,
+            'Ca' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ca/q10/GTH-PARAMETER"  , "3s2 3p6 4s2"        ,  "[Ne]"          ] ,
+            'Sc' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Sc/q11/GTH-PARAMETER"  , "3s2 3p6 4s2 3d1"    ,  "[Ne]"          ] ,
+            'Ti' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ti/q12/GTH-PARAMETER"  , "3s2 3p6 4s2 3d2"    ,  "[Ne]"          ] ,
+            'V'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/V/q13/GTH-PARAMETER"   , "3s2 3p6 4s2 3d3"    ,  "[Ne]"          ] ,
+            'Cr' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Cr/q14/GTH-PARAMETER"  , "3s2 3p6 4s2 3d4"    ,  "[Ne]"          ] ,
+            'Mn' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Mn/q15/GTH-PARAMETER"  , "3s2 3p6 4s2 3d5"    ,  "[Ne]"          ] ,
+            'Fe' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Fe/q16/GTH-PARAMETER"  , "3s2 3p6 4s2 3d6"    ,  "[Ne]"          ] ,
+            'Co' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Co/q17/GTH-PARAMETER"  , "3s2 3p6 4s2 3d7"    ,  "[Ne]"          ] ,
+            'Ni' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ni/q18/GTH-PARAMETER"  , "3s2 3p6 4s2 3d8"    ,  "[Ne]"          ] ,
+            'Cu' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Cu/q19/GTH-PARAMETER"  , "3s2 3p6 4s1 3d10"   ,  "[Ne]"          ] ,
+            'Zn' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Zn/q20/GTH-PARAMETER"  , "3s2 3p6 4s2 3d10"   ,  "[Ne]"          ] ,
+            'Ga' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ga/q13/GTH-PARAMETER"  , "3d10 4s2 4p1"       ,  "[Ar]"          ] ,
+            'Ge' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ge/q4/GTH-PARAMETER"   , "4s2 4p2"            ,  "[Ar] 3d10"     ] ,
+            'As' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/As/q5/GTH-PARAMETER"   , "4s2 4p3"            ,  "[Ar] 3d10"     ] ,
+            'Se' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Se/q6/GTH-PARAMETER"   , "4s2 4p4"            ,  "[Ar] 3d10"     ] ,
+            'Br' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Br/q7/GTH-PARAMETER"   , "4s2 4p5"            ,  "[Ar] 3d10"     ] ,
+            'Kr' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Kr/q8/GTH-PARAMETER"   , "4s2 4p6"            ,  "[Ar] 3d10"     ] ,
+            'Rb' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Rb/q9/GTH-PARAMETER"   , "4s2 4p6 5s1"        ,  "[Ar] 3d10"     ] ,
+            'Sr' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Sr/q10/GTH-PARAMETER"  , "4s2 4p6 5s2"        ,  "[Ar] 3d10"     ] ,
+            'Y'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Y/q11/GTH-PARAMETER"   , "4s2 4p6 5s2 4d1"    ,  "[Ar] 3d10"     ] ,
+            'Zr' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Zr/q12/GTH-PARAMETER"  , "4s2 4p6 5s2 4d2"    ,  "[Ar] 3d10"     ] ,
+            'Nb' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Nb/q13/GTH-PARAMETER"  , "4s2 4p6 5s2 4d3"    ,  "[Ar] 3d10"     ] ,
+            'Mo' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Mo/q14/GTH-PARAMETER"  , "4s2 4p6 5s1 4d5"    ,  "[Ar] 3d10"     ] ,
+            'Tc' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Tc/q15/GTH-PARAMETER"  , "4s2 4p6 5s2 4d5"    ,  "[Ar] 3d10"     ] ,
+            'Ru' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ru/q16/GTH-PARAMETER"  , "4s2 4p6 5s2 4d6"    ,  "[Ar] 3d10"     ] ,
+            'Rh' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Rh/q17/GTH-PARAMETER"  , "4s2 4p6 5s2 4d7"    ,  "[Ar] 3d10"     ] ,
+            'Pd' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Pd/q18/GTH-PARAMETER"  , "4s2 4p6 5s2 4d8"    ,  "[Ar] 3d10"     ] ,
+            'Ag' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ag/q19/GTH-PARAMETER"  , "5s1 4d10"           ,  "[Kr]"          ] ,
+            'Cd' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Cd/q12/GTH-PARAMETER"  , "5s2 4d10"           ,  "[Kr]"          ] ,
+            'In' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/In/q13/GTH-PARAMETER"  , "5s2 5p1 4d10"       ,  "[Kr]"          ] ,
+            'Sn' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Sn/q4/GTH-PARAMETER"   , "5s2 5p2"            ,  "[Kr] 4d10"     ] ,
+            'Sb' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Sb/q5/GTH-PARAMETER"   , "5s2 5p3"            ,  "[Kr] 4d10"     ] ,
+            'Te' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Te/q6/GTH-PARAMETER"   , "5s2 5p4"            ,  "[Kr] 4d10"     ] ,
+            'I'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/I/q7/GTH-PARAMETER"    , "5s2 5p5"            ,  "[Kr] 4d10"     ] ,
+            'Xe' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Xe/q8/GTH-PARAMETER"   , "5s2 5p6"            ,  "[Kr] 4d10"     ] ,
+            'Cs' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Cs/q9/GTH-PARAMETER"   , "5s2 5p6 6s1"        ,  "[Kr] 5d10"     ] ,
+            'Ba' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ba/q10/GTH-PARAMETER"  , "5s2 5p6 6s2"        ,  "[Kr] 5d10"     ] ,
 
-            'La' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/La/q11/GTH-PARAMETER"  , " 4f1 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Ce' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ce/q12/GTH-PARAMETER"  , " 4f1 5s2 5p6 5d1 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Pr' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Pr/q13/GTH-PARAMETER"  , " 4f3 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Nd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Nd/q14/GTH-PARAMETER"  , " 4f4 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Pm' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Pm/q15/GTH-PARAMETER"  , " 4f5 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Sm' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Sm/q16/GTH-PARAMETER"  , " 4f6 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Eu' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Eu/q17/GTH-PARAMETER"  , " 4f7 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Gd' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Gd/q18/GTH-PARAMETER"  , " 4f7 5s2 5p6 5d1 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Tb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Tb/q19/GTH-PARAMETER"  , " 4f9 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
-            'Dy' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Dy/q20/GTH-PARAMETER"  , " 4f10 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
-            'Ho' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ho/q21/GTH-PARAMETER"  , " 4f11 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
-            'Er' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Er/q22/GTH-PARAMETER"  , " 4f12 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
-            'Tm' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Tm/q23/GTH-PARAMETER"  , " 4f13 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
-            'Yb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Yb/q24/GTH-PARAMETER"  , " 4f14 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
+            'La' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/La/q11/GTH-PARAMETER"  , " 4f1 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Ce' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ce/q12/GTH-PARAMETER"  , " 4f1 5s2 5p6 5d1 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Pr' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Pr/q13/GTH-PARAMETER"  , " 4f3 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Nd' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Nd/q14/GTH-PARAMETER"  , " 4f4 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Pm' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Pm/q15/GTH-PARAMETER"  , " 4f5 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Sm' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Sm/q16/GTH-PARAMETER"  , " 4f6 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Eu' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Eu/q17/GTH-PARAMETER"  , " 4f7 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Gd' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Gd/q18/GTH-PARAMETER"  , " 4f7 5s2 5p6 5d1 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Tb' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Tb/q19/GTH-PARAMETER"  , " 4f9 5s2 5p6 5d0 6s2"  ,  "[Kr] 4d10"     ] ,
+            'Dy' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Dy/q20/GTH-PARAMETER"  , " 4f10 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
+            'Ho' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ho/q21/GTH-PARAMETER"  , " 4f11 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
+            'Er' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Er/q22/GTH-PARAMETER"  , " 4f12 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
+            'Tm' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Tm/q23/GTH-PARAMETER"  , " 4f13 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
+            'Yb' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Yb/q24/GTH-PARAMETER"  , " 4f14 5s2 5p6 5d0 6s2" ,  "[Kr] 4d10"     ] ,
 
-            'Hf' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Hf/q12/GTH-PARAMETER"  , "5s2 5p6 5d2 6s2"    ,  "[Kr] 4d10 4f14"] ,
-            'Ta' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ta/q13/GTH-PARAMETER"  , "5s2 5p6 5d3 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
-            'W'  : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/W/q14/GTH-PARAMETER"   , "5s2 5p6 5d4 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
-            'Re' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Re/q15/GTH-PARAMETER"  , "5s2 5p6 5d5 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
-            'Os' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Os/q16/GTH-PARAMETER"  , "5s2 5p6 5d6 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
-            'Ir' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Ir/q17/GTH-PARAMETER"  , "5s2 5p6 5d7 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
-            'Pt' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Pt/q18/GTH-PARAMETER"  , "5s2 5p6 5d9 6s1"    ,  "[Kr] 4d10 4f14"     ] ,
-            'Au' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Au/q19/GTH-PARAMETER"  , "5s2 5p6 5d10 6s1"   ,  "[Kr] 4d10 4f14"     ] ,
-            'Hg' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Hg/q12/GTH-PARAMETER"  , "5d10 6s2"           ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
-            'Tl' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Tl/q13/GTH-PARAMETER"  , "5d10 6s2 6p1"       ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
-            'Pb' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Pb/q14/GTH-PARAMETER"  , "5d10 6s2 6p2"       ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
-            'Bi' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Bi/q15/GTH-PARAMETER"  , "5d10 6s2 6p3"       ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
-            'Po' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Po/q6/GTH-PARAMETER"   , "6s2 6p4"            ,  "[Kr] 4d10 4f14 5s2 5p6 5d10"] ,
-            'At' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/At/q7/GTH-PARAMETER"   , "6s2 6p5"            ,  "[Kr] 4d10 4f14 5s2 5p6 5d10"] ,
-            'Rn' : [   "/users/ralph/work/fatman/PBE_23May2016/PBE/Rn/q8/GTH-PARAMETER"   , "6s2 6p6"            ,  "[Kr] 4d10 4f14 5s2 5p6 5d10"] ,
+            'Hf' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Hf/q12/GTH-PARAMETER"  , "5s2 5p6 5d2 6s2"    ,  "[Kr] 4d10 4f14"] ,
+            'Ta' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ta/q13/GTH-PARAMETER"  , "5s2 5p6 5d3 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
+            'W'  : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/W/q14/GTH-PARAMETER"   , "5s2 5p6 5d4 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
+            'Re' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Re/q15/GTH-PARAMETER"  , "5s2 5p6 5d5 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
+            'Os' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Os/q16/GTH-PARAMETER"  , "5s2 5p6 5d6 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
+            'Ir' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Ir/q17/GTH-PARAMETER"  , "5s2 5p6 5d7 6s2"    ,  "[Kr] 4d10 4f14"     ] ,
+            'Pt' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Pt/q18/GTH-PARAMETER"  , "5s2 5p6 5d9 6s1"    ,  "[Kr] 4d10 4f14"     ] ,
+            'Au' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Au/q19/GTH-PARAMETER"  , "5s2 5p6 5d10 6s1"   ,  "[Kr] 4d10 4f14"     ] ,
+            'Hg' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Hg/q12/GTH-PARAMETER"  , "5d10 6s2"           ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
+            'Tl' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Tl/q13/GTH-PARAMETER"  , "5d10 6s2 6p1"       ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
+            'Pb' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Pb/q14/GTH-PARAMETER"  , "5d10 6s2 6p2"       ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
+            'Bi' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Bi/q15/GTH-PARAMETER"  , "5d10 6s2 6p3"       ,  "[Kr] 4d10 4f14 5s2 5p6"] ,
+            'Po' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Po/q6/GTH-PARAMETER"   , "6s2 6p4"            ,  "[Kr] 4d10 4f14 5s2 5p6 5d10"] ,
+            'At' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/At/q7/GTH-PARAMETER"   , "6s2 6p5"            ,  "[Kr] 4d10 4f14 5s2 5p6 5d10"] ,
+            'Rn' : [   "/users/ralph/work/fatman/PBE_17Jun2016/PBE/Rn/q8/GTH-PARAMETER"   , "6s2 6p6"            ,  "[Kr] 4d10 4f14 5s2 5p6 5d10"] ,
             }
 
 
 
 def main(args):
     elements = args
-    atoms_db = atoms_db_largecore
+    atoms_db = atoms_db_mediumcore            #<--- CHANGE HERE
 
     workdir_prefix = "/data/ralph/deltatests/newpseudos/"
     cp2k_command   = "module load gcc-suite/5.3.0; /users/ralph/cp2k/cp2k-code/exe/Linux-x86-64-gfortran-local/cp2k.popt"
 
     workdir_prefix += randomword(6)
-    q = hashlib.sha1( ''.join(input_template_str.split()) + ''.join(str(atoms_db).split()) )
-    pp_unique_name = 'family_23_05_16_largecore' #urlsafe_b64encode(q.digest())[:7]
+    pp_unique_name = 'family_17_06_16_mediumcore'       #<--- CHANGE HERE
 
     for el in elements:
-        #retrieve a default pseudopotential for that element as a starting guess
+       #retrieve a default pseudopotential for that element as a starting guess
        #myguess = requests.get(PSEUDOPOTENTIAL_URL, data={'family':'GTH-PBE', 'element':el}, verify=False).json()[el]
 
-       ##prepare the input file
+        #prepare the input file
         settings = { 'element' : el, 
                      'family'  : pp_unique_name,
                      'pseudoguess' : '',
@@ -299,7 +292,8 @@ def main(args):
      #      myinput_lines = infile.readlines()
      #      myinput = "".join(myinput_lines)
      #  
-     #  #prepare the working directory
+
+        #prepare the working directory
         workdir = os.path.join(workdir_prefix, "{:s}".format(el))
 
         try:
@@ -307,8 +301,8 @@ def main(args):
         except OSError:
             pass
 
-        filename = os.path.dirname(atoms_db[el][0])
         os.chdir(workdir)
+     #  filename = os.path.dirname(atoms_db[el][0])
      #  os.system("cp {:}/GTH-PARAMETER {:}".format(filename, workdir))
 
 
@@ -319,11 +313,12 @@ def main(args):
                
         #and run it.
         #os.popen(cp2k_command + " -i job.inp -o job.out")
-        myinput_lines = []
+        #myinput_lines = []
         #open the resulting pseudopotential data
         #infile = open("GTH-PARAMETER")
-        infile = open(atoms_db[el][0])
         #pseudo_data = myguess #"".join(infile.readlines()[1:] + ['# ' + x for x in myinput_lines])
+
+        infile = open(atoms_db[el][0])
         pseudo_data = "".join(infile.readlines()[1:] )
 
         #upload the PP data.
@@ -332,6 +327,7 @@ def main(args):
 
         settings['pseudoguess'] = pseudo_data
 
+        #now for the UPF conversion
         myinput = upf_template.render(settings)
         of = open("upf.inp", "w")
         of.write(myinput)
@@ -356,13 +352,12 @@ def main(args):
                                               'settings': json.dumps({'smearing': 'marzari-vanderbilt', 'xc': 'PBE', 'cutoff_pw': 3401.4244569396633, 'sigma': 0.027211395655517306, 'max_kpoints': [20,20,20]})}, 
                             verify=False)
         req.raise_for_status()
-        #method_id = req.json()['id']
-        method_id = 76 #req.json()['id']
+        method_id = req.json()['id']
 
         #create the corresponding delta tasks for this method.
         req = requests.post(TASK_URL, data={  'method':method_id, 
                                               'test': 'deltatest_'+el,
-                                              'priority': 66}, 
+                                              'priority': 50}, 
                             verify=False)
         req.raise_for_status()
         tasklist = req.json()
