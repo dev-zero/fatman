@@ -232,6 +232,9 @@ def main(args):
 
         if not hpc:
             sleep(20)  # just take a short break to avoid cycling through too many tasks if errors happen
+        else:
+            sleep(1)
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
