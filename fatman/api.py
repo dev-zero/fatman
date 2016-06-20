@@ -499,8 +499,10 @@ class Plot(Resource):
         stride = int(min(35./len(args['method']),7))
         label_xpos = 5
         warning_yshift = 0
+        i=0
 
         for m in args['method']:
+            i+=1
             meth = Method.get(Method.id==m)
 
             #here the curve, based on the fitted data
@@ -552,7 +554,7 @@ class Plot(Resource):
             ax.plot(x2,y2, 's', color=mycolor)
              
 
-            ax.annotate("Method {:}".format(m), xy= (xfit[label_xpos], yfit[label_xpos]), xytext = (-5,-30), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right', color=mycolor)
+            ax.annotate("Method {:}".format(m), xy= (xfit[label_xpos], yfit[label_xpos]), xytext = (-5,-30 if i!=3 else 20), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right', color=mycolor)
             label_xpos += stride
 
         canvas=FigureCanvas(fig)
