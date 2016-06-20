@@ -6,9 +6,10 @@ import {Location} from '@angular/common';
 import {DetailsService} from './details.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
 import {TestdetailsComponent} from '../details/testdetails.component';
+import {ComparematrixComponent} from '../details/comparematrix.component';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent, TestdetailsComponent],
+  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent, TestdetailsComponent, ComparematrixComponent],
   inputs: ['test1'],
   providers: [DetailsService],
    template: `
@@ -50,6 +51,9 @@ import {TestdetailsComponent} from '../details/testdetails.component';
    <div class="container col-md-9">
      <!-- this iframe solution is obviously ugly, but it avoids intermixing 'external' javascript from the Chemdoodle WebGL stuff with angular2 -->
      <iframe seamless frameborder=0 marginheight=0 marginwidth=0 src="../structure?test={{ test1 }}&repeat=2&viewer=True&size=600" width=620 height=630></iframe>
+   </div>
+   <div class="container col-md-3">
+     <comparematrix [methods]="selectedmethods" [test]="test1"></comparematrix>
    </div>
     <div class="container">
       <router-outlet></router-outlet>
