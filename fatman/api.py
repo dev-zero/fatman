@@ -670,6 +670,7 @@ class Comparison(Resource):
 
             all_delta = np.array(all_delta)
             ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
+            ret["methods"] = [method1.id, method2.id]
 
         elif mode=="1method":
             cachefilename = '/tmp/apicache_{:}'.format(method1.id)
