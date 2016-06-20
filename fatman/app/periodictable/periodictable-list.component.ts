@@ -59,16 +59,9 @@ export class DeltavaluePipe implements PipeTransform {
       <tr> 
           <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Li">Li</a><br /><a href="details/deltatest_Li;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Li | deltavalue }}</a></td> 
           <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Be">Be</a><br /><a href="details/deltatest_Be;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Be | deltavalue}}</a></td> 
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
-        <td style='border:0'></td>
+        <td colspan=10 style='border:0; text-align:center; vertical-align:middle'><div class="text-info">
+                 Average Delta: {{ f_elements.summary.avg | number: ".3" }} &plusmn; {{ f_elements.summary.stdev | number: ".3" }} (N = {{ f_elements.summary.N }})
+  </div></td>
         <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_B">B </a><br /><a href="details/deltatest_B;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_B | deltavalue}}</a></td> 
         <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_C">C </a><br /><a href="details/deltatest_C;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_C | deltavalue}}</a></td> 
         <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_N">N </a><br /><a href="details/deltatest_N;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_N | deltavalue}}</a></td> 
@@ -152,9 +145,7 @@ export class DeltavaluePipe implements PipeTransform {
           <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_At">At</a><br /><a href="details/deltatest_At;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_At | deltavalue}}</a></td> 
           <td><a href="/reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Rn">Rn</a><br /><a href="details/deltatest_Rn;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Rn | deltavalue}}</a></td></tr> 
   </table>
-  <div style="font-size: 16pt">
-      Average Delta: {{ f_elements.summary.avg | number: ".3" }} &plusmn; {{ f_elements.summary.stdev | number: ".3" }} (N = {{ f_elements.summary.N }})
-  </div>
+  
   `,
   providers: [PeriodictableService],
   pipes: [DeltavaluePipe],
