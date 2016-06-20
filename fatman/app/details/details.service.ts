@@ -11,6 +11,7 @@ export class DetailsService {
   private _methodsUrl = '../methods';
   private _testlistUrl = '../tests';
   private _resultsUrl = '../results';
+  private _testresultUrl = '../testresult';
   private _compareUrl = '../compare';
 
   getComparisonOneTest(method1, method2, test): Observable<Object[]> {
@@ -49,6 +50,15 @@ export class DetailsService {
       search: new URLSearchParams(`test=${test}&method=${method}`)
     });
     return this._http.get(this._resultsUrl, myoptions)
+      .map((response) => response.json())
+      .catch(this.handleError);
+  }
+
+  getTestresults(method, test): Observable<Object[]> {
+    let myoptions = new RequestOptions ({
+      search: new URLSearchParams(`test=${test}&method=${method}`)
+    });
+    return this._http.get(this._testresultUrl, myoptions)
       .map((response) => response.json())
       .catch(this.handleError);
   }

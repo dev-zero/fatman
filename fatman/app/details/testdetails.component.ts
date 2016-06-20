@@ -24,7 +24,18 @@ export class TruncatePipe {
   template: `
   <div class='panel panel-info'>
     <div class='panel-heading'>
-      <methoddetails method_id="{{ method_id }}"></methoddetails>
+      <div class='row'>
+        <div class='col-md-10'>
+          <methoddetails method_id="{{ method_id }}"></methoddetails>
+        </div>
+        <div *ngIf='testresults' class='col-md-2'>
+          <table>
+            <tr><td style='padding-right: 10px'>V<sub>0</sub></td><td> <b>{{ testresults[0][test].V  | number: ".3"}}</b></td></tr>
+            <tr><td style='padding-right: 10px'>B<sub>0</sub></td><td> <b>{{ testresults[0][test].B0 | number: ".3"}}</b></td></tr>
+            <tr><td style='padding-right: 10px'>B<sub>1</sub></td><td> <b>{{ testresults[0][test].B1 | number: ".3"}}</b></td></tr>
+          </table>
+        </div>
+      </div>
     </div>
     <ul class='list-group'>
       <li class='list-group-item' *ngFor='let res of results'>
@@ -51,6 +62,7 @@ export class TestdetailsComponent implements OnInit {
 
   errorMessage: string;
   results: Object[];
+  testresults: Object[];
 
   public method_id: number;
   public test: string;
@@ -61,8 +73,15 @@ export class TestdetailsComponent implements OnInit {
       error => this.errorMessage = <any>error);
   };
 
+  getTestresults(method_id, test) {
+    this._service.getTestresults(method_id,test).subscribe(
+      testresults => this.testresults = testresults,
+      error => this.errorMessage = <any>error);
+  };
+
   ngOnInit(){
     this.getResults(this.method_id, this.test);
+    this.getTestresults(this.method_id, this.test);
   }
 }
 //  vim: set ts=2 sw=2 tw=0 :
