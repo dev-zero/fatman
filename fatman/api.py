@@ -617,7 +617,7 @@ class Comparison(Resource):
 
         all_delta = []
 
-        if args["method1"] is not None and args["method2"] is not None and args["test"] is None:
+        if args["method1"] is not None and args["method2"] is not None:
             #COMPARE 2 METHODS
             mode = "2methods"
             method2 = Method.get(Method.id==args["method2"])
