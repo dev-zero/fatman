@@ -17,9 +17,9 @@ export class HomeService {
       .catch(this.handleError);
   }
 
-  getResults(method1): Observable<Object[]> {
+  getResults(method1, method2): Observable<Object[]> {
     let myoptions = new RequestOptions ({
-      search: new URLSearchParams(`method1=${method1}`)
+      search: new URLSearchParams(`method1=${method1}&method2=${method2}`)
     });
 
     return this._http.get(this._compareUrl, myoptions)
