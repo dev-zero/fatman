@@ -40,9 +40,6 @@ export class ComparematrixComponent implements OnInit {
     for (var i=0; i<this.methods.length; i++) {
       this.methodmatrix.push(Array.apply(null, Array(this.methods.length)).map(Number.prototype.valueOf,0.));
     }
-    console.log("first:");
-    console.log(JSON.stringify(this.methodmatrix));
-
     for (var i=0; i<this.methods.length; i++) {
       for (var j=0; j<this.methods.length; j++){
         this._service.getComparisonOneTest(this.methods[i],this.methods[j],this.test).subscribe(
@@ -51,8 +48,6 @@ export class ComparematrixComponent implements OnInit {
             () => {this.updateMethodmatrix()});
       }
     }
-    console.log("second:");
-    console.log(JSON.stringify(this.methodmatrix));
   //this._service.getMethodDetails(methods).subscribe(
   //  method => this.method = method,
   //  error => this.errorMessage = <any>error);
