@@ -11,7 +11,7 @@ from datetime import datetime
 from fatman import app, resultfiles
 from fatman.models import *
 from fatman.utils import route_from
-from fatman.tools import calcDelta, eos, Json2Atoms
+from fatman.tools import calcDelta, eos, Json2Atoms, Atoms2Json
 
 from io import BytesIO, StringIO
 
@@ -21,6 +21,7 @@ import json
 import pickle
 import os
 import bz2
+
 
 method_resource_fields = {
     'id': fields.Raw,
@@ -71,6 +72,12 @@ task_list_fields = {
     'method': fields.Nested(method_list_fields),
     'structure': fields.Nested(structure_list_fields),
     '_links': { 'self': fields.Url('taskresource') },
+    }
+
+test_resource_fields = {
+    'id': fields.Raw,
+    'test': fields.Raw,
+    'structure': fields.Nested(structure_resource_fields),
     }
 
 
@@ -306,6 +313,14 @@ class ResultList(Resource):
         result.save()
 
         return model_to_dict(result), 201, {'Location': api.url_for(ResultResource, id=result.id)}
+
+class TestResource(Resource):
+    @marshal_with(test_resource_fields)
+    def get(self, testname):
+        t = Test.get(Test.name==testname)
+        st = TestStructure.select().where(TestStructure.test == t)
+
+        return [marshal(model_to_dict(s), test_resource_fields) for s in st]
 
 class TestList(Resource):
     def get(self):
@@ -573,6 +588,8 @@ class StructureResource(Resource):
         parser.add_argument('repeat', type=int, required=False, default=1)
         parser.add_argument('viewer', type=bool, required=False, default=False)
         parser.add_argument('size', type=int, required=False, default=300)
+        parser.add_argument('format', type=str, required=False, default="xyz")
+
         args = parser.parse_args()
     
         if args['id'] is not None:
@@ -598,7 +615,7 @@ cif=`{1:}`; var molecule = ChemDoodle.readCIF(cif, {2:d},{2:d},{2:d}); t.loadCon
 
             response = make_response(viewer_html)
 
-        else:
+        elif args['viewer']==False and args['format']=='xyz':
             atoms_rep = atoms.repeat(args['repeat'])
             xyz_output = ""
             xyz_output += "{:d}\n".format(len(atoms_rep.numbers))
@@ -606,6 +623,10 @@ cif=`{1:}`; var molecule = ChemDoodle.readCIF(cif, {2:d},{2:d},{2:d}); t.loadCon
             xyz_output += "\n".join(["{:}   {:10.6f} {:10.6f} {:10.6f}".format(x[0],x[1][0],x[1][1],x[1][2]) for x in zip(atoms_rep.get_chemical_symbols(),atoms_rep.get_positions())])
             response = make_response(xyz_output)
             response.headers["Content-Type"] = "text/plain"
+
+        elif args['viewer']==False and args['format']=='json':
+            atoms_rep = atoms.repeat(args['repeat'])
+            return Atoms2Json(atoms_rep)
 
         return response
 
@@ -782,6 +803,7 @@ api.add_resource(Comparison, '/compare')
 api.add_resource(MethodResource, '/methods/<int:id>')
 api.add_resource(MethodList, '/methods')
 api.add_resource(TestList, '/tests')
+api.add_resource(TestResource, '/tests/<string:testname>')
 api.add_resource(Plot, '/plot')
 api.add_resource(StructureResource, '/structure')
 

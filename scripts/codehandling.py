@@ -48,6 +48,17 @@ class HandlerParent():
         self.output_filename = "test.out"
 
     def runOne(self):
+        struct, workdir = self._prepare()
+
+        deltacalc = self.getCalculator()
+
+        struct.set_calculator(deltacalc)
+
+        e = struct.get_potential_energy()
+
+        return e, os.path.join(workdir, self.output_filename)
+
+    def _prepare(self):
         struct = self.structure
         identifier = struct.info["key_value_pairs"]["identifier"]
 
@@ -60,14 +71,7 @@ class HandlerParent():
 
         os.chdir(workdir)
 
-        deltacalc = self.getCalculator()
-
-        struct.set_calculator(deltacalc)
-
-        e = struct.get_potential_energy()
-
-        return e, os.path.join(workdir, self.output_filename)
-
+        return struct, workdir
 
 # THIS IS CURRENTLY UNTESTED CODE, MAKE SURE IT WORKS!
 class AbinitHandler(HandlerParent):
@@ -273,7 +277,7 @@ class Cp2kHandler(HandlerParent):
 
         calc = CP2K(
                 label = "test",
-                command = "module load gcc-suite/5.3.0; mpirun -np 4 /users/ralph/cp2k/cp2k-code/exe/Linux-x86-64-gfortran-local/cp2k_shell.popt",
+                command = "module load gcc-suite/5.3.0 >/dev/null 2>&1; mpirun -np 4 /users/ralph/cp2k/cp2k-code/exe/Linux-x86-64-gfortran-local/cp2k_shell.popt",
                 kind_settings = kind_settings,
                 basis_set_file = False,
                 potential_file = False,
@@ -296,10 +300,20 @@ class Cp2kHandler(HandlerParent):
     def createOne(self):
         """Attach the cp2k calculator to the structure, write an input file and return its path.
         """
-        raise NotImplementedError("This method is not implemented")
+        struct, workdir = self._prepare()
+
+        deltacalc = self.getCalculator()
+
+        deltacalc.atoms = struct
+
+        a=deltacalc._generate_input() 
+        with open(os.path.join(workdir, 'deltatest.inp'), 'w') as outfile:
+            outfile.write(a)
+
+        return os.path.join(workdir, self.output_filename)
 
 
-class EspressoHandler():
+class EspressoHandler(HandlerParent):
     """Class to run Quantum Espresso with FATMAN data through ASE and the ASE-Espresso extension.
 
     Instantiated by the HandlerFactory for a particular ASE chemical structure
@@ -412,16 +426,9 @@ class EspressoHandler():
             - the path of the input file (`pw.inp`) for Q. Espresso.
         """
 
-        struct = self.structure
-        identifier = struct.info["key_value_pairs"]["identifier"]
+        struct, workdir = self._prepare()
 
-        workdir = os.path.join("/tmp/espresso-remote-task")
         deltacalc = self.getCalculator(input_only=True)
-
-        try:
-            os.makedirs(workdir)
-        except OSError:
-            pass
 
         deltacalc.outdir = workdir
         deltacalc.pwinp = os.path.join(workdir, "pw.inp")
