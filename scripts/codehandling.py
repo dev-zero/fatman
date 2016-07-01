@@ -35,9 +35,6 @@ from ase.calculators.cp2k import CP2K
 from ase import Atoms
 from ase.units import Ry
 
-import espresso
-
-
 class HandlerParent():
     """Base class for the codehandler.
 
@@ -340,6 +337,8 @@ class EspressoHandler(HandlerParent):
         - createOne()
           create a calculator and make it write an input file.
     """
+
+    import espresso
 
     def __init__(self, structure, settings={}, workdir_prefix="/data/ralph/deltatests/espresso"):
         self.workdir_prefix = workdir_prefix
