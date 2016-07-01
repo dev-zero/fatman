@@ -984,7 +984,7 @@ def calcDelta(data_f, data_w):
 
 def randomword(length=8):
     import random, string
-    return ''.join(random.choice(string.lowercase + string.digits) for i in range(length))
+    return ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(length))
 
 
 def energies_for_test(method, test):
