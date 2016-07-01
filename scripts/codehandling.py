@@ -33,7 +33,6 @@ import json
 from ase.calculators.abinit import Abinit
 from ase.calculators.cp2k import CP2K
 from ase import Atoms
-from ase.test.tasks import dcdft
 from ase.units import Ry
 
 import espresso
