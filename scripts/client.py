@@ -5,9 +5,9 @@ from __future__ import print_function
 
 import argparse
 import os
-import requests
 import sys
 import json
+import requests
 
 from fatman.tools import Json2Atoms, randomword, get_data_from_outputfile
 from codehandling import HandlerFactory
@@ -57,6 +57,11 @@ def main(args):
     print("############################################################################")
     sys.stdout.flush()
 
+    sess = requests.Session()
+
+    # the certificate is signed by the inofficial TC-Chem CA
+    sess.verify = False
+
     while ntask < maxtask:
         ntask += 1
 
@@ -72,7 +77,7 @@ def main(args):
         print("still running.")
 
         # request a task
-        req = requests.get(TASKS_URL, params={'limit': 1, 'status': 'new'}, verify=False)
+        req = sess.get(TASKS_URL, params={'limit': 1, 'status': 'new'})
         req.raise_for_status()
 
         tasks = req.json()
@@ -85,9 +90,9 @@ def main(args):
 
         # set the task's status to pending
         if not args.no_update:
-            req = requests.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine': machinename}, verify=False)
+            req = sess.patch(SERVER + tasks[0]['_links']['self'], data={'status': 'pending', 'machine': machinename})
         else:
-            req = requests.get(SERVER + tasks[0]['_links']['self'], verify=False)
+            req = sess.get(SERVER + tasks[0]['_links']['self'])
 
         req.raise_for_status()
         task = req.json()
@@ -128,11 +133,11 @@ def main(args):
                 mymethod["multiplicity"] = struct.info["key_value_pairs"]["multiplicity"]
 
             # REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
-            pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family': mymethod['pseudopotential'], 'element': set(struct.get_chemical_symbols())}, verify=False).json()
+            pseudo = sess.get(PSEUDOPOTENTIAL_URL, data={'family': mymethod['pseudopotential'], 'element': set(struct.get_chemical_symbols())}).json()
 
             if mymethod["code"] == "cp2k":
                 # when running cp2k jobs, the basis and pseudo settings have to be rearranged into a 'kind_settings' structure, while preserving potentially existing kind_settings.
-                basis = requests.get(BASISSET_URL, data={'family': mymethod['basis_set'], 'element': set(struct.get_chemical_symbols())}, verify=False).json()
+                basis = sess.get(BASISSET_URL, data={'family': mymethod['basis_set'], 'element': set(struct.get_chemical_symbols())}).json()
                 if "kind_settings" in mymethod["settings"].keys():
                     ks = mymethod["settings"]["kind_settings"].copy()
                 else:
@@ -160,11 +165,11 @@ def main(args):
 
             # REMOTE: update the task's status to "running"
             if not args.no_update and not args.no_calc and not hpc:
-                req = requests.patch(SERVER + task['_links']['self'], data={'status': 'running'}, verify=False)
+                req = sess.patch(SERVER + task['_links']['self'], data={'status': 'running'})
                 req.raise_for_status()
                 task = req.json()
             elif not args.no_update and not args.no_calc and hpc:
-                req = requests.patch(SERVER + task['_links']['self'], data={'status': 'running-remote'}, verify=False)
+                req = sess.patch(SERVER + task['_links']['self'], data={'status': 'running-remote'})
                 req.raise_for_status()
                 task = req.json()
 
@@ -183,16 +188,16 @@ def main(args):
 
                 # REMOTE: throw the energy into the DB, get the id of the stored result
                 if extradata is not None:
-                    req = requests.post(RESULTS_URL, data={'energy': e, 'task_id': task['id'], 'data': json.dumps(extradata, sort_keys=True)}, verify=False)
+                    req = sess.post(RESULTS_URL, data={'energy': e, 'task_id': task['id'], 'data': json.dumps(extradata, sort_keys=True)})
                 else:
-                    req = requests.post(RESULTS_URL, data={'energy': e, 'task_id': task['id']}, verify=False)
+                    req = sess.post(RESULTS_URL, data={'energy': e, 'task_id': task['id']})
                 req.raise_for_status()
                 done_task = req.json()
 
                 # REMOTE: upload the output file
                 os.system("bzip2 {}".format(output_file_path))
                 with open(output_file_path + ".bz2") as f:
-                    req = requests.post(SERVER + done_task["_links"]["self"]+'/file', files={'file': f}, verify=False)
+                    req = sess.post(SERVER + done_task["_links"]["self"]+'/file', files={'file': f})
                     req.raise_for_status()
 
             elif hpc:
@@ -219,13 +224,13 @@ def main(args):
 
             # REMOTE: update the task's status to "done"
             if not args.no_update and not args.no_calc and not hpc:
-                req = requests.patch(SERVER + task['_links']['self'], data={'status': 'done'}, verify=False)
+                req = sess.patch(SERVER + task['_links']['self'], data={'status': 'done'})
                 req.raise_for_status()
                 task = req.json()
 
         except Exception as e:
             if not args.no_update:
-                req = requests.patch(SERVER + task['_links']['self'], data={'status': 'error'}, verify=False)
+                req = sess.patch(SERVER + task['_links']['self'], data={'status': 'error'})
                 req.raise_for_status()
 
             print('{:}: Encountered an error! {:}.'.format(datetime.now(), str(e)))
