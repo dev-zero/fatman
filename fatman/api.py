@@ -413,9 +413,9 @@ class Pseudopotentials(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('family', type=str)
-        parser.add_argument('element', type=str)
-        parser.add_argument('pseudo', type=str)
+        parser.add_argument('family', type=str, required=True)
+        parser.add_argument('element', type=str, required=True)
+        parser.add_argument('pseudo', type=str, required=True)
         parser.add_argument('overwrite', type=bool, default=False)
         
         args = parser.parse_args()
