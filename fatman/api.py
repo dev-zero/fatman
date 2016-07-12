@@ -395,16 +395,16 @@ class MethodResource(Resource):
 class Basissets(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('family', type=str)
-        parser.add_argument('element', type=str, action="append")
+        parser.add_argument('family', type=str, required=True)
+        parser.add_argument('element', type=str, required=True, action="append")
         args = parser.parse_args()
 
-        ret = {}
-        for element in args['element']:
-            basis = BasisSet.get(BasisSet.family==BasissetFamily.get(BasissetFamily.name==args['family']),BasisSet.element==element)
-            ret[element] = basis.basis
+        q = BasisSet \
+                .select(BasisSet, BasissetFamily) \
+                .join(BasissetFamily) \
+                .where((BasissetFamily.name == args['family']) & (BasisSet.element << args['element']))
 
-        return ret
+        return {b.element: b.basis for b in q}
 
 class Pseudopotentials(Resource):
     def get(self):
