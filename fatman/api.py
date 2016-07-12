@@ -478,18 +478,14 @@ class MachineStatus(Resource):
     def get(self):
         ret = {}
 
-        q = Task.select(Task.machine,fn.Count(Task.machine).alias('count')).where(Task.status==TaskStatus.get(TaskStatus.name=="running")).group_by(Task.machine)
-        for x in q:
-            ret[x.machine] = [x.count]
+        # see https://github.com/coleifer/peewee/issues/1010
+        q = Task.select(Task.machine,
+                    fn.COUNT(Task.id).alias('total'),
+                    fn.COUNT(SQL('CASE WHEN t2.name = %s THEN t1.id END', 'running')).alias('running')) \
+                .join(TaskStatus).alias('ts').switch(Task) \
+                .group_by(Task.machine)
 
-        q = Task.select(Task.machine,fn.Count(Task.machine).alias('count')).group_by(Task.machine)
-        for x in q:
-            if x.machine in ret.keys():
-                ret[x.machine] = [ret[x.machine][0],x.count]
-            else:
-                ret[x.machine] = [0,x.count]
-        
-        return [ [k, v[0], v[1]] for k,v in ret.items() ]
+        return [(m.machine, m.running, m.total) for m in q]
 
 class CalcStatus(Resource):
     """Return a dictionary of task statuses and the number of tasks with that status
