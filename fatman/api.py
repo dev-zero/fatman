@@ -80,6 +80,22 @@ test_resource_fields = {
     'structure': fields.Nested(structure_resource_fields),
     }
 
+pseudo_list_fields = {
+    'id': fields.Integer,
+    'element': fields.String,
+    'family': fields.String(attribute='name'),
+    'format': fields.String,
+    'converted_from': fields.Integer(attribute='converted_from'),
+    }
+
+pseudo_list_full_fields = {
+    'id': fields.Integer,
+    'element': fields.String,
+    'family': fields.String(attribute='name'),
+    'format': fields.String,
+    'pseudo': fields.String,
+    'converted_from': fields.Integer(attribute='converted_from'),
+    }
 
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
@@ -394,43 +410,62 @@ class Pseudopotentials(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('family', type=str)
+        parser.add_argument('format', type=str)
         parser.add_argument('element', type=str, action="append")
         args = parser.parse_args()
 
-        ret = {}
-        if not args['element'] is None:
-            for element in args['element']:
-                f = PseudopotentialFamily.get(PseudopotentialFamily.name==args['family'])
-                pseudo = Pseudopotential.get((Pseudopotential.family==f) & (Pseudopotential.element==element))
-                ret[element] = pseudo.pseudo
-        else:
-            f = PseudopotentialFamily.get(PseudopotentialFamily.name==args['family'])
-            q =  Pseudopotential.select().where(Pseudopotential.family==f)
-            for ps in q:
-                ret[ps.element] = ps.pseudo
+        # contrary to the other queries we are using dicts() here
+        # to avoid one query per element during model_to_dict().
+        # This would happen due to the converted_from self-reference
+        # which would require another join here with Pseudopotential
+        # to fully populate the entry object.
+        # Furthermore since the converted_from can be NULL, the join
+        # would have to be a LEFT OUTER join.
+        # Finally Peewee seems to do something strange for self-reference
+        # columns in case they are NULL during model_to_dict()
+        q = Pseudopotential \
+                .select(Pseudopotential, PseudopotentialFamily) \
+                .join(PseudopotentialFamily) \
+                .dicts()
 
-        return ret
+        if args['family']:
+            q = q.where(PseudopotentialFamily.name == args['family'])
+
+        if args['format']:
+            q = q.where(Pseudopotential.format == args['format'])
+
+        if args['element']:
+            q = q.where(Pseudopotential.element << args['element'])
+
+        if any(args.values()):
+            return [marshal(p, pseudo_list_full_fields) for p in q]
+        else:
+            return [marshal(p, pseudo_list_fields) for p in q]
 
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('family', type=str, required=True)
         parser.add_argument('element', type=str, required=True)
         parser.add_argument('pseudo', type=str, required=True)
+        parser.add_argument('format', type=str, required=True)
         parser.add_argument('overwrite', type=bool, default=False)
-        
+
         args = parser.parse_args()
 
-        f,created = PseudopotentialFamily.get_or_create(name=args['family'])
-        p,created = Pseudopotential.get_or_create(family=f, element=args['element'], defaults=dict(pseudo=args['pseudo']))
+        f, _ = PseudopotentialFamily.get_or_create(name=args['family'])
+        p, created = Pseudopotential.get_or_create(family=f,
+                                                   element=args['element'],
+                                                   format=args['format'],
+                                                   defaults=dict(pseudo=args['pseudo']))
 
-        #the user can specify overwriting of the pseudo
+        # the user can specify overwriting of the pseudo
         if args['overwrite'] and not created:
             q = Pseudopotential.update(pseudo=args['pseudo']).where(Pseudopotential.id == p.id)
             q.execute()
 
         if not created and not args['overwrite']:
             abort(400, message="Pseudo is already uploaded for this result")
-        
+
         return {'id': f.id}
 
 class MachineStatus(Resource):

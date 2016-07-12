@@ -322,7 +322,14 @@ def main(args):
         pseudo_data = "".join(infile.readlines()[1:] )
 
         #upload the PP data.
-        req = requests.post(PSEUDOPOTENTIAL_URL, data={'family':pp_unique_name, 'element':el, 'pseudo': pseudo_data, 'overwrite': False}, verify=False)
+        req = requests.post(PSEUDOPOTENTIAL_URL,
+                            data={
+                                'family': pp_unique_name,
+                                'element': el,
+                                'pseudo': pseudo_data,
+                                'format': 'CP2K',
+                                'overwrite': False,
+                                }, verify=False)
         req.raise_for_status()
 
         settings['pseudoguess'] = pseudo_data
@@ -340,7 +347,13 @@ def main(args):
         infile = open("output.UPF")
         upf_data = infile.read()
 
-        req = requests.post(PSEUDOPOTENTIAL_URL, data={'family':pp_unique_name+'-UPF', 'element':el, 'pseudo': upf_data, 'overwrite': True}, verify=False)
+        req = requests.post(PSEUDOPOTENTIAL_URL,
+                            data={
+                                'family': pp_unique_name,
+                                'element': el,
+                                'pseudo': upf_data,
+                                'format': 'UPF',
+                                'overwrite': True}, verify=False)
         req.raise_for_status()
         upf_id = req.json()['id']
 

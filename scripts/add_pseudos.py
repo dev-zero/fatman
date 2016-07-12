@@ -48,7 +48,7 @@ def main(infile, elements):
                     Pseudopotential.create_or_get(family=pseudofamily,
                                                   element=element,
                                                   pseudo=stored_pseudo,
-                                                  format='ABINIT')
+                                                  format='CP2K')
 
             s = line.split()
             element = s[0]

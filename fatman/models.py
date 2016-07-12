@@ -58,7 +58,6 @@ class PseudopotentialFamily(BaseModel):
     def __str__(self):
         return self.name
 
-
 class BasisSet(BaseModel):
     family = ForeignKeyField(BasissetFamily, related_name='basisset')
     element = CharField(null=False)
@@ -75,11 +74,18 @@ class Pseudopotential(BaseModel):
     element = CharField(null=False)
     pseudo = TextField(null=False)
 
+    format = CharField(null=False)
+    converted_from = ForeignKeyField('self', related_name='converted_to', null=True)
+
     class Meta:
         order_by = ('family',)
 
+        indexes = (
+            (('family', 'element', 'format'), True),
+        )
+
     def __str__(self):
-        return self.family.name
+        return "{} {} ({})".format(self.family.name, self.element, self.format)
 
 class Method(BaseModel):
     # proper database design would demand introduction of

@@ -132,10 +132,16 @@ def main(args):
             if "multiplicity" in struct.info["key_value_pairs"].keys():
                 mymethod["multiplicity"] = struct.info["key_value_pairs"]["multiplicity"]
 
-            # REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
-            pseudo = sess.get(PSEUDOPOTENTIAL_URL, data={'family': mymethod['pseudopotential'], 'element': set(struct.get_chemical_symbols())}).json()
-
             if mymethod["code"] == "cp2k":
+                # REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
+                pseudo = sess.get(PSEUDOPOTENTIAL_URL,
+                                  data={
+                                        'family': mymethod['pseudopotential'],
+                                        'element': set(struct.get_chemical_symbols()),
+                                        'format': 'CP2K',
+                                        }
+                                 ).json()
+
                 # when running cp2k jobs, the basis and pseudo settings have to be rearranged into a 'kind_settings' structure, while preserving potentially existing kind_settings.
                 basis = sess.get(BASISSET_URL, data={'family': mymethod['basis_set'], 'element': set(struct.get_chemical_symbols())}).json()
                 if "kind_settings" in mymethod["settings"].keys():
@@ -145,12 +151,24 @@ def main(args):
 
                 mymethod["kind_settings"] = {}
 
+                # the combination of (family,element,format) is guaranteed to be unique
+                pseudo = {p['element']: p['pseudo'] for p in pseudo}
+
                 for x in set(basis.keys()) & set(pseudo.keys()):
                     mymethod["kind_settings"][x] = {"basis_set": basis[x], "potential": pseudo[x]}
                     for k, v in ks.items():
                         mymethod["kind_settings"][x][k] = v
 
             elif mymethod["code"] == "espresso":
+                # REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
+                pseudo = sess.get(PSEUDOPOTENTIAL_URL,
+                                  data={
+                                        'family': mymethod['pseudopotential'],
+                                        'element': set(struct.get_chemical_symbols()),
+                                        'format': 'UPF',
+                                        }
+                                 ).json()
+
                 # when running espresso jobs the pseudo file has to be written somewhere on disk
                 odir = os.path.join("/users/ralph/work/espresso/", mymethod['pseudopotential'])
                 try:
@@ -158,9 +176,9 @@ def main(args):
                 except OSError:
                     pass
 
-                for e, pp in pseudo.items():
-                    of = open(os.path.join(odir, e+".UPF"), 'w')
-                    of.write(pp)
+                for pp in pseudo:
+                    of = open(os.path.join(odir, "{element}.UPF".format(**pp)), 'w')
+                    of.write(pp['pseudo'])
                     of.close()
 
             # REMOTE: update the task's status to "running"

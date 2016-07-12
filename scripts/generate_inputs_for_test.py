@@ -75,10 +75,15 @@ def main(args):
             if "multiplicity" in struct.info["key_value_pairs"].keys():
                 mymethod["multiplicity"] = struct.info["key_value_pairs"]["multiplicity"]
 
-            # REMOTE: get dicts containing the Pseudos and Basissets for all required chemical elements
-            pseudo = requests.get(PSEUDOPOTENTIAL_URL, data={'family': mymethod['pseudopotential'], 'element': set(struct.get_chemical_symbols())}, verify=False).json()
-
             if mymethod["code"] == "cp2k":
+                pseudo = requests.get(PSEUDOPOTENTIAL_URL,
+                                      data={
+                                          'family': mymethod['pseudopotential'],
+                                          'element': set(struct.get_chemical_symbols()),
+                                          'format': 'CP2K',
+                                          },
+                                      verify=False).json()
+
                 # when running cp2k jobs, the basis and pseudo settings have to be rearranged into a 'kind_settings' structure, while preserving potentially existing kind_settings.
                 basis = requests.get(BASISSET_URL, data={'family': mymethod['basis_set'], 'element': set(struct.get_chemical_symbols())}, verify=False).json()
                 if "kind_settings" in mymethod["settings"].keys():
@@ -88,12 +93,23 @@ def main(args):
 
                 mymethod["kind_settings"] = {}
 
+                # the combination of (family,element,format) is guaranteed to be unique
+                pseudo = {p['element']: p['pseudo'] for p in pseudo}
+
                 for x in set(basis.keys()) & set(pseudo.keys()):
                     mymethod["kind_settings"][x] = {"basis_set": basis[x], "potential": pseudo[x]}
                     for k, v in ks.items():
                         mymethod["kind_settings"][x][k] = v
 
             elif mymethod["code"] == "espresso":
+                pseudo = requests.get(PSEUDOPOTENTIAL_URL,
+                                      data={
+                                          'family': mymethod['pseudopotential'],
+                                          'element': set(struct.get_chemical_symbols()),
+                                          'format': 'UPF',
+                                          },
+                                      verify=False).json()
+
                 # when running espresso jobs the pseudo file has to be written somewhere on disk
                 odir = os.path.join("/users/ralph/work/espresso/", mymethod['pseudopotential'])
                 try:
@@ -101,9 +117,9 @@ def main(args):
                 except OSError:
                     pass
 
-                for e, pp in pseudo.items():
-                    of = open(os.path.join(odir, e+".UPF"), 'w')
-                    of.write(pp)
+                for pp in pseudo:
+                    of = open(os.path.join(odir, "{element}.UPF".format(**pp)), 'w')
+                    of.write(pp['pseudo'])
                     of.close()
 
             # create our code-running object with the relevant settings.
