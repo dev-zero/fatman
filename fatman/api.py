@@ -506,20 +506,15 @@ class TestResultResource(Resource):
         parser.add_argument('test', type=str, required=True)
         args = parser.parse_args()
 
-        test1 = Test.get(Test.name==args["test"])
+        q = TestResult.select(Test, TestResult) \
+                .join(Test) \
+                .where(Test.name == args["test"])
 
-        if args['method'] is not None:
-            method1 = Method.get(Method.id==args["method"])
-
-            r = TestResult.get((TestResult.method==method1) & (TestResult.test==test1))
-            ret=[{r.test.name: r.result_data}]
+        if args['method']:
+            q = q.where(TestResult.method == args["method"])
+            return [{tr.test.name: tr.result_data} for tr in q]
         else:
-            q = TestResult.select().where((TestResult.test==test1))
-            ret=[]
-            for r in q:
-                ret.append({r.method_id: r.result_data})
-
-        return ret
+            return [{tr.method_id: tr.result_data} for tr in q]
 
 class Plot(Resource):
     def get(self):
