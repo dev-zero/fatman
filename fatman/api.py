@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
-from flask import make_response, send_file
+from flask import make_response
 from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
 
-from datetime import datetime
+from datetime import datetime as dt
 
 from fatman import app, resultfiles
 from fatman.models import *
@@ -19,7 +19,7 @@ import numpy as np
 
 import json
 import pickle
-import os
+from os import path
 import bz2
 
 
@@ -124,7 +124,7 @@ class TaskResource(Resource):
         # update the status and/or priority and reset the modification time
         task = Task.get(Task.id == id)
         task.status = TaskStatus.get(TaskStatus.name == args['status']).id
-        task.mtime = datetime.now()
+        task.mtime = dt.now()
         if 'machine' in args.keys() and args['machine'] is not None:
             task.machine = args['machine'] 
         if 'priority' in args.keys() and args['priority'] is not None:
@@ -160,8 +160,8 @@ class TaskResource(Resource):
             ta, created = Task.get_or_create(structure = struct,
                                              method = m, 
                                              test = t,
-                                             defaults = dict(ctime = datetime.now(),
-                                                             mtime = datetime.now(),
+                                             defaults = dict(ctime = dt.now(),
+                                                             mtime = dt.now(),
                                                              status = s,
                                                              machine = '-',
                                                              priority = args['priority']))
@@ -266,7 +266,7 @@ class ResultFileResource(Resource):
         #return the file
         with bz2.BZ2File(resultfiles.path(result.filename)) as infile:
             response = make_response(infile.read())
-            response.headers["Content-Disposition"] = "attachment; filename={:}".format(os.path.splitext(result.filename)[0])
+            response.headers["Content-Disposition"] = "attachment; filename={:}".format(path.splitext(result.filename)[0])
             response.headers["Content-Type"] = "text/plain"
             return response
 
@@ -348,19 +348,19 @@ class MethodList(Resource):
         parser.add_argument('test', type=str)
         args = parser.parse_args()
 
-        if args['test'] is not None:
-            test = Test.get(Test.name==args['test'])
-            tr = TestResult.select().where(TestResult.test == test).order_by(TestResult.method)
-            
-            return [marshal(model_to_dict(x.method), method_list_fields) for x in tr]
+        q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
+            .join(PseudopotentialFamily).switch(Method) \
+            .join(BasissetFamily).switch(Method)
 
+        if args['test']:
+            q = q.join(TestResult) \
+                    .join(Test).switch(Method) \
+                .where(Test.name == args['test']) \
+                .order_by(TestResult.method)
         else:
-            q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
-                .join(PseudopotentialFamily).switch(Method) \
-                .join(BasissetFamily).switch(Method) \
-                .order_by(Method.id)
+            q = q.order_by(Method.id)
 
-            return [marshal(model_to_dict(m), method_list_fields) for m in q]
+        return [marshal(model_to_dict(m), method_list_fields) for m in q]
 
     def post(self):
         parser = reqparse.RequestParser()
@@ -370,13 +370,13 @@ class MethodList(Resource):
         parser.add_argument('settings', type=str, required=True)
         args = parser.parse_args()
 
-        b = BasissetFamily.get(BasissetFamily.id==args['basis_set'])
-        p = PseudopotentialFamily.get(PseudopotentialFamily.id==args['pseudopotential'])
+        b = BasissetFamily.get(BasissetFamily.id == args['basis_set'])
+        p = PseudopotentialFamily.get(PseudopotentialFamily.id == args['pseudopotential'])
 
-        m,created = Method.get_or_create(code = args['code'],
-                                         basis_set = b,
-                                         pseudopotential = p,
-                                         settings = json.loads(args['settings']))
+        m, created = Method.get_or_create(code=args['code'],
+                                          basis_set=b,
+                                          pseudopotential=p,
+                                          settings=json.loads(args['settings']))
 
         return {'id': m.id}
 
@@ -605,6 +605,8 @@ class Plot(Resource):
         response.headers['Content-Type'] = 'image/png'
         return response
 
+class ParameterError(Exception):
+    pass
 
 class StructureResource(Resource):
     def get(self):
@@ -614,105 +616,117 @@ class StructureResource(Resource):
         parser.add_argument('repeat', type=int, required=False, default=1)
         parser.add_argument('viewer', type=bool, required=False, default=False)
         parser.add_argument('size', type=int, required=False, default=300)
-        parser.add_argument('format', type=str, required=False, default="xyz")
-
+        parser.add_argument('format', type=str, required=False,
+                            default="xyz", choices=("xyz", "json"))
         args = parser.parse_args()
     
+        if args['id'] and args['test']:
+            raise ParameterError("exactly one of id or test parameter is required")
+
         if args['id'] is not None:
-            s = Structure.get(Structure.id==args['id'])
-        elif args['test'] is not None:
-            s = TestStructure.get(TestStructure.test == Test.get(Test.name == args['test'])).structure
+            s = Structure.get(Structure.id == args['id'])
+        elif args['test']:
+            s = Structure.select() \
+                    .join(TestStructure).join(Test) \
+                    .where(Test.name == args['test']) \
+                    .get()
+        else:
+            raise ParameterError("exactly one of id or test parameter is required")
 
         atoms = Json2Atoms(s.ase_structure)
-        
+
         if args['viewer']:
             from ase.io import cif
             mycif = StringIO()
-            cif.write_cif(mycif, atoms)         
-            viewer_html = """<HTML><HEAD><link rel=\"stylesheet\" href=\"https://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.css\" type=\"text/css\"><script type=\"text/javascript\" src=\"https://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.js\"></script> </HEAD><BODY><script>var t = new ChemDoodle.TransformCanvas3D('transformBallAndStick', {0:d}, {0:d});
-  t.specs.projectionPerspective_3D = false;  
-  t.specs.atoms_font_size_2D = 12;
-  t.specs.atoms_useVDWDiameters_3D = true;
-  t.specs.atoms_vdwMultiplier_3D = 8;
-  t.specs.set3DRepresentation('Ball and Stick'); 
-  t.specs.backgroundColor = 'white'; 
-  t.specs.atoms_displayLabels_3D = true;
-cif=`{1:}`; var molecule = ChemDoodle.readCIF(cif, {2:d},{2:d},{2:d}); t.loadContent([molecule.molecule],[molecule.unitCell]);</script><br/><a href='https://web.chemdoodle.com/'><small>Powered by ChemDoodle Web Components (GPL)</small></a></BODY></HTML>""".format(args['size'],mycif.getvalue(), args['repeat'])
+            cif.write_cif(mycif, atoms)
+            viewer_html = """
+                <html>
+                    <head>
+                        <link rel="stylesheet" href="https://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.css" type="text/css">
+                        <script type="text/javascript" src="https://hub.chemdoodle.com/cwc/latest/ChemDoodleWeb.js"></script>
+                    </head>
+                    <body>
+                        <script>
+                            var t = new ChemDoodle.TransformCanvas3D('transformBallAndStick', {0:d}, {0:d});
+                            t.specs.projectionPerspective_3D = false;
+                            t.specs.atoms_font_size_2D = 12;
+                            t.specs.atoms_useVDWDiameters_3D = true;
+                            t.specs.atoms_vdwMultiplier_3D = 8;
+                            t.specs.set3DRepresentation('Ball and Stick');
+                            t.specs.backgroundColor = 'white';
+                            t.specs.atoms_displayLabels_3D = true;
+                            cif=`{1:}`;
+                            var molecule = ChemDoodle.readCIF(cif, {2:d},{2:d},{2:d});
+                            t.loadContent([molecule.molecule],[molecule.unitCell]);
+                        </script><br/>
+                        <a href="https://web.chemdoodle.com/"><small>Powered by ChemDoodle Web Components (GPL)</small></a>
+                    </body></html>""".format(args['size'], mycif.getvalue(), args['repeat'])
+            return make_response(viewer_html)
 
-            response = make_response(viewer_html)
-
-        elif args['viewer']==False and args['format']=='xyz':
-            atoms_rep = atoms.repeat(args['repeat'])
-            xyz_output = ""
-            xyz_output += "{:d}\n".format(len(atoms_rep.numbers))
-            xyz_output += "CELL: {:}\n".format(str(atoms.get_cell()).replace('\n',';'))
-            xyz_output += "\n".join(["{:}   {:10.6f} {:10.6f} {:10.6f}".format(x[0],x[1][0],x[1][1],x[1][2]) for x in zip(atoms_rep.get_chemical_symbols(),atoms_rep.get_positions())])
-            response = make_response(xyz_output)
-            response.headers["Content-Type"] = "text/plain"
-
-        elif args['viewer']==False and args['format']=='json':
+        if args['format'] == 'json':
             atoms_rep = atoms.repeat(args['repeat'])
             return Atoms2Json(atoms_rep)
+
+        atoms_rep = atoms.repeat(args['repeat'])
+        xyz_output = ""
+        xyz_output += "{:d}\n".format(len(atoms_rep.numbers))
+        xyz_output += "CELL: {:}\n".format(str(atoms.get_cell()).replace('\n', ';'))
+        xyz_output += "\n".join(["{:}   {:10.6f} {:10.6f} {:10.6f}" \
+                .format(x[0], x[1][0], x[1][1], x[1][2]) for x in
+                                 zip(atoms_rep.get_chemical_symbols(), atoms_rep.get_positions())
+                                ])
+        response = make_response(xyz_output)
+        response.headers["Content-Type"] = "text/plain"
 
         return response
 
 class Comparison(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('method1', type=int, required=False)
+        parser.add_argument('method1', type=int, required=True)
         parser.add_argument('method2', type=int, required=False)
         parser.add_argument('test', type=str, action="append")
         args = parser.parse_args()
 
         all_delta = []
+        # COMPARE all tests for 1 reference method if method2 and test are not specified
+        mode = "1method"
 
-        if args["method1"] is not None and args["method2"] is not None:
+        method1 = Method.get(Method.id == args["method1"])
+
+        if args["method2"] is not None:
             #COMPARE 2 METHODS
             mode = "2methods"
-            method2 = Method.get(Method.id==args["method2"])
-            method1 = Method.get(Method.id==args["method1"])
-        elif args["method1"] is not None and args["method2"] is None and args["test"] is not None:
+            method2 = Method.get(Method.id == args["method2"])
+        elif args["method2"] is None and args["test"] is not None:
             #COMPARE all tests for 1 reference method
             mode = "methodbytest"
-            method1 = Method.get(Method.id==args["method1"])
-        elif args["method1"] is not None and args["method2"] is None and args["test"] is None:
-            #COMPARE all tests for 1 reference method
-            mode = "1method"
-            method1 = Method.get(Method.id==args["method1"])
-        else:
-            return errors["ParameterError"]
+            if len(args["test"]) > 1:
+                raise ParameterError("Specify either 2 methods and optionally a list of tests, or 1 method and 1 test")
 
+        ret = {"test": {}, "methods": [], "method":{}, "summary": {}}
 
-        ret={"test": {}, "methods": [], "method":{}, "summary": {}}
-
-        if mode=="methodbytest":
+        if mode == "methodbytest":
             ret["methods"] = [method1.id]
-            if args["test"] is not None and len(args["test"])==1:
-                testname = args["test"][0]
-            else:
-                return errors["ParameterError"]
 
-            test = Test.get(Test.name==testname)
+            testname = args["test"][0]
 
-            q = Method.select()
-
-            for method2 in q:
-                result_data = self._getResultData(method1, method2, test)
+            for method2 in Method.select():
+                result_data = self._getResultData(method1, method2, testname)
                 if not result_data == False:
                     ret["method"][method2.id] = [str(method2)] + result_data
                     all_delta.append(result_data[-1])
 
             ret["summary"] = {}
 
-        elif mode=="2methods":
+        elif mode == "2methods":
             if args["test"] is not None:
                 testlist = args["test"]
             else:
                 testlist = [t.name for t in Test.select()]
 
             for testname in testlist:
-                test = Test.get(Test.name==testname)
-                result_data = self._getResultData(method1, method2, test)
+                result_data = self._getResultData(method1, method2, testname)
                 if not result_data == False:
                     ret["test"][testname] = result_data
                     all_delta.append(result_data[-1])
@@ -721,16 +735,17 @@ class Comparison(Resource):
             ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
             ret["methods"] = [method1.id, method2.id]
 
-        elif mode=="1method":
+        elif mode == "1method":
             cachefilename = '/tmp/apicache_{:}'.format(method1.id)
-            if os.path.exists(cachefilename) and (datetime.fromtimestamp(os.path.getmtime(cachefilename))-datetime.now()).total_seconds()<60*60*3   :
-                with open(cachefilename) as infile:
+            if path.exists(cachefilename) \
+                    and (dt.fromtimestamp(path.getmtime(cachefilename))-dt.now()).total_seconds()<60*60*3:
+                with open(cachefilename, 'rb') as infile:
                     ret = pickle.load(infile)
                     return ret
 
             testlist = [t.name for t in Test.select()]
 
-            #loop over method2
+            # loop over method2
             q2 = Method.select().order_by(Method.id)
             for method2 in q2:
                 ret["methods"].append(method2.id)
@@ -738,8 +753,7 @@ class Comparison(Resource):
 
                 all_delta = []
                 for testname in testlist:
-                    test = Test.get(Test.name==testname)
-                    result_data = self._getResultData(method1, method2, test)
+                    result_data = self._getResultData(method1, method2, testname)
                     if not result_data == False:
                         all_delta.append(result_data[-1])
 
@@ -749,24 +763,31 @@ class Comparison(Resource):
                 else:
                     ret['method'][method2.id] = [str(method2), -1, -1, 0] 
 
-            with open(cachefilename, 'w') as outfile:
+            with open(cachefilename, 'wb') as outfile:
                 pickle.dump(ret, outfile)
 
         return ret
     
-    def _getResultData(self, method1, method2, test):
+    def _getResultData(self, method1, method2, testname):
         #implement some kind of caching here?
         dontadd = False
         try:
-            r1 = TestResult.get((TestResult.method==method1) & (TestResult.test==test))
-            r2 = TestResult.get((TestResult.method==method2) & (TestResult.test==test))
+            r1 = TestResult.select(TestResult) \
+                    .join(Test) \
+                    .where((TestResult.method == method1) & (Test.name == testname)) \
+                    .get()
+            r2 = TestResult.select(TestResult) \
+                    .join(Test) \
+                    .where((TestResult.method == method2) & (Test.name == testname)) \
+                    .get()
         except:
             return False
             #ret["test"][test.name] = "N/A"
 
         data_f = []
         data_w = []
-        if "deltatest" in test.name:
+
+        if "deltatest" in testname:
             try:
                 data_f = [r1.result_data["V"], r1.result_data["B0"], r1.result_data["B1"]]
                 data_w = [r2.result_data["V"], r2.result_data["B0"], r2.result_data["B1"]]
@@ -775,15 +796,15 @@ class Comparison(Resource):
             except:
                 dontadd = True
 
-        elif "GMTKN" in test.name:
+        elif "GMTKN" in testname:
             try:
-                n=0
-                mad=0.
+                n = 0
+                mad = 0.
                 for e1, e2 in zip(r1.result_data["energies"], r2.result_data["energies"]):
                     mad+= abs(e1-e2)
                     n+=1
 
-                delta=mad/n
+                delta = mad/n
             except:
                 dontadd = True
 
