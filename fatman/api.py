@@ -333,8 +333,10 @@ class ResultList(Resource):
 class TestResource(Resource):
     @marshal_with(test_resource_fields)
     def get(self, testname):
-        t = Test.get(Test.name==testname)
-        st = TestStructure.select().where(TestStructure.test == t)
+        st = TestStructure.select(TestStructure, Test, Structure) \
+                .join(Test).switch(TestStructure) \
+                .join(Structure).switch(Structure) \
+                .where(Test.name == testname)
 
         return [marshal(model_to_dict(s), test_resource_fields) for s in st]
 
