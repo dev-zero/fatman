@@ -59,7 +59,7 @@ def migrate(migrator, database, fake=False, **kwargs):
             WHERE subquery.to_id = pseudopotential.id;''', '%-UPF', '-UPF')
 
     # make the combination (family,element,format) unique
-    migrator.add_index('pseudopotential', 'family_id', 'element', 'format', unique=True)
+    migrator.add_index('pseudopotential', 'family', 'element', 'format', unique=True)
 
     # have only one Family of pseudos, but more than one pseudo per family and element
 
