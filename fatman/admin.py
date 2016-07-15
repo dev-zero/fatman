@@ -77,6 +77,8 @@ admin.add_view(BaseManagementView(Role))
 admin.add_view(BaseManagementView(UserRole))
 
 admin.add_view(BaseDataView(Structure))
+admin.add_view(BaseDataView(StructureSet))
+admin.add_view(BaseDataView(StructureSetStructure))
 admin.add_view(BaseDataView(Method))
 admin.add_view(BaseDataView(BasisSet))
 admin.add_view(BaseDataView(BasissetFamily))

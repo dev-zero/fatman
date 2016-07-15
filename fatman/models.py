@@ -40,6 +40,25 @@ class Structure(BaseModel):
     def __str__(self):
         return self.name
 
+class StructureSet(BaseModel):
+    name = CharField(unique=True)
+    description = TextField(null=True)
+    class Meta:
+        order_by = ('name',)
+
+    def __str__(self):
+        return self.name
+
+class StructureSetStructure(BaseModel):
+    structure = ForeignKeyField(Structure, related_name='part_of')
+    set = ForeignKeyField(StructureSet, related_name='contains')
+
+    class Meta:
+        # avoid duplicates
+        indexes = (
+            (('structure', 'set'), True),
+        )
+
 class BasissetFamily(BaseModel):
     name = CharField(unique=True, null=False)
 
