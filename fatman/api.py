@@ -133,7 +133,46 @@ class TaskResource(Resource):
 
         return model_to_dict(task)
 
-    def post(self, id):
+class TaskList(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('status', type=str)
+        parser.add_argument('limit', type=int)
+        parser.add_argument('page', type=int)
+        parser.add_argument('per_page', type=int)
+        parser.add_argument('timeorder', type=bool, default=False)
+        parser.add_argument('machine', type=str)
+        args = parser.parse_args()
+
+        q = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
+            .join(TaskStatus).switch(Task) \
+            .join(Method) \
+               .join(PseudopotentialFamily).switch(Method) \
+               .join(BasissetFamily).switch(Method) \
+               .switch(Task) \
+            .join(Structure).switch(Task) \
+            .join(Test).switch(Task) \
+            .order_by(Task.priority.desc())
+
+        if args['timeorder']:
+            q = q.order_by(Task.mtime.desc())
+
+        if args['status'] is not None:
+            status = TaskStatus.get(TaskStatus.name == args['status'])
+            q = q.where(Task.status == status)
+
+        if args['machine'] is not None:
+            q = q.where(Task.machine == args['machine'])
+
+        if args['limit'] is not None:
+            q = q.limit(args['limit'])
+
+        if (args['page'] is not None) and (args['per_page'] is not None):
+            q = q.limit(args['limit'])
+
+        return [marshal(model_to_dict(t), task_list_fields) for t in q]
+
+    def post(self):
         ret = []
         parser = reqparse.RequestParser()
         parser.add_argument('structure', type=str, required=False)
@@ -168,40 +207,6 @@ class TaskResource(Resource):
             ret.append(ta.id)
 
         return ret
-
-class TaskList(Resource):
-    def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('status', type=str)
-        parser.add_argument('limit', type=int)
-        parser.add_argument('timeorder', type=bool, default=False)
-        parser.add_argument('machine', type=str)
-        args = parser.parse_args()
-
-        q = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
-            .join(TaskStatus).switch(Task) \
-            .join(Method) \
-               .join(PseudopotentialFamily).switch(Method) \
-               .join(BasissetFamily).switch(Method) \
-               .switch(Task) \
-            .join(Structure).switch(Task) \
-            .join(Test).switch(Task) \
-            .order_by(Task.priority.desc())
-
-        if args['timeorder']:
-            q = q.order_by(Task.mtime.desc())
-
-        if args['status'] is not None:
-            status = TaskStatus.get(TaskStatus.name == args['status'])
-            q = q.where(Task.status == status)
-
-        if args['machine'] is not None:
-            q = q.where(Task.machine == args['machine'])
-
-        if args['limit'] is not None:
-            q = q.limit(args['limit'])
-
-        return [marshal(model_to_dict(t), task_list_fields) for t in q]
 
 
 result_resource_fields = {

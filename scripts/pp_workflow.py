@@ -31,7 +31,7 @@ SERVER = 'https://172.23.64.223'
 SERVER = 'http://127.0.0.1:5001'
 PSEUDOPOTENTIAL_URL   = SERVER + '/pseudo'
 METHOD_URL            = SERVER + '/methods'
-TASK_URL              = SERVER + '/tasks/0'
+TASK_URL              = SERVER + '/tasks'
 
 
 input_template_str = """
