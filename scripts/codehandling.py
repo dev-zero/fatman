@@ -29,6 +29,7 @@ Classes:
 import numpy as np
 import os
 import json
+from os import path
 
 from ase.calculators.abinit import Abinit
 from ase.calculators.cp2k import CP2K
@@ -44,37 +45,20 @@ class HandlerParent():
         self.output_filename = "test.out"
 
     def runOne(self):
-        struct, workdir = self._prepare()
-
         deltacalc = self.getCalculator()
 
-        struct.set_calculator(deltacalc)
+        self.struct.set_calculator(deltacalc)
 
-        e = struct.get_potential_energy()
+        e = self.struct.get_potential_energy()
 
-        return e, os.path.join(workdir, self.output_filename)
-
-    def _prepare(self):
-        struct = self.structure
-        identifier = struct.info["key_value_pairs"]["identifier"]
-
-        workdir = os.path.join(self.workdir_prefix, "method_{:04d}/{:s}".format(self.settings["id"], identifier))
-
-        try:
-            os.makedirs(workdir)
-        except OSError:
-            pass
-
-        os.chdir(workdir)
-
-        return struct, workdir
+        return e, path.join(workdir, self.output_filename)
 
 # THIS IS CURRENTLY UNTESTED CODE, MAKE SURE IT WORKS!
 class AbinitHandler(HandlerParent):
     """Class to run the Abinit code with FATMAN data through ASE.
 
     Instantiated by the HandlerFactory for a particular ASE chemical structure
-    and a dictionary of settings supplied from FATMAN. The workdir_prefix defines a
+    and a dictionary of settings supplied from FATMAN. The workdir defines a
     writable 'scratch' directory, in which subdirectories will be created for the
     particular calculation.
 
@@ -89,8 +73,8 @@ class AbinitHandler(HandlerParent):
           create a calculator and make it write an input file. NOT IMPLEMENTED YET.
     """
 
-    def __init__(self, structure, settings={}, workdir_prefix="/data/ralph/deltatests/abinit"):
-        self.workdir_prefix = workdir_prefix
+    def __init__(self, structure, settings, workdir):
+        self.workdir = workdir
         self.settings = settings
         self.structure = structure
         self.output_filename = "PREFIX.out"
@@ -175,7 +159,7 @@ class Cp2kHandler(HandlerParent):
     """Class to run CP2K with FATMAN data through ASE.
 
     Instantiated by the HandlerFactory for a particular ASE chemical structure
-    and a dictionary of settings supplied from FATMAN. The workdir_prefix defines a
+    and a dictionary of settings supplied from FATMAN. The workdir defines a
     writable 'scratch' directory, in which subdirectories will be created for the
     particular calculation.
 
@@ -194,8 +178,8 @@ class Cp2kHandler(HandlerParent):
           create a calculator and make it write an input file. NOT IMPLEMENTED YET.
     """
 
-    def __init__(self, structure, settings={}, workdir_prefix="/data/ralph/deltatests/cp2k"):
-        self.workdir_prefix = workdir_prefix
+    def __init__(self, structure, settings, workdir):
+        self.workdir = workdir
         self.settings = settings
         self.structure = structure
         self.output_filename = "test.out"
@@ -296,24 +280,21 @@ class Cp2kHandler(HandlerParent):
     def createOne(self):
         """Attach the cp2k calculator to the structure, write an input file and return its path.
         """
-        struct, workdir = self._prepare()
 
         deltacalc = self.getCalculator()
+        deltacalc.atoms = self.structure
 
-        deltacalc.atoms = struct
+        with open(path.join(self.workdir, 'deltatest.inp'), 'w') as outfile:
+            outfile.write(deltacalc._generate_input())
 
-        a=deltacalc._generate_input() 
-        with open(os.path.join(workdir, 'deltatest.inp'), 'w') as outfile:
-            outfile.write(a)
-
-        return os.path.join(workdir, self.output_filename)
+        return path.join(self.workdir, self.output_filename)
 
 
 class EspressoHandler(HandlerParent):
     """Class to run Quantum Espresso with FATMAN data through ASE and the ASE-Espresso extension.
 
     Instantiated by the HandlerFactory for a particular ASE chemical structure
-    and a dictionary of settings supplied from FATMAN. The workdir_prefix defines a
+    and a dictionary of settings supplied from FATMAN. The workdir defines a
     writable 'scratch' directory, in which subdirectories will be created for the
     particular calculation.
 
@@ -338,25 +319,17 @@ class EspressoHandler(HandlerParent):
           create a calculator and make it write an input file.
     """
 
-    import espresso
-
-    def __init__(self, structure, settings={}, workdir_prefix="/data/ralph/deltatests/espresso"):
-        self.workdir_prefix = workdir_prefix
+    def __init__(self, structure, settings, workdir):
+        self.workdir = workdir
         self.settings = settings
         self.structure = structure
         self.output_filename = "log"
 
-    def getCalculator(self, input_only=None):
+    def getCalculator(self):
         """Mangle the supplied settings and return an Abinit ASE Calculator object.
 
         The pseudopotential path is semi-hardcoded. Because crap.
-
-        Arguments:
-            - input_only: set to True if you want to only write a Q.E. input file, not calculate.
         """
-
-        os.popen("module load quantum-espresso 2> /dev/null")
-        os.popen("module load gcc-suite/5.3.0 2> /dev/null")
 
         ecut = self.settings["settings"]["cutoff_pw"]
         xc = self.settings["settings"]["xc"]
@@ -365,25 +338,26 @@ class EspressoHandler(HandlerParent):
         kpts = list(self.settings["kpoints"])
         pseudopotential = self.settings["pseudopotential"]
 
-        calc = espresso.espresso(
-                        mode="scf",
-                        pw=ecut,                    # density cutoff automatically 4*ecut ?
-                        kpts=kpts,
-                        xc='PBE',
-                        outdir='./',
-                        smearing=smearing,
-                        sigma=sigma,
-                        psppath="/users/ralph/work/espresso/" + pseudopotential,
-                        output={'removewf': True, 'removesave': True},
-                        parflags='-npool 4',
-                        onlycreatepwinp=input_only
-                        )
+        from espresso import Espresso
+
+        calc = Espresso(
+            mode="scf",
+            pw=ecut,                    # density cutoff automatically 4*ecut ?
+            kpts=kpts,
+            xc=xc,
+            outdir='./',
+            smearing=smearing,
+            sigma=sigma,
+            psppath=pseudopotential,
+            output={'removewf': True, 'removesave': True},
+            parflags='-npool 4',
+            )
         return calc
 
     def runOne(self):
         """Attach the ASE Calculator (espresso) to the structure, run the energy calc, and return its results.
 
-        Create working directory for the calculation based on the workdir_prefix, get the espresso calculator,
+        Create working directory for the calculation based on the workdir, get the espresso calculator,
         set it to work in that directory and run the energy calculation.
         If the structure specifies magnetic moments, the option `spinpol` has to be set for the calculator.
 
@@ -391,32 +365,24 @@ class EspressoHandler(HandlerParent):
             - e: the total energy from the DFT calculation in eV.
             - the path of the output file (`log`) which should then eventually be uploaded to the server.
         """
-        struct = self.structure
-        identifier = struct.info["key_value_pairs"]["identifier"]
 
-        workdir = os.path.join(self.workdir_prefix, "method_{:04d}/{:s}".format(self.settings["id"], identifier))
+        identifier = self.structure.info["key_value_pairs"]["identifier"]
+
         deltacalc = self.getCalculator()
-
-        try:
-            os.makedirs(workdir)
-        except OSError:
-            pass
-
         deltacalc.outdir = workdir
 
-        if np.sum(abs(struct.get_initial_magnetic_moments())) > 0:
+        if np.sum(abs(self.structure.get_initial_magnetic_moments())) > 0:
             deltacalc.spinpol = True
-        os.chdir(workdir)
 
-        struct.set_calculator(deltacalc)
+        self.structure.set_calculator(deltacalc)
 
-        e = struct.get_potential_energy()
-        return e, os.path.join(workdir, "log")
+        e = self.structure.get_potential_energy()
+        return e, path.join(workdir, "log")
 
     def createOne(self):
         """Attach the ASE Calculator (espresso) to the structure, write a Q.E. input file and return its path.
 
-        Create output directory for the input file base on workdir_prefix, get the espresso calculator set to
+        Create output directory for the input file base on workdir, get the espresso calculator set to
         only produce an input file, write that input file and return the pathname where it was created.
         If the structure specifies magnetic moments, the option `spinpol` has to be set for the calculator.
 
@@ -424,36 +390,34 @@ class EspressoHandler(HandlerParent):
             - the path of the input file (`pw.inp`) for Q. Espresso.
         """
 
-        struct, workdir = self._prepare()
+        deltacalc = self.getCalculator()
 
-        deltacalc = self.getCalculator(input_only=True)
+        deltacalc.outdir = self.workdir
+        deltacalc.pwinp = path.join(self.workdir, "pw.inp")
 
-        deltacalc.outdir = workdir
-        deltacalc.pwinp = os.path.join(workdir, "pw.inp")
-
-        if np.sum(abs(struct.get_initial_magnetic_moments())) > 0:
+        if np.sum(abs(self.structure.get_initial_magnetic_moments())) > 0:
             deltacalc.spinpol = True
 
-        struct.set_calculator(deltacalc)
-        deltacalc.initialize(struct)
+        self.structure.set_calculator(deltacalc)
+        deltacalc.initialize(self.structure)
 
         return deltacalc.pwinp
 
 
-def HandlerFactory(structure, methodsettings={"code": "cp2k"}):
+def HandlerFactory(structure, settings, workdir, *args, **kwargs):
     """Depending on the selected code, return the appropriate handler object"""
 
-    if methodsettings["code"] == "abinit":
-        return AbinitHandler(structure, settings=methodsettings)
+    if settings["code"] == "abinit":
+        return AbinitHandler(structure, settings, workdir, *args, **kwargs)
 
-    elif methodsettings["code"] == "cp2k":
-        return Cp2kHandler(structure, settings=methodsettings)
+    elif settings["code"] == "cp2k":
+        return Cp2kHandler(structure, settings, workdir, *args, **kwargs)
 
-    elif methodsettings["code"] == "espresso":
-        return EspressoHandler(structure, settings=methodsettings)
+    elif settings["code"] == "espresso":
+        return EspressoHandler(structure, settings, workdir, *args, **kwargs)
 
     else:
-        raise RuntimeError("Asked for unknown code")
+        raise RuntimeError("unknown code: {code}".format(**settings))
 
 if __name__ == "__main__":
     print(__doc__)
