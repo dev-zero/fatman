@@ -253,7 +253,7 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
 
                 # REMOTE: upload the output file
                 os.system("bzip2 {}".format(output_file_path))
-                with open(output_file_path + ".bz2") as f:
+                with open(output_file_path + ".bz2", 'rb') as f:
                     req = sess.post(server + done_task["_links"]["self"]+'/file', files={'file': f})
                     req.raise_for_status()
 
@@ -265,7 +265,8 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
 
             elif hpc_mode:
                 codehandler = HandlerFactory(struct, mymethod, workdir=code_workdir)
-                output_file_path = codehandler.createOne()
+                input_file_path = codehandler.createOne()
+                input_file_name = path.relpath(input_file_path, code_workdir)
 
                 runscript_template_path = path.join(SCRIPTDIR, "dora_script_espresso.txt")
 
@@ -276,12 +277,17 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
                 with open(runscript_template_path, 'r') as runscript_template, \
                         open(path.join(code_workdir, "runjob_dora.sh"), "w") as runscript:
 
-                    params = {"workdir"    : remote_code_workdir,
-                              "taskupdate" : task['_links']['self'],
-                              "natom"      : len(struct.get_masses()),
-                              "id"         : task['id'],
-                              "scratchdir" : path.join(remote_scratchdir, code_workdir_suffix),
-                              "projectname": code_workdir_suffix,
+                    params = {"code_workdir": remote_code_workdir,
+                              "workdir"     : remote_workdir,
+                              "taskupdate"  : task['_links']['self'],
+                              "natom"       : len(struct.get_masses()),
+                              "id"          : task['id'],
+                              "scratchdir"  : path.join(remote_scratchdir, code_workdir_suffix),
+                              "projectname" : code_workdir_suffix,
+                              "output_file" : path.join(code_workdir_suffix,
+                                                        '{}.out.bz2'.format(input_file_name)),
+                              "server"      : server,
+                              "results_url" : RESULTS_URL.format(url),
                              }
 
                     runscript.write(runscript_template.read().format(**params))
@@ -295,7 +301,7 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
 
                     if submit:
                         subprocess.check_call(["ssh", "timuel@ela.cscs.ch",
-                                               "ssh dora 'cd {}; /apps/dora/slurm/default/bin/sbatch runjob_dora.sh'".format(remote_code_workdir)])
+                                               "ssh dora 'cd {}; sbatch runjob_dora.sh'".format(remote_code_workdir)])
 
         except Exception as e:
             if update:

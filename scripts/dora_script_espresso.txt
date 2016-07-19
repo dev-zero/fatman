@@ -22,7 +22,7 @@
 # -- the program and input file --
 INP="pw.inp"
 SCRATCHDIR='{scratchdir}'
-INPDIR='{workdir}'
+INPDIR='{code_workdir}'
 ########################################################################
 
 
@@ -63,22 +63,47 @@ slurm_startjob() {{
     --cpus-per-task ${{OMP_NUM_THREADS}} \
     pw.x -npool ${{pool}} -i ${{INP}} > ${{INP}}.out
 
+  if [ ! -f "{workdir}/update_fatman.py" ] ; then
+      cat >> "{workdir}/update_fatman.py" << EOF
+#!/usr/bin/env python
+
+import requests
+
+sess = requests.Session()
+sess.verify = False
+
+EOF
+
+  fi
+
   if [ $? -eq 0 ]
   then
       echo 'No Error'
       en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654}}'` 
 
-      echo "# {projectname}  correct " `date`  >> /users/timuel/deltatests/update_fatman.py
-      echo "req = requests.post(RESULTS_URL, data={{'energy': $en, 'task_id': {id} }}, verify=False); req.raise_for_status();" >> /users/timuel/deltatests/update_fatman.py
-
-      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'done'}}, verify=False); req.raise_for_status();" >> /users/timuel/deltatests/update_fatman.py
-
       cp $SCRATCHDIR/*out $INPDIR
       bzip2 $INPDIR/pw.inp.out
+
+      cat >> "{workdir}/update_fatman.py" << EOF
+# {projectname}  correct `date`
+req = sess.post('{results_url}', data={{'energy': $en, 'task_id': {id}}})
+req.raise_for_status()
+done_task = req.json()
+
+with open('{output_file}', 'rb') as f:
+  req = sess.post('{server}' + done_task["_links"]["self"]+'/file', files={{'file': f}})
+  req.raise_for_status()
+
+req = sess.patch('{server}' + '{taskupdate}', data={{'status': 'done'}})
+req.raise_for_status()
+EOF
   else
       echo 'encountered an error'
-      echo "# {projectname}   " `date` >> /users/timuel/deltatests/update_fatman.py
-      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'error'}}, verify=False); req.raise_for_status();" >> /users/timuel/deltatests/update_fatman.py
+      cat >> "{workdir}/update_fatman.py" << EOF
+# {projectname}   `date`
+req = sess.patch('{server}' + '{taskupdate}', data={{'status': 'error'}})
+req.raise_for_status()
+EOF
   fi
 
   echo ' --------------------------------------------------------------'
