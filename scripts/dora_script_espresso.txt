@@ -69,16 +69,16 @@ slurm_startjob() {{
       en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654}}'` 
 
       echo "# {projectname}  correct " `date`  >> /users/timuel/deltatests/update_fatman.py
-      echo "req = requests.post(RESULTS_URL, data={{'energy': $en, 'task_id': {id} }}, verify=False); req.raise_for_status(); done_task = req.json();" >> /users/timuel/deltatests/update_fatman.py
+      echo "req = requests.post(RESULTS_URL, data={{'energy': $en, 'task_id': {id} }}, verify=False); req.raise_for_status();" >> /users/timuel/deltatests/update_fatman.py
 
-      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'done'}}, verify=False); req.raise_for_status(); task = req.json()" >> /users/timuel/deltatests/update_fatman.py
+      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'done'}}, verify=False); req.raise_for_status();" >> /users/timuel/deltatests/update_fatman.py
 
       cp $SCRATCHDIR/*out $INPDIR
       bzip2 $INPDIR/pw.inp.out
   else
       echo 'encountered an error'
       echo "# {projectname}   " `date` >> /users/timuel/deltatests/update_fatman.py
-      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'error'}}, verify=False); req.raise_for_status(); task = req.json()" >> /users/timuel/deltatests/update_fatman.py
+      echo "req = requests.patch(SERVER + '{taskupdate}', data={{'status': 'error'}}, verify=False); req.raise_for_status();" >> /users/timuel/deltatests/update_fatman.py
   fi
 
   echo ' --------------------------------------------------------------'
