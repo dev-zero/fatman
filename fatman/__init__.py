@@ -3,8 +3,8 @@ import logging
 
 from flask import Flask, redirect, url_for
 from playhouse.postgres_ext import PostgresqlExtDatabase
-from flask.ext.uploads import UploadSet, configure_uploads
-from flask.ext.security import Security, PeeweeUserDatastore
+from flask_uploads import UploadSet, configure_uploads
+from flask_security import Security, PeeweeUserDatastore
 
 app = Flask(__name__)
 app.config.from_object('fatman.default_settings')

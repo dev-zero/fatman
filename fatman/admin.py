@@ -1,12 +1,12 @@
 
 from flask import redirect, abort, url_for, request
-from flask.ext.admin import Admin
-from flask.ext.admin import helpers as admin_helpers
-from flask.ext.admin.contrib.peewee import ModelView
-from flask.ext.security import current_user
+from flask_admin import Admin
+from flask_admin import helpers as admin_helpers
+from flask_admin.contrib.peewee import ModelView
+from flask_security import current_user
 
 # Wire-up JSONB fields from peewee-playhouse to WTForms
-from flask.ext.admin.contrib.peewee.form import CustomModelConverter
+from flask_admin.contrib.peewee.form import CustomModelConverter
 from playhouse.postgres_ext import BinaryJSONField
 from wtforms import fields
 CustomModelConverter.defaults[BinaryJSONField] = fields.TextAreaField
