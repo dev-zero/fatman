@@ -63,6 +63,8 @@ slurm_startjob() {{
     --cpus-per-task ${{OMP_NUM_THREADS}} \
     pw.x -npool ${{pool}} -i ${{INP}} > ${{INP}}.out
 
+  retval=$?
+
   if [ ! -f "{workdir}/update_fatman.py" ] ; then
       cat >> "{workdir}/update_fatman.py" << EOF
 #!/usr/bin/env python
@@ -76,7 +78,7 @@ EOF
 
   fi
 
-  if [ $? -eq 0 ]
+  if [ $retval -eq 0 ]
   then
       echo 'No Error'
       en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654}}'` 
