@@ -431,7 +431,7 @@ class Pseudopotentials(Resource):
         # Finally Peewee seems to do something strange for self-reference
         # columns in case they are NULL during model_to_dict()
         q = Pseudopotential \
-                .select(Pseudopotential, PseudopotentialFamily) \
+                .select(Pseudopotential, PseudopotentialFamily.name) \
                 .join(PseudopotentialFamily) \
                 .dicts()
 
