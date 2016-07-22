@@ -4,3 +4,6 @@
 typings
 node_modules
 .webassets-cache
+fatman/static/*map
+fatman/static/*.bundle.js
+fatman.cfg
