@@ -12,7 +12,7 @@ import requests
 from jinja2 import Template
 from fatman.tools import randomword
 
-PSEUDOPOTENTIAL_URL = '{}/pseudo'
+PSEUDOPOTENTIAL_URL = '{}/pseudos'
 METHOD_URL          = '{}/methods'
 TASK_URL            = '{}/tasks'
 

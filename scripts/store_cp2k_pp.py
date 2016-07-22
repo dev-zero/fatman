@@ -6,7 +6,7 @@ from datetime import datetime
 import requests
 import click
 
-PSEUDOPOTENTIAL_URL = '{}/pseudo'
+PSEUDOPOTENTIAL_URL = '{}/pseudos'
 
 atoms_db =[ 'H'                                                                                                                                   , 'He'  , 
             'Li'  , 'Be'  ,                                                                                 'B'   , 'C'   , 'N'   , 'O'   , 'F'   , 'Ne'  , 

@@ -25,7 +25,7 @@ from codehandling import HandlerFactory
 TASKS_URL           = '{}/tasks'
 RESULTS_URL         = '{}/results'
 BASISSET_URL        = '{}/basis'
-PSEUDOPOTENTIAL_URL = '{}/pseudo'
+PSEUDOPOTENTIAL_URL = '{}/pseudos'
 
 DAEMON_SLEEPTIME = 5*60
 
