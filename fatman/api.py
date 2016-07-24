@@ -433,6 +433,7 @@ class Pseudopotentials(Resource):
         q = Pseudopotential \
                 .select(Pseudopotential, PseudopotentialFamily.name) \
                 .join(PseudopotentialFamily) \
+                .order_by(Pseudopotential.id.asc()) \
                 .dicts()
 
         if args['family']:
