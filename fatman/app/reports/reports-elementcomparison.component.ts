@@ -1,11 +1,11 @@
-import {Component, ViewChild, AfterViewChecked} from '@angular/core';
-import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
+import {Component, OnInit, OnDestroy, ViewChild, AfterViewChecked} from '@angular/core';
+import {Router, ActivatedRoute} from '@angular/router';
 
 import {ReportService} from './reports.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
+  directives: [MethoddetailsComponent],
   template: `
       <div style="font-size: 16pt">
         <p>
@@ -50,31 +50,40 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
   `,
 })
 
-export class ReportsElementComparison implements OnActivate {
+export class ReportsElementComparison implements OnInit, OnDestroy {
   @ViewChild('meth1') mymeth1;
   @ViewChild('testselect') mytest1;
 
   constructor(
-    private _service: ReportService,
-    private _router: Router) { }
+    private _route: ActivatedRoute,
+    private _router: Router,
+    private _service: ReportService) {}
+
+  private _sub: any;
 
   elements: Object[];
-  errorMessage:  string;
-  method1:       number;
-  test1:         string;
-  comparetable:      Object[];
+  errorMessage: string;
+  method1: number;
+  test1: string;
+  comparetable: Object[];
   comparelist = [];
-  methods:       Object[];
-  tests:       Object[];
+  methods: Object[];
+  tests: Object[];
 
-  routerOnActivate(curr: RouteSegment): void {
-    this.test1 = curr.getParam('test1');
-    this.method1 = +curr.getParam('id1');
+  ngOnInit() {
+    this._sub = this._route.params.subscribe(params => {
+      this.test1 = params['test1'];
+      this.method1 = +params['id1'];
 
-    this.getMethods();
-    this.getTests();
+      this.getMethods();
+      this.getTests();
 
-    this.getElementComparison(this.method1, this.test1);
+      this.getElementComparison(this.method1, this.test1);
+    });
+  }
+
+  ngOnDestroy() {
+    this._sub.unsubscribe();
   }
 
   ngAfterViewChecked() {

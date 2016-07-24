@@ -1,7 +1,7 @@
-import {Component, OnInit, ViewChild, AfterViewChecked} from '@angular/core';
-import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
+import {Component, OnInit, OnDestroy, ViewChild, AfterViewChecked} from '@angular/core';
+import {Router, ActivatedRoute, ROUTER_DIRECTIVES} from '@angular/router';
 import {Location} from '@angular/common';
-//had 
+import {SafeResourceUrl, DomSanitizationService} from '@angular/platform-browser';
 
 import {DetailsService} from './details.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
@@ -50,7 +50,7 @@ import {ComparematrixComponent} from '../details/comparematrix.component';
    </div>
    <div class="container col-md-9">
      <!-- this iframe solution is obviously ugly, but it avoids intermixing 'external' javascript from the Chemdoodle WebGL stuff with angular2 -->
-     <iframe seamless frameborder=0 marginheight=0 marginwidth=0 src="../structure?test={{ test1 }}&repeat=2&viewer=True&size=600" width=620 height=630></iframe>
+     <iframe seamless frameborder=0 marginheight=0 marginwidth=0 [src]="chemdoodle_url" width=620 height=630></iframe>
    </div>
    <div class="container col-md-3">
      <comparematrix [methods]="selectedmethods" [test]="test1"></comparematrix>
@@ -61,13 +61,18 @@ import {ComparematrixComponent} from '../details/comparematrix.component';
   `,
 })
 
-export class Details implements OnActivate {
+export class Details implements OnInit, OnDestroy {
   @ViewChild('testselect') mytest1;
-  constructor(
-    private _service: DetailsService,
-    private _router: Router,
-    private location: Location) { this.location = location; }
 
+  constructor(
+    private _route: ActivatedRoute,
+    private _router: Router,
+    private _location: Location,
+    private _sanitizer: DomSanitizationService,
+    private _service: DetailsService) {}
+
+
+  private _sub: any;
 
   errorMessage: string;
   method1: number;
@@ -78,7 +83,39 @@ export class Details implements OnActivate {
   tests:   Object[];
   selectedmethods = [];
   img_url: string;
+  chemdoodle_url: SafeResourceUrl;
   unavailablemethods = [];
+
+  ngOnInit() {
+    this._sub = this._route.params.subscribe(params => {
+      this.selectedmethods = [];
+
+      let ms = params['methods'];
+
+      if (typeof(ms)=='string') {
+        var methods_str = ms.split(',');
+        for (var i =0;i<methods_str.length;i++) {
+          this.selectedmethods.push(+methods_str[i]);
+        }
+      }
+      else {
+        for (var i =0;i<ms.length;i++) {
+          this.selectedmethods.push(+ms[i]);
+        }
+      }
+
+      this.test1 = params['test1'];
+      this.getMethods(this.test1);
+
+      this.getTests();
+      this.img_url = this.getImgURL();
+      this.chemdoodle_url = this._sanitizer.bypassSecurityTrustResourceUrl(`../structure?test=${this.test1}&repeat=2&viewer=True&size=600`);
+    });
+  }
+
+  ngOnDestroy() {
+    this._sub.unsubscribe();
+  }
 
   updateSelectedMethods(method, event) {
     if (event.target.checked) {
@@ -88,37 +125,13 @@ export class Details implements OnActivate {
       var idx = this.selectedmethods.indexOf(parseInt(event.target.value));
       this.selectedmethods.splice(idx,1);
     }
-    this.location.go(
+    this._location.go(
       this._router.serializeUrl(
         this._router.createUrlTree(['details', this.test1, {methods: this.selectedmethods}])
       )
     );
     this.img_url = this.getImgURL();
     this.updateUnavailableMethods();
-  }
-
-  routerOnActivate(curr: RouteSegment): void {
-    this.selectedmethods= [];
-    
-    var ms = curr.getParam('methods');
-
-    if (typeof(ms)=='string') {
-      var methods_str = ms.split(',');
-      for (var i =0;i<methods_str.length;i++) {
-        this.selectedmethods.push(+methods_str[i]);
-      }
-    }
-    else {
-      for (var i =0;i<ms.length;i++) {
-        this.selectedmethods.push(+ms[i]);
-      }
-    }
-
-    this.test1 = curr.getParam('test1');
-    this.getMethods(this.test1);
-
-    this.getTests();
-    this.img_url = this.getImgURL();
   }
 
   getMethods(test) {

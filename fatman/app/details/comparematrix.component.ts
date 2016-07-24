@@ -1,5 +1,4 @@
 import {Component, OnInit, ViewChild, Pipe, PipeTransform} from '@angular/core';
-import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {DetailsService} from './details.service';
 

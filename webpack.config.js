@@ -4,9 +4,9 @@ var path = require('path');
 // Webpack Config
 var webpackConfig = {
   entry: {
-    'polyfills': './fatman/polyfills.ts',
-    'vendor': './fatman/vendor.ts',
-    'app': './fatman/app.ts',
+    'polyfills': './fatman/app/polyfills.ts',
+    'vendor': './fatman/app/vendor.ts',
+    'app': './fatman/app/main.ts',
   },
 
   output: {

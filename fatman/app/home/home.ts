@@ -1,5 +1,5 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
+import {ROUTER_DIRECTIVES} from '@angular/router';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
 import {HomeService} from './home.service';
 

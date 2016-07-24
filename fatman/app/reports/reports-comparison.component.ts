@@ -1,5 +1,5 @@
-import {Component, ViewChild, AfterViewChecked} from '@angular/core';
-import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
+import {Component, OnInit, OnDestroy, ViewChild, AfterViewChecked} from '@angular/core';
+import {Router, ActivatedRoute, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {ReportService} from './reports.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
@@ -56,13 +56,16 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
   `,
 })
 
-export class ReportsComparison implements OnActivate {
+export class ReportsComparison implements OnInit, OnDestroy {
   @ViewChild('meth1') mymeth1;
   @ViewChild('meth2') mymeth2;
 
   constructor(
-    private _service: ReportService,
-    private _router: Router) { }
+    private _route: ActivatedRoute,
+    private _router: Router,
+    private _service: ReportService) {}
+
+  private _sub: any;
 
   elements: Object[];
   errorMessage:  string;
@@ -73,12 +76,18 @@ export class ReportsComparison implements OnActivate {
   methods:       Object[];
   summary = {'N':0, 'avg': 0., 'stdev':0. };
 
-  routerOnActivate(curr: RouteSegment): void {
-    this.method1 = +curr.getParam('id1');
-    this.method2 = +curr.getParam('id2');
+  ngOnInit() {
+    this._sub = this._route.params.subscribe(params => {
+      this.method1 = +params['id1'];
+      this.method2 = +params['id2'];
 
-    this.getMethods();
-    this.getComparison(this.method1, this.method2);
+      this.getMethods();
+      this.getComparison(this.method1, this.method2);
+    });
+  }
+
+  ngOnDestroy() {
+    this._sub.unsubscribe();
   }
 
   getMethods() {

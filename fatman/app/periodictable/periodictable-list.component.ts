@@ -1,5 +1,5 @@
-import {Component, OnInit, Pipe, PipeTransform, ViewChild, AfterViewChecked} from '@angular/core';
-import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
+import {Component, OnInit, OnDestroy, Pipe, PipeTransform, ViewChild, AfterViewChecked} from '@angular/core';
+import {Router, ActivatedRoute, ROUTER_DIRECTIVES} from '@angular/router';
 
 import {PeriodictableService} from './periodictable.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
@@ -151,7 +151,7 @@ export class DeltavaluePipe implements PipeTransform {
   pipes: [DeltavaluePipe],
 })
 
-export class Periodictable {
+export class Periodictable implements OnInit, OnDestroy {
   @ViewChild('meth1') mymeth1;
   @ViewChild('meth2') mymeth2;
   title = 'Periodic Table';
@@ -171,14 +171,32 @@ export class Periodictable {
                 'methods': [0, 1],
                 'summary': {'N':0, 'avg': 0., 'stdev':0. }};
 
+  private _sub: any;
+
   errorMessage:  string;
   elements:      Object[];
   methods:       Object[];
   method1:       number;
   method2:       number;
 
-  constructor(private _PeriodictableService: PeriodictableService,
-              private _router: Router) { };
+  constructor(
+    private _route: ActivatedRoute,
+    private _router: Router,
+    private _PeriodictableService: PeriodictableService) {}
+
+  ngOnInit() {
+    this._sub = this._route.params.subscribe(params => {
+      this.method1 = +params['method1'];
+      this.method2 = +params['method2'];
+
+      this.getMethodlist();
+      this.getPeriodictable(this.method1, this.method2);
+    });
+  }
+
+  ngOnDestroy() {
+    this._sub.unsubscribe();
+  }
 
   myComplete() { 
      this.f_elements['methods'][0] = this.method1;
@@ -207,14 +225,6 @@ export class Periodictable {
       elements => this.elements = elements,
       error => this.errorMessage = <any>error,
          () =>   this.myComplete());
-  }
-
-  routerOnActivate(curr: RouteSegment): void {
-    this.method1 = +curr.getParam('method1');
-    this.method2 = +curr.getParam('method2');
-
-    this.getMethodlist();
-    this.getPeriodictable(this.method1, this.method2);
   }
 
   getMethodlist() {

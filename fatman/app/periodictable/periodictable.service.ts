@@ -1,5 +1,4 @@
 import { Http, Response, RequestOptions, URLSearchParams } from '@angular/http';
-import {OnActivate, Router, RouteSegment} from '@angular/router';
 import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';

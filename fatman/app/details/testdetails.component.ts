@@ -1,5 +1,5 @@
-import {Component, OnInit, ViewChild, AfterViewChecked, Pipe, PipeTransform} from '@angular/core';
-import {OnActivate, Router, RouteSegment, ROUTER_DIRECTIVES} from '@angular/router';
+import {Component, OnInit, Pipe, PipeTransform} from '@angular/core';
+import {Router} from '@angular/router';
 
 import {DetailsService} from './details.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
@@ -18,7 +18,7 @@ export class TruncatePipe {
 @Component({
   selector:'testdetails', 
   inputs: ['method_id', 'test'],
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
+  directives: [MethoddetailsComponent],
   pipes: [TruncatePipe],
   providers: [DetailsService],
   template: `

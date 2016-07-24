@@ -1,19 +1,8 @@
 import {Component} from '@angular/core';
+import { ROUTER_DIRECTIVES } from '@angular/router';
 
 // Add the RxJS Observable operators we need in this app.
 import './rxjs-operators';
-
-import {Routes, Router, ROUTER_DIRECTIVES} from '@angular/router';
-
-import {Home} from './home/home';
-import {Tasks} from './tasks/tasks-list.component';
-import {MachineStatus} from './machinestatus/machinestatus-list.component';
-import {Reports} from './reports/reports-list.component';
-import {ReportsComparison} from './reports/reports-comparison.component';
-import {ReportsElementComparison} from './reports/reports-elementcomparison.component';
-import {Periodictable} from './periodictable/periodictable-list.component';
-import {Details} from './details/details-list.component';
-import {MethodList} from './methods/methods-list.component';
 
 @Component({
   selector: 'fatman-app',
@@ -42,19 +31,6 @@ import {MethodList} from './methods/methods-list.component';
   `,
 })
 
-@Routes([
-  { path: '/', component: Home },
-  { path: '/home', component: Home },
-  { path: '/tasks', component: Tasks },
-  { path: '/reports/comparison/:id1/:id2', component: ReportsComparison },
-  { path: '/reports/elementcomparison/:id1/:test1', component: ReportsElementComparison },
-  { path: '/reports', component: Reports },
-  { path: '/machinestatus', component: MachineStatus },
-  { path: '/periodictable/:method1/:method2', component: Periodictable },
-  { path: '/periodictable/', component: Home },
-  { path: '/details/', component: Home },
-  { path: '/details/:test1', component: Details },
-  { path: '/methodlist', component: MethodList },
-])
-
-export class FatmanApp {}
+export class FatmanApp {
+  title = 'F.A.T.M.A.N.';
+}

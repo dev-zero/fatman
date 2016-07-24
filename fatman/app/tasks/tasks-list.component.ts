@@ -25,7 +25,6 @@ import {TaskService} from './tasks.service';
     </tbody>
   </table>
   `,
-  providers: [TaskService]
 })
 
 export class Tasks implements OnInit {
