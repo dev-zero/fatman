@@ -509,7 +509,7 @@ class PseudopotentialList(Resource):
             print('here')
             data['converted_from'] = args['converted_from']
 
-        p, created = Pseudopotential.get_or_create(**data, defaults=dict(pseudo=args['pseudo']))
+        p, created = Pseudopotential.get_or_create(defaults=dict(pseudo=args['pseudo']), **data)
 
         if created:
             return pseudo_to_dict(p), 201, {'Location': api.url_for(PseudopotentialResource, id=p.id)}
