@@ -343,7 +343,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
             infile = open(atoms_db[el][0].format(pplocation), 'r')
         except FileNotFoundError:
             if ignore_missing_pp:
-                print("{}: ignoring element due to missing pseudopotential coefficients".format(el))
+                print("{:2s}: ignoring element due to missing pseudopotential coefficients".format(el))
                 continue
             else:
                 raise
@@ -361,7 +361,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
                                  })
             req.raise_for_status()
         else:
-            print("{}: would have submitted a pseudopotential in CP2K format".format(el))
+            print("{:2s}: would have submitted a pseudopotential in CP2K format".format(el))
 
         settings['pseudoguess'] = pseudo_data
 
@@ -372,7 +372,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
         of.close()
 
         #and run it.
-        print("{}: converting pseudopotential from CP2K to UPF".format(el))
+        print("{:2s}: converting pseudopotential from CP2K to UPF".format(el))
         subprocess.check_call(cp2k_command.format("upf.inp", "upf.out"), shell=True)
 
         #open the resulting UPF file
@@ -414,7 +414,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
             print("{:2s}: {:}".format(el, ", ".join([str(x) for x in tasklist])))
 
         else:
-            print("{}: would have submitted the UPF pseudo, a new method entry and tasks".format(el))
+            print("{:2s}: would have submitted the UPF pseudo, a new method entry and tasks".format(el))
 
 if __name__ == "__main__":
     run()
