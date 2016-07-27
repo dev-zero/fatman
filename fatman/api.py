@@ -377,23 +377,24 @@ class MethodList(Resource):
 
         return [marshal(model_to_dict(m), method_list_fields) for m in q]
 
+    @marshal_with(method_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('code', type=str, required=True)
-        parser.add_argument('pseudopotential', type=int, required=True)
+        # TODO: the column and the attribute are called pseudopotential, but are in fact family-references
+        parser.add_argument('pseudopotential', type=str, required=True)
         parser.add_argument('basis_set', type=int, required=True)
         parser.add_argument('settings', type=str, required=True)
         args = parser.parse_args()
 
         b = BasissetFamily.get(BasissetFamily.id == args['basis_set'])
-        p = PseudopotentialFamily.get(PseudopotentialFamily.id == args['pseudopotential'])
+        p = PseudopotentialFamily.get(PseudopotentialFamily.name == args['pseudopotential'])
 
-        m, created = Method.get_or_create(code=args['code'],
-                                          basis_set=b,
-                                          pseudopotential=p,
-                                          settings=json.loads(args['settings']))
+        m = Method.create(code=args['code'],
+                          basis_set=b, pseudopotential=p,
+                          settings=json.loads(args['settings']))
 
-        return {'id': m.id}
+        return model_to_dict(m)
 
 class MethodResource(Resource):
     """Return all the details for a method, or set them"""
