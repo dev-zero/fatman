@@ -21,6 +21,7 @@ import './rxjs-operators';
             <li><a [routerLink]="['/machinestatus']">Machine Status</a></li>
             <li><a [routerLink]="['/periodictable/3/72']">Periodic Table</a></li>
             <li><a [routerLink]="['/methodlist']">Method Overview</a></li>
+            <li><a [routerLink]="['/pseudos']">Pseudos</a></li>
           </ul>
         </div> <!--/.navbar-collapse -->
       </div>
