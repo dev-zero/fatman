@@ -287,6 +287,9 @@ class ResultList(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('test', type=str)
         parser.add_argument('method', type=int)
+        parser.add_argument('structure', type=str)
+        parser.add_argument('calculated_on', type=str)
+        parser.add_argument('code', type=str)
         args = parser.parse_args()
 
         q = Result.select(Result, Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
@@ -309,6 +312,15 @@ class ResultList(Resource):
             m = Method.get(Method.id == args['method'])
             q = q.where(Task.method == m)
         
+        if args['structure']:
+            q = q.where(Structure.name == args['structure'])
+
+        if args['calculated_on']:
+            q = q.where(Task.machine == args['calculated_on'])
+
+        if args['code']:
+            q = q.where(Method.code == args['code'])
+
         return [marshal(model_to_dict(x), result_resource_fields) for x in q]
 
 
