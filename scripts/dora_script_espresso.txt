@@ -11,7 +11,7 @@
 # -- job info --
 #SBATCH --account=uzh1
 #SBATCH --job-name={projectname}
-#SBATCH --time=23:59:00
+#SBATCH --time={runtime}
 
 # -- number of nodes --
 #SBATCH --nodes=4               # of nodes            (default =  1)

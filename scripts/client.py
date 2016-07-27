@@ -9,6 +9,7 @@ import json
 import tempfile
 from time import sleep
 from datetime import datetime as dt
+from datetime import timedelta
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -31,6 +32,37 @@ DAEMON_SLEEPTIME = 5*60
 
 # some code in run() changes the working directory, preserve it here
 SCRIPTDIR = path.dirname(path.abspath(__file__))
+
+def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340):
+    '''Try to calculate a runtime estimate based on previous calculations in seconds
+
+    Search criteria for the estimate are: code-name, machine-name and the structure calculated.
+
+    If no estimate can be obtained (because there is no history), 23:59:00 is returned.
+    This fallback can be overwritten.
+
+    Returned is 1.5x the maximum runtime found in seconds.'''
+
+    req = sess.get(RESULTS_URL.format(url),
+                   params={'code': code, 'calculated_on': machine, 'structure': structure})
+    req.raise_for_status()
+
+    print("estimating runtime for calculating {} with {} on {}".format(structure, code, machine))
+
+    runtime_max = 0
+    for result in req.json():
+        try:
+            runtime = result['data']['runtime']
+            if runtime > runtime_max:
+                runtime_max = int(runtime)
+        except (KeyError, TypeError):
+            # missing either data or data.runtime, ignore it
+            pass
+
+    if runtime_max == 0:
+        return fallback
+
+    return int(1.5*runtime_max) # truncate to int (seconds)
 
 @click.command()
 @click.option('--url', type=str, default='http://localhost:5000',
@@ -274,6 +306,8 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
                 remote_scratchdir = "/scratch/daint/timuel/deltatests"
                 remote_code_workdir = path.join(remote_workdir, code_workdir_suffix)
 
+                runtime_estimate = get_runtime_estimate(sess, url, "espresso", "hpc", task['structure']['name'])
+
                 with open(runscript_template_path, 'r') as runscript_template, \
                         open(path.join(code_workdir, "runjob_dora.sh"), "w") as runscript:
 
@@ -288,6 +322,7 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
                                                         '{}.out.bz2'.format(input_file_name)),
                               "server"      : server,
                               "results_url" : RESULTS_URL.format(url),
+                              "runtime"     : str(timedelta(seconds=runtime_estimate))
                              }
 
                     runscript.write(runscript_template.read().format(**params))
