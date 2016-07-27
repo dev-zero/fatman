@@ -146,8 +146,6 @@ class TaskList(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('status', type=str)
         parser.add_argument('limit', type=int)
-        parser.add_argument('page', type=int)
-        parser.add_argument('per_page', type=int)
         parser.add_argument('timeorder', type=bool, default=False)
         parser.add_argument('machine', type=str)
         args = parser.parse_args()
@@ -173,9 +171,6 @@ class TaskList(Resource):
             q = q.where(Task.machine == args['machine'])
 
         if args['limit'] is not None:
-            q = q.limit(args['limit'])
-
-        if (args['page'] is not None) and (args['per_page'] is not None):
             q = q.limit(args['limit'])
 
         return [marshal(model_to_dict(t), task_list_fields) for t in q]
