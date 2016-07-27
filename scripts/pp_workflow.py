@@ -387,13 +387,12 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
                                   'format': 'UPF',
                                   'overwrite': True})
             req.raise_for_status()
-            upf_id = req.json()['id']
 
             #now, create a 'method' with this PP.
             req = sess.post(METHOD_URL.format(url),
                             data={'code':'espresso',
                                   'basis_set': 55,
-                                  'pseudopotential': upf_id,
+                                  'pseudopotential': ppname,
                                   'settings': json.dumps(
                                       {'smearing': 'marzari-vanderbilt',
                                        'xc': 'PBE',
