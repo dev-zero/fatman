@@ -41,7 +41,7 @@ def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340):
     If no estimate can be obtained (because there is no history), 23:59:00 is returned.
     This fallback can be overwritten.
 
-    Returned is 1.5x the maximum runtime found in seconds.'''
+    Returned is 1.2x the maximum runtime found in seconds.'''
 
     req = sess.get(RESULTS_URL.format(url),
                    params={'code': code, 'calculated_on': machine, 'structure': structure})
@@ -62,7 +62,7 @@ def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340):
     if runtime_max == 0:
         return fallback
 
-    return int(1.5*runtime_max) # truncate to int (seconds)
+    return int(1.2*runtime_max) # truncate to int (seconds)
 
 @click.command()
 @click.option('--url', type=str, default='http://localhost:5000',
