@@ -258,7 +258,7 @@ DELTATEST_ELEMENTS = {
 
 @click.command()
 @click.argument('ppname', type=str)
-@click.argument('pplocation', type=click.Path(exists=True))
+@click.argument('pplocation', type=click.Path(exists=True, resolve_path=True))
 @click.argument('atomtype', type=click.Choice(['smallcore', 'mediumcore', 'largecore']))
 @click.argument('elements', type=str, nargs=-1, metavar='[ELEMENTS]')
 @click.option('--url', type=str, default='http://localhost:5000',
