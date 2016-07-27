@@ -29,7 +29,7 @@ method_resource_fields = {
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
     'settings': fields.Raw,
-    '_links': { 'self': fields.Url('methodresource') },
+    '_links': {'self': fields.Url('methodresource')},
     }
 
 method_list_fields = {
@@ -37,7 +37,7 @@ method_list_fields = {
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
-    '_links': { 'self': fields.Url('methodresource') },
+    '_links': {'self': fields.Url('methodresource')},
     }
 
 structure_resource_fields = {
@@ -52,26 +52,26 @@ structure_list_fields = {
     }
 
 task_resource_fields = {
-    'id': fields.Integer,
+    'id': fields.Raw,
     'ctime': fields.String,
     'mtime': fields.String,
     'machine': fields.Raw,
     'status': fields.String(attribute='status.name'),
     'method': fields.Nested(method_resource_fields),
     'structure': fields.Nested(structure_resource_fields),
-    '_links': { 'self': fields.Url('taskresource') },
+    '_links': {'self': fields.Url('taskresource')},
     'priority' : fields.Integer,
     }
 
 task_list_fields = {
-    'id': fields.Integer,
+    'id': fields.Raw,
     'ctime': fields.String,
     'mtime': fields.String,
     'machine': fields.Raw,
     'status': fields.String(attribute='status.name'),
     'method': fields.Nested(method_list_fields),
     'structure': fields.Nested(structure_list_fields),
-    '_links': { 'self': fields.Url('taskresource') },
+    '_links': {'self': fields.Url('taskresource')},
     }
 
 test_resource_fields = {
@@ -80,21 +80,29 @@ test_resource_fields = {
     'structure': fields.Nested(structure_resource_fields),
     }
 
-pseudo_list_fields = {
-    'id': fields.Integer,
-    'element': fields.String,
-    'family': fields.String(attribute='name'),
-    'format': fields.String,
-    'converted_from': fields.Integer(attribute='converted_from'),
+pseudo_nested_fields = {
+    'id': fields.Raw,
+    'format': fields.Raw,
+    '_links': {'self': fields.Url('pseudopotentialresource')},
     }
 
-pseudo_list_full_fields = {
-    'id': fields.Integer,
-    'element': fields.String,
-    'family': fields.String(attribute='name'),
-    'format': fields.String,
-    'pseudo': fields.String,
-    'converted_from': fields.Integer(attribute='converted_from'),
+pseudo_list_fields = {
+    'id': fields.Raw,
+    'element': fields.Raw,
+    'family': fields.String(attribute='family.name'),
+    'format': fields.Raw,
+    'converted_from': fields.Nested(pseudo_nested_fields, default={}),
+    '_links': {'self': fields.Url('pseudopotentialresource')},
+    }
+
+pseudo_resource_fields = {
+    'id': fields.Raw,
+    'element': fields.Raw,
+    'family': fields.String(attribute='family.name'),
+    'format': fields.Raw,
+    'pseudo': fields.Raw,
+    'converted_from': fields.Nested(pseudo_nested_fields, default={}),
+    '_links': {'self': fields.Url('pseudopotentialresource')},
     }
 
 class TaskResource(Resource):
@@ -413,7 +421,31 @@ class Basissets(Resource):
 
         return {b.element: b.basis for b in q}
 
-class Pseudopotentials(Resource):
+def pseudo_to_dict(pseudo):
+    '''Convert an empty dict to None to trigger the default for fields.Nested'''
+
+    pdict = model_to_dict(pseudo)
+
+    if not pdict['converted_from']:
+        pdict['converted_from'] = None
+
+    return pdict
+
+class PseudopotentialResource(Resource):
+    @marshal_with(pseudo_resource_fields)
+    def get(self, id):
+        ConvertedPseudo = Pseudopotential.alias()
+        q = (Pseudopotential
+             .select(Pseudopotential, PseudopotentialFamily.name, ConvertedPseudo)
+             .join(PseudopotentialFamily).switch(Pseudopotential)
+             .join(ConvertedPseudo, JOIN.LEFT_OUTER,
+                   on=(Pseudopotential.converted_from == ConvertedPseudo.id)).switch(Pseudopotential)
+             .where(Pseudopotential.id == id)
+             .get())
+
+        return pseudo_to_dict(q)
+
+class PseudopotentialList(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('family', type=str)
@@ -421,20 +453,13 @@ class Pseudopotentials(Resource):
         parser.add_argument('element', type=str, action="append")
         args = parser.parse_args()
 
-        # contrary to the other queries we are using dicts() here
-        # to avoid one query per element during model_to_dict().
-        # This would happen due to the converted_from self-reference
-        # which would require another join here with Pseudopotential
-        # to fully populate the entry object.
-        # Furthermore since the converted_from can be NULL, the join
-        # would have to be a LEFT OUTER join.
-        # Finally Peewee seems to do something strange for self-reference
-        # columns in case they are NULL during model_to_dict()
-        q = Pseudopotential \
-                .select(Pseudopotential, PseudopotentialFamily.name) \
-                .join(PseudopotentialFamily) \
-                .order_by(Pseudopotential.id.asc()) \
-                .dicts()
+        ConvertedPseudo = Pseudopotential.alias()
+        q = (Pseudopotential
+             .select(Pseudopotential, PseudopotentialFamily.name, ConvertedPseudo)
+             .join(PseudopotentialFamily).switch(Pseudopotential)
+             .join(ConvertedPseudo, JOIN.LEFT_OUTER,
+                   on=(Pseudopotential.converted_from == ConvertedPseudo.id)).switch(Pseudopotential)
+             .order_by(Pseudopotential.id.asc()))
 
         if args['family']:
             q = q.where(PseudopotentialFamily.name == args['family'])
@@ -446,35 +471,47 @@ class Pseudopotentials(Resource):
             q = q.where(Pseudopotential.element << args['element'])
 
         if any(args.values()):
-            return [marshal(p, pseudo_list_full_fields) for p in q]
+            return [marshal(pseudo_to_dict(p), pseudo_resource_fields) for p in q]
         else:
-            return [marshal(p, pseudo_list_fields) for p in q]
+            return [marshal(pseudo_to_dict(p), pseudo_list_fields) for p in q]
 
+    @marshal_with(pseudo_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('family', type=str, required=True)
         parser.add_argument('element', type=str, required=True)
         parser.add_argument('pseudo', type=str, required=True)
         parser.add_argument('format', type=str, required=True)
+        parser.add_argument('converted_from', type=int, required=False)
         parser.add_argument('overwrite', type=bool, default=False)
 
         args = parser.parse_args()
 
         f, _ = PseudopotentialFamily.get_or_create(name=args['family'])
-        p, created = Pseudopotential.get_or_create(family=f,
-                                                   element=args['element'],
-                                                   format=args['format'],
-                                                   defaults=dict(pseudo=args['pseudo']))
+
+        data = {'family': f,
+                'element': args['element'],
+                'format': args['format']}
+
+        if args['converted_from']:
+            print('here')
+            data['converted_from'] = args['converted_from']
+
+        p, created = Pseudopotential.get_or_create(**data, defaults=dict(pseudo=args['pseudo']))
+
+        if created:
+            return pseudo_to_dict(p), 201, {'Location': api.url_for(PseudopotentialResource, id=p.id)}
 
         # the user can specify overwriting of the pseudo
-        if args['overwrite'] and not created:
-            q = Pseudopotential.update(pseudo=args['pseudo']).where(Pseudopotential.id == p.id)
-            q.execute()
-
-        if not created and not args['overwrite']:
+        if args['overwrite']:
+            q = (Pseudopotential
+                    .update(pseudo=args['pseudo'])
+                    .where(Pseudopotential.id == p.id)
+                    .returning(Pseudopotential)
+                    .execute())
+            return pseudo_to_dict(next(q)), 200, {'Location': api.url_for(PseudopotentialResource, id=p.id)}
+        else:
             abort(400, message="Pseudo is already uploaded for this result")
-
-        return {'id': f.id}
 
 class MachineStatus(Resource):
     """Return a dictionary with the number of running and total tasks per machine:
@@ -850,7 +887,8 @@ api.add_resource(ResultResource, '/results/<int:id>')
 api.add_resource(ResultFileResource, '/results/<int:id>/file')
 api.add_resource(ResultList, '/results')
 api.add_resource(Basissets, '/basis')
-api.add_resource(Pseudopotentials, '/pseudos')
+api.add_resource(PseudopotentialResource, '/pseudos/<int:id>')
+api.add_resource(PseudopotentialList, '/pseudos')
 api.add_resource(CalcStatus, '/calcstatus')
 api.add_resource(MachineStatus, '/machinestatus')
 api.add_resource(TestResultResource, '/testresult')
