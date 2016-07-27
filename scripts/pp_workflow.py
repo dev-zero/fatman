@@ -350,6 +350,8 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
 
         pseudo_data = "".join(infile.readlines()[1:])
 
+        orig_pseudo_id = 0
+
         #upload the PP data.
         if online:
             req = sess.post(PSEUDOPOTENTIAL_URL.format(url),
@@ -360,6 +362,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
                                   'overwrite': False,
                                  })
             req.raise_for_status()
+            orig_pseudo_id = req.json()['id']
         else:
             print("{:2s}: would have submitted a pseudopotential in CP2K format".format(el))
 
@@ -385,7 +388,9 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
                                   'element': el,
                                   'pseudo': upf_data,
                                   'format': 'UPF',
-                                  'overwrite': True})
+                                  'overwrite': True,
+                                  'converted_from': orig_pseudo_id,
+                                 })
             req.raise_for_status()
 
             #now, create a 'method' with this PP.
@@ -410,7 +415,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
             req.raise_for_status()
             tasklist = req.json()
 
-            print("{:2s}: {:}".format(el, ", ".join([str(x) for x in tasklist])))
+            print("{:2s}: task ids {:}".format(el, ", ".join([str(x) for x in tasklist])))
 
         else:
             print("{:2s}: would have submitted the UPF pseudo, a new method entry and tasks".format(el))
