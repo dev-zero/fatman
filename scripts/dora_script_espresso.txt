@@ -78,13 +78,15 @@ EOF
 
   fi
 
+  # pull the output files from scratch in any case
+  cp "$SCRATCHDIR"/*out "$INPDIR"
+
   if [ $retval -eq 0 ]
   then
       echo 'No Error'
       en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654}}'` 
 
-      cp $SCRATCHDIR/*out $INPDIR
-      bzip2 $INPDIR/pw.inp.out
+      bzip2 "$INPDIR/pw.inp.out"
 
       cat >> "{workdir}/update_fatman.py" << EOF
 # {projectname}  correct `date`
