@@ -150,7 +150,6 @@ class TaskList(Resource):
         parser.add_argument('machine', type=str)
         parser.add_argument('structure', type=str)
         parser.add_argument('pseudofamily', type=str)
-        parser.add_argument('method', type=str)
         args = parser.parse_args()
 
         q = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
@@ -178,9 +177,6 @@ class TaskList(Resource):
 
         if args['pseudofamily'] is not None:
             q = q.where(PseudopotentialFamily.name == args['pseudofamily'])
-
-        if args['method'] is not None:
-            q = q.where(Method.name == args['method'])
 
         if args['limit'] is not None:
             q = q.limit(args['limit'])
