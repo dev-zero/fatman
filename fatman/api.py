@@ -880,10 +880,6 @@ class StatsResource(Resource):
                       "_links": {"self": url_for("tasklist", status=e.status.name)}
                      } for e in q]
 
-            stats += [{"status": "total",
-                       "count": Task.select().count(),
-                       "_links": {"self": url_for("tasklist")}}]
-
             return stats
 
         abort(404)
