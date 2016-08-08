@@ -546,18 +546,6 @@ class MachineStatus(Resource):
 
         return [(m.machine, m.running, m.total) for m in q]
 
-class CalcStatus(Resource):
-    """Return a dictionary of task statuses and the number of tasks with that status
-       e.g.   running   7
-              error     2
-              total    124
-    """
-    def get(self):
-        q = TaskStatus.select().annotate(Task)
-        ret = dict([(x.name,x.count) for x in q])
-        
-        return ret
-
 class TestResultResource(Resource):
     def get(self):
         parser = reqparse.RequestParser()
@@ -872,6 +860,34 @@ class Comparison(Resource):
         else:
             return False
 
+class StatsResource(Resource):
+    """Return a list of summary stats, including links to go to the details:
+       e.g. for tasks
+         [ { "status": "running", "count": 7, "_links": { "self": "/tasks?status=running" }},
+           { "status": "error", "count": 2, "_links": { "self": "/tasks?status=error" }},
+           { "status": "total", "count": 9, "_links": { "self": "/tasks" }} ]
+    """
+    def get(self, what):
+        if what == "tasks":
+            q = (Task
+                 .select(TaskStatus.name, fn.COUNT(TaskStatus.name))
+                 .join(TaskStatus)
+                 .group_by(TaskStatus.name)
+                 .order_by(TaskStatus.name))
+
+            stats = [{"status": e.status.name,
+                      "count": e.count,
+                      "_links": {"self": url_for("tasklist", status=e.status.name)}
+                     } for e in q]
+
+            stats += [{"status": "total",
+                       "count": Task.select().count(),
+                       "_links": {"self": url_for("tasklist")}}]
+
+            return stats
+
+        abort(404)
+
 
 # Catch common exceptions in the REST dispatcher
 errors = {
@@ -903,7 +919,6 @@ api.add_resource(ResultList, '/results')
 api.add_resource(Basissets, '/basis')
 api.add_resource(PseudopotentialResource, '/pseudos/<int:id>')
 api.add_resource(PseudopotentialList, '/pseudos')
-api.add_resource(CalcStatus, '/calcstatus')
 api.add_resource(MachineStatus, '/machinestatus')
 api.add_resource(TestResultResource, '/testresult')
 api.add_resource(Comparison, '/compare')
@@ -913,5 +928,6 @@ api.add_resource(TestList, '/tests')
 api.add_resource(TestResource, '/tests/<string:testname>')
 api.add_resource(Plot, '/plot')
 api.add_resource(StructureResource, '/structure')
+api.add_resource(StatsResource, '/stats/<string:what>')
 
 #  vim: set ts=4 sw=4 tw=0 :
