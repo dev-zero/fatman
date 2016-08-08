@@ -14,6 +14,9 @@ import {TasksList} from './tasks-list.component';
       (click)="onSelect(tstat.status)">
       {{tstat.status}} <span class="badge">{{tstat.count}}</span>
     </button>
+    <button type="button" class="list-group-item" disabled>
+      Total <span class="badge">{{total}}</span>
+    </button>
   </div>
   <tasks-list [statusname]="selectedStatus"></tasks-list>
   `,
@@ -25,14 +28,21 @@ export class TasksStats implements OnInit {
 
   errorMessage: string;
   taskstats: Object[];
+  total: number = 0;
   selectedStatus: string;
 
   constructor(private _taskService: TaskService) { }
 
   getStats() {
     this._taskService.getStats().subscribe(
-      taskstats => this.taskstats = taskstats,
+      taskstats => {
+        this.total = taskstats.reduce(function(sum: number, entry) {
+          return sum + entry['count'];
+        }, 0);
+        this.taskstats = taskstats;
+      },
       error => this.errorMessage = <any>error);
+
   }
 
   onSelect(stat: string) { this.selectedStatus = stat; }
