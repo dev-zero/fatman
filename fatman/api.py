@@ -1,27 +1,24 @@
 #!/usr/bin/env python
 
+from datetime import datetime as dt
+import json
+import pickle
+from os import path
+import bz2
+from io import BytesIO, StringIO
+
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
-from flask import make_response
+from flask import make_response, url_for
 from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
-
-from datetime import datetime as dt
 
 from fatman import app, resultfiles
 from fatman.models import *
 from fatman.utils import route_from
 from fatman.tools import calcDelta, eos, Json2Atoms, Atoms2Json
 
-from io import BytesIO, StringIO
-
 import numpy as np
-
-import json
-import pickle
-from os import path
-import bz2
-
 
 method_resource_fields = {
     'id': fields.Raw,
