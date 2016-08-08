@@ -9,13 +9,24 @@ export class TaskService {
   constructor(private _http: Http) {
   }
 
-  private _methodsUrl = '../tasks';
+  private _tasksUrl = '../tasks';
+  private _statsUrl = '../stats/tasks';
 
-  getTasks(): Observable<Object[]> {
+  getTasks(statusName: string = ""): Observable<Object[]> {
     let params: URLSearchParams = new URLSearchParams();
-    params.set('limit', '500');
+    params.set('limit', '100');
     params.set('timeorder', 'True');
-    return this._http.get(this._methodsUrl, {search: params})
+
+    if (statusName != "")
+      params.set('status', statusName)
+
+    return this._http.get(this._tasksUrl, {search: params})
+      .map((response) => response.json())
+      .catch(this.handleError);
+  }
+
+  getStats(): Observable<Object[]> {
+    return this._http.get(this._statsUrl)
       .map((response) => response.json())
       .catch(this.handleError);
   }

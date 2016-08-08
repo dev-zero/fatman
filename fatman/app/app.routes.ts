@@ -2,7 +2,7 @@
 import {provideRouter, RouterConfig} from '@angular/router';
 
 import {Home} from './home/home';
-import {Tasks} from './tasks/tasks-list.component';
+import {TasksStats} from './tasks/tasks-stats.component';
 import {MachineStatus} from './machinestatus/machinestatus-list.component';
 import {Reports} from './reports/reports-list.component';
 import {ReportsComparison} from './reports/reports-comparison.component';
@@ -16,7 +16,7 @@ import {PseudoList} from './pseudos/pseudo-list.component';
 const routes: RouterConfig = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'home', component: Home },
-  { path: 'tasks', component: Tasks },
+  { path: 'tasks', component: TasksStats },
   { path: 'reports/comparison/:id1/:id2', component: ReportsComparison },
   { path: 'reports/elementcomparison/:id1/:test1', component: ReportsElementComparison },
   { path: 'reports', component: Reports },
