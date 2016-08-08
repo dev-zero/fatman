@@ -869,9 +869,9 @@ class StatsResource(Resource):
     """
     def get(self, what):
         if what == "tasks":
-            q = (Task
-                 .select(TaskStatus.name, fn.COUNT(TaskStatus.name))
-                 .join(TaskStatus)
+            q = (TaskStatus
+                 .select(TaskStatus.name, fn.COUNT(Task.id))
+                 .join(Task, JOIN.LEFT_OUTER)
                  .group_by(TaskStatus.name)
                  .order_by(TaskStatus.name))
 
