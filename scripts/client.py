@@ -33,7 +33,7 @@ DAEMON_SLEEPTIME = 5*60
 # some code in run() changes the working directory, preserve it here
 SCRIPTDIR = path.dirname(path.abspath(__file__))
 
-def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340):
+def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340, minimum=900):
     '''Try to calculate a runtime estimate based on previous calculations in seconds
 
     Search criteria for the estimate are: code-name, machine-name and the structure calculated.
@@ -60,9 +60,9 @@ def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340):
             pass
 
     if runtime_max == 0:
-        return fallback
+        return max(minimum, fallback)
 
-    return int(1.2*runtime_max) # truncate to int (seconds)
+    return max(minimum, int(1.2*runtime_max)) # truncate to int (seconds)
 
 @click.command()
 @click.option('--url', type=str, default='http://localhost:5000',
