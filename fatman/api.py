@@ -875,9 +875,9 @@ class StatsResource(Resource):
                  .group_by(TaskStatus.name)
                  .order_by(TaskStatus.name))
 
-            stats = [{"status": e.status.name,
+            stats = [{"status": e.name,
                       "count": e.count,
-                      "_links": {"self": url_for("tasklist", status=e.status.name)}
+                      "_links": {"self": url_for("tasklist", status=e.name)}
                      } for e in q]
 
             return stats
