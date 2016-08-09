@@ -14,8 +14,8 @@
 #SBATCH --time={runtime}
 
 # -- number of nodes --
-#SBATCH --nodes=4               # of nodes            (default =  1)
-#SBATCH --ntasks-per-node=36    # of MPI tasks/node   (default = 36)
+#SBATCH --nodes=8               # of nodes            (default =  1)
+#SBATCH --ntasks-per-node=18    # of MPI tasks/node   (default = 36)
 #SBATCH --cpus-per-task=1       # of OMP threads/task (default =  1)
 #SBATCH --ntasks-per-core=1     # HT (default = 1, HyperThreads = 2)
 
