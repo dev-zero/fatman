@@ -33,7 +33,7 @@ DAEMON_SLEEPTIME = 5*60
 # some code in run() changes the working directory, preserve it here
 SCRIPTDIR = path.dirname(path.abspath(__file__))
 
-def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340, minimum=900):
+def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340, minimum=900, maximum=86340):
     '''Try to calculate a runtime estimate based on previous calculations in seconds
 
     Search criteria for the estimate are: code-name, machine-name and the structure calculated.
@@ -41,7 +41,8 @@ def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340, mi
     If no estimate can be obtained (because there is no history), 23:59:00 is returned.
     This fallback can be overwritten.
 
-    Returned is 1.2x the maximum runtime found in seconds.'''
+    Returned is 1.5x the maximum runtime found in seconds
+    with a lower limit of 15 minutes and max of 23:59:00.'''
 
     req = sess.get(RESULTS_URL.format(url),
                    params={'code': code, 'calculated_on': machine, 'structure': structure})
@@ -62,7 +63,16 @@ def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340, mi
     if runtime_max == 0:
         return max(minimum, fallback)
 
-    return max(minimum, int(1.2*runtime_max)) # truncate to int (seconds)
+    if runtime_max > maximum:
+        raise RuntimeError('Maximum runtime found exceeds enforced maximum')
+
+    estimated_rt = int(1.5*runtime_max) # truncate to int (seconds)
+
+    if estimated_rt > maximum:
+        print('WARNING: Estimated runtime exceeds maximal runtime, limitting to maximum')
+        estimated_rt = maximum
+
+    return max(minimum, estimated_rt)
 
 @click.command()
 @click.option('--url', type=str, default='http://localhost:5000',
