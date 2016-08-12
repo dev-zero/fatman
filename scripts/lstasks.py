@@ -27,8 +27,6 @@ def lstasks(url, **kwargs):
     params = {o: kwargs[o] for o in kwargs.keys() if o in TASKS_OPTS and kwargs[o]}
     params['timeorder'] = True
 
-    print(params)
-
     req = sess.get(TASKS_URL.format(url), data=params)
     req.raise_for_status()
 
