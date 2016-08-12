@@ -170,7 +170,7 @@ class TaskList(Resource):
             q = q.where(Task.machine == args['machine'])
 
         if args['structure'] is not None:
-            q = q.where(Structure.name == args['structure'])
+            q = q.where(Structure.name.contains(args['structure']))
 
         if args['pseudofamily'] is not None:
             q = q.where(PseudopotentialFamily.name == args['pseudofamily'])
