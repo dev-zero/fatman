@@ -1,5 +1,5 @@
 
-import {provideRouter, RouterConfig} from '@angular/router';
+import {Routes, RouterModule} from '@angular/router';
 
 import {Home} from './home/home';
 import {TasksStats} from './tasks/tasks-stats.component';
@@ -12,8 +12,7 @@ import {Details} from './details/details-list.component';
 import {MethodList} from './methods/methods-list.component';
 import {PseudoList} from './pseudos/pseudo-list.component';
 
-
-const routes: RouterConfig = [
+const appRoutes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'home', component: Home },
   { path: 'tasks', component: TasksStats },
@@ -29,8 +28,6 @@ const routes: RouterConfig = [
   { path: 'pseudos', component: PseudoList }
 ];
 
-export const appRouterProviders = [
-  provideRouter(routes)
-];
+export const routing = RouterModule.forRoot(appRoutes);
 
 //  vim: set ts=2 sw=2 tw=0 :
