@@ -9,20 +9,32 @@ import {HomeService} from './home.service';
   template: `
     <h3>Welcome to FATMAN</h3>
 
-      <div style="font-size: 12pt" class="container" style="overflow-y:scroll; height:600px;">
-        Reference Method:
-          <select #meth1 (change)="onSelect(meth1.value);">
-              <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
-          </select>
+    <div style="font-size: 12pt" class="container" style="overflow-y:scroll; height:600px;">
+      <p>Reference Method:
+        <select #meth1 (change)="onSelect(meth1.value);">
+            <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
+        </select>
+      </p>
 
       <table class="table table-bordered table-striped table-condensed">
         <thead>
-          <th (click)="re_sort(0)">Code</th>
-          <th (click)="re_sort(2)">Average Delta</th>
+          <tr>
+            <th (click)="re_sort(0)">Code</th>
+            <th (click)="re_sort(2)">Average Delta</th>
+          </tr>
         </thead>
-        <tr *ngFor="let id of f_results"><td><methoddetails method_id="{{ id[0] }}" small=True></methoddetails></td><td><a [routerLink]="['/periodictable',method1, id[0]]">{{ id[1] | number:'.3'}} &plusmn; {{ id[2] | number:'.3'}} ({{ id[3] | number:'.0'}})</a></td></tr>
+        <tbody>
+          <tr *ngFor="let id of f_results">
+            <td><methoddetails method_id="{{ id[0] }}" small=True></methoddetails></td>
+            <td>
+              <a [routerLink]="['/periodictable',method1, id[0]]">
+                {{ id[1] | number:'.3'}} &plusmn; {{ id[2] | number:'.3'}} ({{ id[3] | number:'.0'}})
+              </a>
+            </td>
+          </tr>
+        </tbody>
       </table>
-      </div>
+    </div>
   `,
 })
 
