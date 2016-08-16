@@ -29,31 +29,34 @@ export class PseudoService {
     let unmatched : Pseudo[] = [];
 
     for (let pseudo of plist) {
-      if (+pseudo.converted_from) {
-        // we are using the fact that converted pseudos
-        // are usually added shortly/directly after the original one
-        let idx = -1;
-        for (let i = pseudos.length-1; i >= 0; i--) {
-          if (pseudos[i].id == pseudo.converted_from) {
-            idx = i;
-            break;
-          }
-        }
-
-        // nevertheless, it may be that a converted pseudo was added before the original one
-        if (idx >= 0) {
-          pseudos[idx].addConverted(pseudo);
-        } else {
-          unmatched.push(new Pseudo(pseudo));
-        }
-      } else {
+      // add non-converted pseudos directly to the list of pseudos
+      if (Object.getOwnPropertyNames(pseudo.converted_from).length === 0) {
         pseudos.push(new Pseudo(pseudo));
+        continue;
+      }
+
+      // we are using the fact that converted pseudos
+      // are usually added shortly/directly after the original one
+      let idx = -1;
+      for (let i = pseudos.length-1; i >= 0; i--) {
+        console.log(`comparing ${pseudos[i].id} == ${pseudo.converted_from.id}`);
+        if (pseudos[i].id == pseudo.converted_from.id) {
+          idx = i;
+          break;
+        }
+      }
+
+      // nevertheless, it may be that a converted pseudo was added before the original one
+      if (idx >= 0) {
+        pseudos[idx].addConverted(pseudo);
+      } else {
+        unmatched.push(new Pseudo(pseudo));
       }
     }
 
     // it is guaranteed that the converted_from id exists in the database if non-zero
     for (let pseudo of unmatched) {
-      let spseudo = pseudos.find(function(p) { return p.id == pseudo.converted_from; })
+      let spseudo = pseudos.find(function(p) { return p.id == pseudo.converted_from.id; })
       spseudo.addConverted(pseudo);
     }
 

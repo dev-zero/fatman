@@ -4,7 +4,7 @@ export class Pseudo {
   public element: string = '';
   public family: string = '';
   public format: string = '';
-  public converted_from: number = -1;
+  public converted_from: Pseudo;
   converted_pseudos: Pseudo[] = [];
 
   constructor(json : Object) {
