@@ -9,7 +9,7 @@ import './rxjs-operators';
   directives: [ROUTER_DIRECTIVES],
   template: `
     <nav class="navbar navbar-inverse navbar-static-top">
-      <div class="container">
+      <div class="container-fluid">
         <div class="navbar-header">
           <a class="navbar-brand" href="#">FATMAN</a>
         </div>

@@ -3,56 +3,86 @@ import {Router} from '@angular/router';
 
 import {DetailsService} from './details.service';
 
-@Pipe({name: 'settingspipe'})
-export class SettingsPipe implements PipeTransform {
-    transform(value) {
-      var ret = "";
-      var val_s = "";
-      for (var key in value) {
-        var val = value[key];
-        if (typeof val == 'number') {
-          val_s = val.toFixed(0);
+/**
+ * Iterable Pipe
+ *
+ * It accepts Objects and [Maps](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)
+ * From here:
+ *   https://gist.github.com/amcdnl/202596c5b85cc66d7002d10bde3ab514
+ *
+ * Example:
+ *
+ *  <div *ngFor="let keyValuePair of someObject | mapToIterable">
+ *    key {{keyValuePair.key}} and value {{keyValuePair.value}}
+ *  </div>
+ *
+ */
+@Pipe({name: 'mapToIterable'})
+export class IterablePipe implements PipeTransform {
+  transform(iterable: any, args: any[]): any {
+    let result = [];
+
+    if (iterable.entries) {
+      iterable.forEach((key, value) => {
+        result.push({key, value});
+      });
+    } else {
+      for (let key in iterable) {
+        if (iterable.hasOwnProperty(key)) {
+          result.push({key, value: iterable[key]});
         }
-        else {
-          val_s = JSON.stringify (val);
-        }
-        ret += key + ": " + val_s + ", " ;  //todo: nicer formatting
       }
-      return (ret);
-      //if (value == -1.0) {
-      //    return "-";
-      //}
-      //else {
-      //    return value.toFixed(3);
-      //}
     }
+
+    return result;
+  }
+}
+
+@Pipe({name: 'stringifysetting'})
+export class SettingsPipe implements PipeTransform {
+  transform(value: any) {
+    if (typeof value == 'number')
+      return value.toFixed(0);
+
+    return JSON.stringify(value);
+  }
+}
+
+@Pipe({name: 'concatkvpairlist'})
+export class ConcatPipe implements PipeTransform {
+  transform(iterable: any[]) {
+    return iterable.map(entry => entry.key + ": " + JSON.stringify(entry.value)).join(", ");
+  }
 }
 
 @Component({
   selector:'methoddetails', 
   inputs: ['method_id', 'small'],
   providers: [DetailsService],
-  pipes: [SettingsPipe],
+  pipes: [SettingsPipe, IterablePipe, ConcatPipe],
   template: `
-    <span *ngIf='method'>
-      <span *ngIf='!small'>
-          <div class="panel panel-default">
-            <table border=0 width="100%" style='padding-left: 5px'>
-              <tr>
-                <td rowspan=2 width=60px style='text-align: center'><div style='height:12px; font-size: 10pt'>Method</div><div style='font-weight:bold; font-size:32pt'>{{ method.id }}</div> </td>
-                <td style='padding-left: 15px; width: 1px; white-space: nowrap' > Code: <b>{{ method.code }}</b> </td>
-                <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Pseudopotential: <b>{{ method.pseudopotential }}</b> </td>
-                <td style='padding-left: 25px; width: 1px; white-space: nowrap'> Basis Set: <b>{{ method.basis_set }}</b> </td>
-                <td> </td>
-              </tr>
-              <tr>
-                <td  style='padding-left: 15px' colspan=4>{{ method.settings | settingspipe}}&nbsp;</td>
-              </tr>
-            </table>
-          </div>
+    <div *ngIf="method && !small" class="panel panel-default">
+      <div class="panel-body">
+        <div class="text-center pull-left" style="margin-right: 1em;">
+          Method <p class="lead" style="font-size: 200%;"><strong>{{ method.id }}</strong></p>
+        </div>
+        <ul class="list-inline">
+          <li><strong>Code:</strong> {{ method.code }}</li>
+          <li><strong>Pseudopotential:</strong> {{ method.pseudopotential }}</li>
+          <li><strong>Basis Set:</strong> {{ method.basis_set }}</li>
+        </ul>
+        <ul class="list-inline">
+          <li *ngFor="let settingpair of method.settings | mapToIterable">
+            {{settingpair.key}}: {{ settingpair.value | stringifysetting }}
+          </li>
+        </ul>
+      </div>
+    </div>
+    <span *ngIf="method && small" title="{{ method.settings | mapToIterable | concatkvpairlist }}">
+      <span title="{{ method.settings | mapToIterable | concatkvpairlist }}">
+        <span class="text-muted">{{ method.id }}</span>
+        <span class="small">{{ method.basis_set }} / {{ method.pseudopotential }} ({{ method.code }})</span>
       </span>
-      <span *ngIf='small' title="{{ method.settings | settingspipe }}">
-        <span title="{{ method.settings | settingspipe }}"> <span class="text-muted">{{ method.id }}</span> <span class="small"> {{ method.basis_set }} / {{ method.pseudopotential }} ({{ method.code }})</span> 
     </span>
   `,
 })
