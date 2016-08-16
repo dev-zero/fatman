@@ -60,13 +60,19 @@ export class Home implements OnInit {
   };
 
   getResults(method) {
-    this.f_results=[];
+    this.f_results = [];
     if (this.methods) {
       for (var i=0; i<this.methods.length; i++) {
         this._service.getResults(method, this.methods[i]['id']).subscribe(
-        results => {this.f_results.push([results['methods'][1]].concat(results['summary']['avg']).concat(results['summary']['stdev']).concat(results['summary']['N'])) },
+          results => {
+            this.f_results.push([results['methods'][1]]
+                                .concat(results['summary']['avg'])
+                                .concat(results['summary']['stdev'])
+                                .concat(results['summary']['N']))
+          },
           error => this.errorMessage = <any>error,
-            () => this.re_sort(1));
+          () => this.re_sort(1)
+        );
       }
     }
   };
