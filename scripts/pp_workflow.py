@@ -289,14 +289,15 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
     atoms_db = ATOMS_DB[atomtype]
 
     workdir_base = mkdtemp(prefix="newpseudos_", dir=pplocation)
-    print("converted pseudos will be located in {}".format(workdir_base))
+    click.echo("converted pseudos will be located in {}".format(workdir_base))
 
     cp2k_command = "{} -i {{}} -o {{}}".format(cp2k_exe)
 
     if len(elements) == 0:
         elements = [e for e in atoms_db.keys() if e in DELTATEST_ELEMENTS]
 
-    print("process elements", ', '.join(elements))
+    click.echo("Processing elements: {}".format(', '.join(elements)))
+
     for el in elements:
        #retrieve a default pseudopotential for that element as a starting guess
        #myguess = sess.get(PSEUDOPOTENTIAL_URL, data={'family':'GTH-PBE', 'element':el}).json()[el]
@@ -343,7 +344,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
             infile = open(atoms_db[el][0].format(pplocation), 'r')
         except FileNotFoundError:
             if ignore_missing_pp:
-                print("{:2s}: ignoring element due to missing pseudopotential coefficients".format(el))
+                click.echo("{:2s}: ignoring element due to missing pseudopotential coefficients".format(el))
                 continue
             else:
                 raise
@@ -364,7 +365,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
             req.raise_for_status()
             orig_pseudo_id = req.json()['id']
         else:
-            print("{:2s}: would have submitted a pseudopotential in CP2K format".format(el))
+            click.echo("{:2s}: would have submitted a pseudopotential in CP2K format".format(el))
 
         settings['pseudoguess'] = pseudo_data
 
@@ -375,7 +376,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
         of.close()
 
         #and run it.
-        print("{:2s}: converting pseudopotential from CP2K to UPF".format(el))
+        click.echo("{:2s}: converting pseudopotential from CP2K to UPF".format(el))
         subprocess.check_call(cp2k_command.format("upf.inp", "upf.out"), shell=True)
 
         #open the resulting UPF file
@@ -415,10 +416,10 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
             req.raise_for_status()
             tasklist = req.json()
 
-            print("{:2s}: task ids {:}".format(el, ", ".join([str(x) for x in tasklist])))
+            click.echo("{:2s}: task ids {:}".format(el, ", ".join([str(x) for x in tasklist])))
 
         else:
-            print("{:2s}: would have submitted the UPF pseudo, a new method entry and tasks".format(el))
+            click.echo("{:2s}: would have submitted the UPF pseudo, a new method entry and tasks".format(el))
 
 if __name__ == "__main__":
     run()
