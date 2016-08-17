@@ -403,9 +403,9 @@ class MethodList(Resource):
         p = PseudopotentialFamily.get(PseudopotentialFamily.name == args['pseudopotential'])
 
         # the client relies on this method doing deduplication by using get_or_create
-        m = Method.get_or_create(code=args['code'],
-                                 basis_set=b, pseudopotential=p,
-                                 settings=json.loads(args['settings']))
+        m, _ = Method.get_or_create(code=args['code'],
+                                    basis_set=b, pseudopotential=p,
+                                    settings=json.loads(args['settings']))
 
         return model_to_dict(m)
 
