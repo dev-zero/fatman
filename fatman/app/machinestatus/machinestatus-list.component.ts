@@ -4,22 +4,21 @@ import {MachinestatusService} from './machinestatus.service';
 
 @Component({
   template: `
-  <table class="machinestatus table table-bordered table-striped table-condensed">
+  <table class="table table-bordered table-striped table-condensed">
     <thead>
-    <tr style="border-bottom: 2px solid; border-top: 2px solid;">
-        <th> Machine </th>
-        <th> Running </th>
-        <th> Total </th>
-    </tr>
+      <tr>
+          <th> Machine </th>
+          <th> Running </th>
+          <th> Total </th>
+      </tr>
     </thead>
     <tbody>
-    <tr class="" *ngFor="let machine of machines">
-        <td *ngFor="let item of machine">
-            {{item}}
-        </td>
-    </tr>
+      <tr class="" *ngFor="let machine of machines">
+        <td *ngFor="let item of machine">{{item}}</td>
+      </tr>
     </tbody>
-  </table>`,
+  </table>
+  `,
   providers: [MachinestatusService]
 })
 
