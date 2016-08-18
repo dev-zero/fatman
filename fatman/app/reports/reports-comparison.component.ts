@@ -7,7 +7,7 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
 @Component({
   directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   templateUrl: 'reports/reports-comparison.component.html',
-  styleUrls: ['reports/reports-comparison.component.css'],
+  styleUrls: ['reports/reports.component.css'],
 })
 
 export class ReportsComparison implements OnInit, OnDestroy {

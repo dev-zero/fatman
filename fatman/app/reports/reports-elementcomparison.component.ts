@@ -7,47 +7,60 @@ import {MethoddetailsComponent} from '../details/methoddetails.component';
 @Component({
   directives: [MethoddetailsComponent],
   template: `
-      <div style="font-size: 16pt">
+    <div class="row">
+      <div class="col-md-12">
         <p>
-        Comparing all 
+          Comparing all
           <select #testselect (change)="onSelect(meth1.value,testselect.value);">
               <option *ngFor="let test of tests" value="{{ test[1] }}">{{ test[1] }}</option>
           </select> to reference method 
           <select #meth1 (change)="onSelect(meth1.value,testselect.value);">
               <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
-          </select>.
+          </select>
         </p>
       </div>
-    <p>
-     <methoddetails method_id="{{ method1 }}"></methoddetails>
-    </p>
-    <table class="table table-bordered table-striped table-condensed">
-      <thead>
-        <th (click)="re_sort(0)">Method ID</th>
-        <th (click)="re_sort(1)">Method</th>
-        <th (click)="re_sort(2)">V0</th>
-        <th (click)="re_sort(3)">B0</th>
-        <th (click)="re_sort(4)">B1</th>
-        <th (click)="re_sort(5)">V0,r</th>
-        <th (click)="re_sort(6)">B0,r</th>
-        <th (click)="re_sort(7)">B1,r</th>
-        <th (click)="re_sort(8)">Delta</th>
-      </thead>
-      <tbody>
-        <tr *ngFor="let line of comparelist">
-          <td><a href="reports/comparison/{{ method1 }}/{{ line[0] }}"> {{ line[0] }} </a></td>
-          <td> {{ line[1] }} </td>
-          <td> {{ line[2] | number:'.4-4'  }} </td>
-          <td> {{ line[3] | number:'.4-4'  }} </td>
-          <td> {{ line[4] | number:'.4-4'  }} </td>
-          <td> {{ line[5] | number:'.4-4'  }} </td>
-          <td> {{ line[6] | number:'.4-4'  }} </td>
-          <td> {{ line[7] | number:'.4-4'  }} </td>
-          <td><a href="details/{{ test1 }};methods={{ method1 }},{{ line[0] }}"> {{ line[8] | number:'.4-4' }}</a></td>
-        </tr>
-      </tbody>
-    </table>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <methoddetails method_id="{{ method1 }}"></methoddetails>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table table-bordered table-striped table-condensed">
+          <thead>
+            <tr>
+              <th (click)="re_sort(0)">Method ID</th>
+              <th (click)="re_sort(1)">Method</th>
+              <th (click)="re_sort(2)">V0</th>
+              <th (click)="re_sort(3)">B0</th>
+              <th (click)="re_sort(4)">B1</th>
+              <th (click)="re_sort(5)">V0,r</th>
+              <th (click)="re_sort(6)">B0,r</th>
+              <th (click)="re_sort(7)">B1,r</th>
+              <th (click)="re_sort(8)">Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let line of comparelist">
+              <td><a [routerLink]="['/reports/comparison', method1, line[0]]"> {{ line[0] }} </a></td>
+              <td> {{ line[1] }} </td>
+              <td> {{ line[2] | number:'.4-4'  }} </td>
+              <td> {{ line[3] | number:'.4-4'  }} </td>
+              <td> {{ line[4] | number:'.4-4'  }} </td>
+              <td> {{ line[5] | number:'.4-4'  }} </td>
+              <td> {{ line[6] | number:'.4-4'  }} </td>
+              <td> {{ line[7] | number:'.4-4'  }} </td>
+              <td>
+                <a [routerLink]="['/details', test1, {'methods': method1 + ',' + line[0]}]"> {{ line[8] | number:'.4-4' }}</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   `,
+  styleUrls: ['reports/reports.component.css']
 })
 
 export class ReportsElementComparison implements OnInit, OnDestroy {

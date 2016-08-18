@@ -53,15 +53,22 @@
       <tbody>
         <tr *ngFor="let line of comparelist">
           <td> {{ line[0] }} </td>
-          <td><a href="reports/elementcomparison/{{ method1 }}/deltatest_{{ line[1] }}"> {{ line[1] }} </a></td>
+          <td>
+            <a [routerLink]="['/reports/elementcomparison', method1, 'deltatest_' + line[1]]">
+              {{ line[1] }}
+            </a>
+          </td>
           <td> {{ line[2] | number:'.4-4'  }} </td>
           <td> {{ line[3] | number:'.4-4'  }} </td>
           <td> {{ line[4] | number:'.4-4'  }} </td>
           <td> {{ line[5] | number:'.4-4'  }} </td>
           <td> {{ line[6] | number:'.4-4'  }} </td>
           <td> {{ line[7] | number:'.4-4'  }} </td>
-          <!--      <td><a href="details/{{ method1 }}/{{ method2 }}/deltatest_{{ line[1] }}"> {{ line[8] | number:'.4-4' }}</a></td>-->
-          <td><a href="details/deltatest_{{ line[1] }};methods={{ method1 }},{{ method2 }}"> {{ line[8] | number:'.4-4' }}</a></td>
+          <td>
+            <a [routerLink]="['/details', 'deltatest_' + line[1], {'methods': method1 + ',' + method2}]">
+              {{ line[8] | number:'.4-4' }}
+            </a>
+          </td>
         </tr>
       </tbody>
     </table>
