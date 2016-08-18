@@ -1,21 +1,21 @@
 <div class="row hidden-print">
   <div class="col-md-12">
     <p>
-      Comparing Methods:
-      <select #meth1 (change)="onSelect(meth1.value,meth2.value);">
-        <option *ngFor="let method of methods" value="{{ method.id }}">
-          {{ method.id }} ({{ method.pseudopotential }})
-        </option>
-      </select> and 
-      <select #meth2 (change)="onSelect(meth1.value,meth2.value);">
-        <option *ngFor="let method of methods" value="{{ method.id }}">
-          {{ method.id }} ({{ method.pseudopotential }})
-        </option>
-      </select>
+    Comparing Methods:
+    <select #meth1 (change)="onSelect(meth1.value,meth2.value);">
+      <option *ngFor="let method of methods" value="{{ method.id }}">
+      {{ method.id }} ({{ method.pseudopotential }})
+      </option>
+    </select> and
+    <select #meth2 (change)="onSelect(meth1.value,meth2.value);">
+      <option *ngFor="let method of methods" value="{{ method.id }}">
+      {{ method.id }} ({{ method.pseudopotential }})
+      </option>
+    </select>
 
-      <a [routerLink]="['/reports/comparison/', method1, method2]" class="btn btn-sm btn-info pull-right">
-        List View
-      </a>
+    <a [routerLink]="['/reports/comparison/', method1, method2]" class="btn btn-sm btn-info pull-right">
+      List View
+    </a>
     </p>
   </div>
 </div>
@@ -30,119 +30,245 @@
 
 <div class="row">
   <div class="col-md-12">
-    <table class="table table-bordered table-striped table-condensed" *ngIf="f_elements">
-      <tr> 
-        <td>
-          <a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_H">H</a><br />
-          <a href="details/deltatest_H;methods={{ f_elements.methods[0] }},{{ f_elements.methods[1] }}">
-              {{ f_elements.test.deltatest_H  | deltavalue}}
+    <table class="table table-bordered table-striped table-condensed periodic-table" *ngIf="f_elements">
+      <tr>
+        <td class="element-H">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_H']">H</a><br />
+          <a [routerLink]="['/details/deltatest_H', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">
+            {{ f_elements.test.deltatest_H  | deltavalue}}
           </a>
-        </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_He">He</a><br /><a href="details/deltatest_He;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_He | deltavalue}}</a></td></tr> 
-      <tr> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Li">Li</a><br /><a href="details/deltatest_Li;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Li | deltavalue }}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Be">Be</a><br /><a href="details/deltatest_Be;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Be | deltavalue}}</a></td> 
-        <td colspan=10 style='border:0; text-align:center; vertical-align:middle'><div class="text-info">
+        </td>
+        <td colspan=16 class="gap-first-row"> </td>
+        <td class="element-He">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_He']">He</a><br />
+          <a [routerLink]="['/details/deltatest_He', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">
+            {{ f_elements.test.deltatest_He | deltavalue}}
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <td class="element-Li">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Li']">Li</a><br />
+          <a [routerLink]="['/details/deltatest_Li', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Li | deltavalue }}</a>
+        </td>
+        <td class="element-Be">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Be']">Be</a><br />
+          <a [routerLink]="['/details/deltatest_Be', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Be | deltavalue}}</a>
+        </td>
+        <td colspan=10 class="gap-second-row" style='text-align:center; vertical-align:middle'>
+          <div class="text-info">
             Average Delta: {{ f_elements.summary.avg | number: ".3" }} &plusmn; {{ f_elements.summary.stdev | number: ".3" }} (N = {{ f_elements.summary.N }})
-          </div></td>
-          <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_B">B </a><br /><a href="details/deltatest_B;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_B | deltavalue}}</a></td> 
-          <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_C">C </a><br /><a href="details/deltatest_C;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_C | deltavalue}}</a></td> 
-          <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_N">N </a><br /><a href="details/deltatest_N;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_N | deltavalue}}</a></td> 
-          <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_O">O </a><br /><a href="details/deltatest_O;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_O | deltavalue}}</a></td> 
-          <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_F">F </a><br /><a href="details/deltatest_F;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_F | deltavalue}}</a></td> 
-          <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ne">Ne</a><br /><a href="details/deltatest_Ne;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ne | deltavalue}}</a></td></tr> 
-      <tr> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Na">Na</a><br /><a href="details/deltatest_Na;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Na | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Mg">Mg</a><br /><a href="details/deltatest_Mg;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Mg | deltavalue}}</a></td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td style='border:0'> </td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Al">Al</a><br /><a href="details/deltatest_Al;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Al | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Si">Si</a><br /><a href="details/deltatest_Si;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Si | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_P">P </a><br /><a href="details/deltatest_P;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_P  | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_S">S </a><br /><a href="details/deltatest_S;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_S  | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Cl">Cl</a><br /><a href="details/deltatest_Cl;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Cl | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ar">Ar</a><br /><a href="details/deltatest_Ar;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ar | deltavalue}}</a></td></tr> 
-      <tr> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_K">K </a><br /><a href="details/deltatest_K;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_K  | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ca">Ca</a><br /><a href="details/deltatest_Ca;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ca | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Sc">Sc</a><br /><a href="details/deltatest_Sc;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Sc | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ti">Ti</a><br /><a href="details/deltatest_Ti;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ti | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_V">V </a><br /><a href="details/deltatest_V;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_V  | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Cr">Cr</a><br /><a href="details/deltatest_Cr;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Cr | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Mn">Mn</a><br /><a href="details/deltatest_Mn;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Mn | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Fe">Fe</a><br /><a href="details/deltatest_Fe;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Fe | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Co">Co</a><br /><a href="details/deltatest_Co;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Co | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ni">Ni</a><br /><a href="details/deltatest_Ni;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ni | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Cu">Cu</a><br /><a href="details/deltatest_Cu;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Cu | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Zn">Zn</a><br /><a href="details/deltatest_Zn;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Zn | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ga">Ga</a><br /><a href="details/deltatest_Ga;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ga | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ge">Ge</a><br /><a href="details/deltatest_Ge;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ge | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_As">As</a><br /><a href="details/deltatest_As;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_As | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Se">Se</a><br /><a href="details/deltatest_Se;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Se | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Br">Br</a><br /><a href="details/deltatest_Br;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Br | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Kr">Kr</a><br /><a href="details/deltatest_Kr;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Kr | deltavalue}}</a></td></tr> 
-      <tr> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Rb">Rb </a><br /><a href="details/deltatest_Rb;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Rb| deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Sr">Sr</a><br /><a href="details/deltatest_Sr;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Sr | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Y">Y </a><br /><a href="details/deltatest_Y;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Y  | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Zr">Zr</a><br /><a href="details/deltatest_Zr;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Zr | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Nb">Nb</a><br /><a href="details/deltatest_Nb;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Nb | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Mo">Mo</a><br /><a href="details/deltatest_Mo;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Mo | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Tc">Tc</a><br /><a href="details/deltatest_Tc;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Tc | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ru">Ru</a><br /><a href="details/deltatest_Ru;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ru | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Rh">Rh</a><br /><a href="details/deltatest_Rh;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Rh | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Pd">Pd</a><br /><a href="details/deltatest_Pd;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Pd | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ag">Ag</a><br /><a href="details/deltatest_Ag;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ag | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Cd">Cd</a><br /><a href="details/deltatest_Cd;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Cd | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_In">In</a><br /><a href="details/deltatest_In;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_In | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Sn">Sn</a><br /><a href="details/deltatest_Sn;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Sn | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Sb">Sb</a><br /><a href="details/deltatest_Sb;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Sb | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Te">Te</a><br /><a href="details/deltatest_Te;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Te | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_I">I </a><br /><a href="details/deltatest_I;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_I  | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Xe">Xe</a><br /><a href="details/deltatest_Xe;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Xe | deltavalue}}</a></td></tr> 
-      <tr> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Cs">Cs</a><br /><a href="details/deltatest_Cs;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Cs | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ba">Ba</a><br /><a href="details/deltatest_Ba;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ba | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_La">La</a><br /><a href="details/deltatest_La;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_La | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Hf">Hf</a><br /><a href="details/deltatest_Hf;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Hf | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ta">Ta</a><br /><a href="details/deltatest_Ta;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ta | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_W">W </a><br /><a href="details/deltatest_W;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_W  | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Re">Re</a><br /><a href="details/deltatest_Re;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Re | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Os">Os</a><br /><a href="details/deltatest_Os;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Os | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Ir">Ir</a><br /><a href="details/deltatest_Ir;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Ir | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Pt">Pt</a><br /><a href="details/deltatest_Pt;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Pt | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Au">Au</a><br /><a href="details/deltatest_Au;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Au | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Hg">Hg</a><br /><a href="details/deltatest_Hg;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Hg | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Tl">Tl</a><br /><a href="details/deltatest_Tl;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Tl | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Pb">Pb</a><br /><a href="details/deltatest_Pb;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Pb | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Bi">Bi</a><br /><a href="details/deltatest_Bi;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Bi | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Po">Po</a><br /><a href="details/deltatest_Po;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Po | deltavalue}}</a></td> 
-        <td><a href="reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_At">At</a><br /><a href="details/deltatest_At;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_At | deltavalue}}</a></td> 
-        <td><a href="/reports/elementcomparison/{{ f_elements.methods[0] }}/deltatest_Rn">Rn</a><br /><a href="details/deltatest_Rn;methods={{ f_elements.methods[0]}},{{f_elements.methods[1]}}">{{ f_elements.test.deltatest_Rn | deltavalue}}</a></td></tr> 
+          </div>
+        </td>
+        <td class="element-B">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_B']">B </a><br />
+          <a [routerLink]="['/details/deltatest_B', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_B | deltavalue}}</a></td>
+        <td class="element-C">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_C']">C </a><br />
+          <a [routerLink]="['/details/deltatest_C', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_C | deltavalue}}</a></td>
+        <td class="element-N">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_N']">N </a><br />
+          <a [routerLink]="['/details/deltatest_N', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_N | deltavalue}}</a></td>
+        <td class="element-O">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_O']">O </a><br />
+          <a [routerLink]="['/details/deltatest_O', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_O | deltavalue}}</a></td>
+        <td class="element-F">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_F']">F </a><br />
+          <a [routerLink]="['/details/deltatest_F', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_F | deltavalue}}</a></td>
+        <td class="element-Ne">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ne']">Ne</a><br />
+          <a [routerLink]="['/details/deltatest_Ne', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ne | deltavalue}}</a></td></tr>
+      <tr>
+        <td class="element-Na">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Na']">Na</a><br />
+          <a [routerLink]="['/details/deltatest_Na', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Na | deltavalue}}</a></td>
+        <td class="element-Mg">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Mg']">Mg</a><br />
+          <a [routerLink]="['/details/deltatest_Mg', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Mg | deltavalue}}</a></td>
+        <td colspan=10 class="gap-third-row"> </td>
+        <td class="element-Al">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Al']">Al</a><br />
+          <a [routerLink]="['/details/deltatest_Al', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Al | deltavalue}}</a></td>
+        <td class="element-Si">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Si']">Si</a><br />
+          <a [routerLink]="['/details/deltatest_Si', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Si | deltavalue}}</a></td>
+        <td class="element-P">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_P']">P </a><br />
+          <a [routerLink]="['/details/deltatest_P', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_P  | deltavalue}}</a></td>
+        <td class="element-S">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_S']">S </a><br />
+          <a [routerLink]="['/details/deltatest_S', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_S  | deltavalue}}</a></td>
+        <td class="element-Cl">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Cl']">Cl</a><br />
+          <a [routerLink]="['/details/deltatest_Cl', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Cl | deltavalue}}</a></td>
+        <td class="element-Ar">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ar']">Ar</a><br />
+          <a [routerLink]="['/details/deltatest_Ar', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ar | deltavalue}}</a></td></tr>
+      <tr>
+        <td class="element-K">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_K']">K </a><br />
+          <a [routerLink]="['/details/deltatest_K', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_K  | deltavalue}}</a></td>
+        <td class="element-Ca">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ca']">Ca</a><br />
+          <a [routerLink]="['/details/deltatest_Ca', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ca | deltavalue}}</a></td>
+        <td class="element-Sc">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Sc']">Sc</a><br />
+          <a [routerLink]="['/details/deltatest_Sc', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Sc | deltavalue}}</a></td>
+        <td class="element-Ti">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ti']">Ti</a><br />
+          <a [routerLink]="['/details/deltatest_Ti', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ti | deltavalue}}</a></td>
+        <td class="element-V">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_V']">V </a><br />
+          <a [routerLink]="['/details/deltatest_V', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_V  | deltavalue}}</a></td>
+        <td class="element-Cr">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Cr']">Cr</a><br />
+          <a [routerLink]="['/details/deltatest_Cr', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Cr | deltavalue}}</a></td>
+        <td class="element-Mn">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Mn']">Mn</a><br />
+          <a [routerLink]="['/details/deltatest_Mn', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Mn | deltavalue}}</a></td>
+        <td class="element-Fe">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Fe']">Fe</a><br />
+          <a [routerLink]="['/details/deltatest_Fe', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Fe | deltavalue}}</a></td>
+        <td class="element-Co">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Co']">Co</a><br />
+          <a [routerLink]="['/details/deltatest_Co', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Co | deltavalue}}</a></td>
+        <td class="element-Ni">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ni']">Ni</a><br />
+          <a [routerLink]="['/details/deltatest_Ni', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ni | deltavalue}}</a></td>
+        <td class="element-Cu">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Cu']">Cu</a><br />
+          <a [routerLink]="['/details/deltatest_Cu', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Cu | deltavalue}}</a></td>
+        <td class="element-Zn">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Zn']">Zn</a><br />
+          <a [routerLink]="['/details/deltatest_Zn', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Zn | deltavalue}}</a></td>
+        <td class="element-Ga">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ga']">Ga</a><br />
+          <a [routerLink]="['/details/deltatest_Ga', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ga | deltavalue}}</a></td>
+        <td class="element-Ge">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ge']">Ge</a><br />
+          <a [routerLink]="['/details/deltatest_Ge', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ge | deltavalue}}</a></td>
+        <td class="element-As">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_As']">As</a><br />
+          <a [routerLink]="['/details/deltatest_As', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_As | deltavalue}}</a></td>
+        <td class="element-Se">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Se']">Se</a><br />
+          <a [routerLink]="['/details/deltatest_Se', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Se | deltavalue}}</a></td>
+        <td class="element-Br">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Br']">Br</a><br />
+          <a [routerLink]="['/details/deltatest_Br', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Br | deltavalue}}</a></td>
+        <td class="element-Kr">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Kr']">Kr</a><br />
+          <a [routerLink]="['/details/deltatest_Kr', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Kr | deltavalue}}</a></td></tr>
+      <tr>
+        <td class="element-Rb">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Rb']">Rb </a><br />
+          <a [routerLink]="['/details/deltatest_Rb', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Rb| deltavalue}}</a></td>
+        <td class="element-Sr">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Sr']">Sr</a><br />
+          <a [routerLink]="['/details/deltatest_Sr', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Sr | deltavalue}}</a></td>
+        <td class="element-Y">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Y']">Y </a><br />
+          <a [routerLink]="['/details/deltatest_Y', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Y  | deltavalue}}</a></td>
+        <td class="element-Zr">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Zr']">Zr</a><br />
+          <a [routerLink]="['/details/deltatest_Zr', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Zr | deltavalue}}</a></td>
+        <td class="element-Nb">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Nb']">Nb</a><br />
+          <a [routerLink]="['/details/deltatest_Nb', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Nb | deltavalue}}</a></td>
+        <td class="element-Mo">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Mo']">Mo</a><br />
+          <a [routerLink]="['/details/deltatest_Mo', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Mo | deltavalue}}</a></td>
+        <td class="element-Tc">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Tc']">Tc</a><br />
+          <a [routerLink]="['/details/deltatest_Tc', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Tc | deltavalue}}</a></td>
+        <td class="element-Ru">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ru']">Ru</a><br />
+          <a [routerLink]="['/details/deltatest_Ru', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ru | deltavalue}}</a></td>
+        <td class="element-Rh">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Rh']">Rh</a><br />
+          <a [routerLink]="['/details/deltatest_Rh', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Rh | deltavalue}}</a></td>
+        <td class="element-Pd">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Pd']">Pd</a><br />
+          <a [routerLink]="['/details/deltatest_Pd', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Pd | deltavalue}}</a></td>
+        <td class="element-Ag">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ag']">Ag</a><br />
+          <a [routerLink]="['/details/deltatest_Ag', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ag | deltavalue}}</a></td>
+        <td class="element-Cd">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Cd']">Cd</a><br />
+          <a [routerLink]="['/details/deltatest_Cd', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Cd | deltavalue}}</a></td>
+        <td class="element-In">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_In']">In</a><br />
+          <a [routerLink]="['/details/deltatest_In', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_In | deltavalue}}</a></td>
+        <td class="element-Sn">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Sn']">Sn</a><br />
+          <a [routerLink]="['/details/deltatest_Sn', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Sn | deltavalue}}</a></td>
+        <td class="element-Sb">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Sb']">Sb</a><br />
+          <a [routerLink]="['/details/deltatest_Sb', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Sb | deltavalue}}</a></td>
+        <td class="element-Te">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Te']">Te</a><br />
+          <a [routerLink]="['/details/deltatest_Te', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Te | deltavalue}}</a></td>
+        <td class="element-I">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_I']">I </a><br />
+          <a [routerLink]="['/details/deltatest_I', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_I  | deltavalue}}</a></td>
+        <td class="element-Xe">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Xe']">Xe</a><br />
+          <a [routerLink]="['/details/deltatest_Xe', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Xe | deltavalue}}</a></td></tr>
+      <tr>
+        <td class="element-Cs">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Cs']">Cs</a><br />
+          <a [routerLink]="['/details/deltatest_Cs', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Cs | deltavalue}}</a></td>
+        <td class="element-Ba">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ba']">Ba</a><br />
+          <a [routerLink]="['/details/deltatest_Ba', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ba | deltavalue}}</a></td>
+        <td class="element-La">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_La']">La</a><br />
+          <a [routerLink]="['/details/deltatest_La', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_La | deltavalue}}</a></td>
+        <td class="element-Hf">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Hf']">Hf</a><br />
+          <a [routerLink]="['/details/deltatest_Hf', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Hf | deltavalue}}</a></td>
+        <td class="element-Ta">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ta']">Ta</a><br />
+          <a [routerLink]="['/details/deltatest_Ta', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ta | deltavalue}}</a></td>
+        <td class="element-W">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_W']">W </a><br />
+          <a [routerLink]="['/details/deltatest_W', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_W  | deltavalue}}</a></td>
+        <td class="element-Re">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Re']">Re</a><br />
+          <a [routerLink]="['/details/deltatest_Re', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Re | deltavalue}}</a></td>
+        <td class="element-Os">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Os']">Os</a><br />
+          <a [routerLink]="['/details/deltatest_Os', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Os | deltavalue}}</a></td>
+        <td class="element-Ir">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Ir']">Ir</a><br />
+          <a [routerLink]="['/details/deltatest_Ir', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Ir | deltavalue}}</a></td>
+        <td class="element-Pt">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Pt']">Pt</a><br />
+          <a [routerLink]="['/details/deltatest_Pt', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Pt | deltavalue}}</a></td>
+        <td class="element-Au">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Au']">Au</a><br />
+          <a [routerLink]="['/details/deltatest_Au', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Au | deltavalue}}</a></td>
+        <td class="element-Hg">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Hg']">Hg</a><br />
+          <a [routerLink]="['/details/deltatest_Hg', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Hg | deltavalue}}</a></td>
+        <td class="element-Tl">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Tl']">Tl</a><br />
+          <a [routerLink]="['/details/deltatest_Tl', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Tl | deltavalue}}</a></td>
+        <td class="element-Pb">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Pb']">Pb</a><br />
+          <a [routerLink]="['/details/deltatest_Pb', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Pb | deltavalue}}</a></td>
+        <td class="element-Bi">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Bi']">Bi</a><br />
+          <a [routerLink]="['/details/deltatest_Bi', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Bi | deltavalue}}</a></td>
+        <td class="element-Po">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Po']">Po</a><br />
+          <a [routerLink]="['/details/deltatest_Po', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Po | deltavalue}}</a></td>
+        <td class="element-At">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_At']">At</a><br />
+          <a [routerLink]="['/details/deltatest_At', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_At | deltavalue}}</a></td>
+        <td class="element-Rn">
+          <a [routerLink]="['/reports/elementcomparison', f_elements.methods[0], 'deltatest_Rn']">Rn</a><br />
+          <a [routerLink]="['/details/deltatest_Rn', {'methods': f_elements.methods[0] + ',' + f_elements.methods[1]}]">{{ f_elements.test.deltatest_Rn | deltavalue}}</a></td></tr>
     </table>
   </div>
 </div>
