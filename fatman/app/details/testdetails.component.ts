@@ -4,9 +4,7 @@ import {Router} from '@angular/router';
 import {DetailsService} from './details.service';
 import {MethoddetailsComponent} from '../details/methoddetails.component';
 
-@Pipe({
-  name: 'truncate'
-})
+@Pipe({name: 'truncate'})
 export class TruncatePipe {
   transform(value: string, args: string[]) : string {
     let limit = args.length > 0 ? parseInt(args[0], 10) : 16;
@@ -40,7 +38,7 @@ export class TruncatePipe {
     <ul class='list-group'>
       <li class='list-group-item' *ngFor='let res of results'>
         <span class='text-muted'>
-          <a href='../results/{{ res.id }}/file'> {{ res.task.structure.name }}</a>:
+          <a [href]="'../results/' + res.id + '/file'" target="_blank"> {{ res.task.structure.name }}</a>:
           </span> 
           <span class='small'>
             <b>{{ res.energy }} eV</b>, update: 
