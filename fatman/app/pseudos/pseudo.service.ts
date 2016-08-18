@@ -39,7 +39,6 @@ export class PseudoService {
       // are usually added shortly/directly after the original one
       let idx = -1;
       for (let i = pseudos.length-1; i >= 0; i--) {
-        console.log(`comparing ${pseudos[i].id} == ${pseudo.converted_from.id}`);
         if (pseudos[i].id == pseudo.converted_from.id) {
           idx = i;
           break;
