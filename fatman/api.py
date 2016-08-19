@@ -102,6 +102,10 @@ pseudo_resource_fields = {
     '_links': {'self': fields.Url('pseudopotentialresource')},
     }
 
+pseudofamily_list_fields = {
+    'name': fields.Raw,
+    }
+
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
     def get(self, id):
@@ -458,6 +462,15 @@ class PseudopotentialResource(Resource):
              .get())
 
         return pseudo_to_dict(q)
+
+class PseudopotentialFamilyList(Resource):
+    """Get the list of pseudopotential families"""
+    def get(self):
+        q = (PseudopotentialFamily
+             .select(PseudopotentialFamily)
+             .order_by(PseudopotentialFamily.name))
+
+        return [marshal(model_to_dict(f), pseudofamily_list_fields) for f in q]
 
 class PseudopotentialList(Resource):
     def get(self):
@@ -884,7 +897,6 @@ class StatsResource(Resource):
 
         abort(404)
 
-
 # Catch common exceptions in the REST dispatcher
 errors = {
         'TaskStatusDoesNotExist': {
@@ -915,6 +927,7 @@ api.add_resource(ResultList, '/results')
 api.add_resource(Basissets, '/basis')
 api.add_resource(PseudopotentialResource, '/pseudos/<int:id>')
 api.add_resource(PseudopotentialList, '/pseudos')
+api.add_resource(PseudopotentialFamilyList, '/pseudofamilies')
 api.add_resource(MachineStatus, '/machinestatus')
 api.add_resource(TestResultResource, '/testresult')
 api.add_resource(Comparison, '/compare')
