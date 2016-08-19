@@ -25,4 +25,16 @@ export class Pseudo {
     );
   }
 }
+
+export interface PseudoFamily {
+  name: string;  
+}
+
+export function toPseudoFamily(r: any) : PseudoFamily {
+  return <PseudoFamily>({
+    name: r.name,
+  });
+}
+
+
 //  vim: set ts=2 sw=2 tw=0 :

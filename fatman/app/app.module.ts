@@ -1,7 +1,7 @@
 import { NgModule }       from '@angular/core';
 import { BrowserModule }  from '@angular/platform-browser';
 import { FormsModule }    from '@angular/forms';
-import { HTTP_PROVIDERS } from '@angular/http'; // make this provider global
+import { HttpModule }     from '@angular/http';
 
 import { AppComponent }   from './app.component';
 import { routing }        from './app.routing';
@@ -15,7 +15,7 @@ import {ReportsElementComparison} from './reports/reports-elementcomparison.comp
 import {Periodictable}            from './periodictable/periodictable-list.component';
 import {Details}                  from './details/details-list.component';
 import {MethodList}               from './methods/methods-list.component';
-import {PseudoList}               from './pseudos/pseudo-list.component';
+import {PseudoFamilyList}         from './pseudos/pseudofamily-list.component';
 
 import { ReportService } from './reports/reports.service';
 import { TaskService }   from './tasks/tasks.service';
@@ -25,7 +25,8 @@ import { PseudoService } from './pseudos/pseudo.service';
   imports: [
     BrowserModule,
     FormsModule,
-    routing
+    routing,
+    HttpModule
   ],
   declarations: [
     AppComponent,
@@ -38,13 +39,12 @@ import { PseudoService } from './pseudos/pseudo.service';
     Periodictable,
     Details,
     MethodList,
-    PseudoList
+    PseudoFamilyList
   ],
   providers: [
     ReportService,
     TaskService,
     PseudoService,
-    HTTP_PROVIDERS
   ],
   bootstrap: [ AppComponent ]
 })

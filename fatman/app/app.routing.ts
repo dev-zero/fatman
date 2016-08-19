@@ -10,7 +10,7 @@ import {ReportsElementComparison} from './reports/reports-elementcomparison.comp
 import {Periodictable} from './periodictable/periodictable-list.component';
 import {Details} from './details/details-list.component';
 import {MethodList} from './methods/methods-list.component';
-import {PseudoList} from './pseudos/pseudo-list.component';
+import {PseudoFamilyList} from './pseudos/pseudofamily-list.component';
 
 const appRoutes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -25,7 +25,7 @@ const appRoutes: Routes = [
   { path: 'details/', component: Home },
   { path: 'details/:test1', component: Details },
   { path: 'methodlist', component: MethodList },
-  { path: 'pseudos', component: PseudoList }
+  { path: 'pseudos', component: PseudoFamilyList }
 ];
 
 export const routing = RouterModule.forRoot(appRoutes);

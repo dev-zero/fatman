@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
 
-import { Pseudo } from './pseudo.ts';
+import { Pseudo, PseudoFamily, toPseudoFamily } from './pseudo.ts';
 
 @Injectable()
 export class PseudoService {
@@ -12,14 +12,30 @@ export class PseudoService {
   }
 
   private _pseudosUrl = '../pseudos';
+  private _pseudoFamiliesUrl = '../pseudofamilies';
 
-  getPseudos(): Observable<Pseudo[]> {
-    return this._http.get(this._pseudosUrl)
-      .map(this._extractData)
+  getPseudoFamilies() : Observable<PseudoFamily[]> {
+    return this._http.get(this._pseudoFamiliesUrl)
+      .map(this._mapPseudoFamilies)
       .catch(this.handleError);
   }
 
-  private _extractData(res: Response) : Array<Pseudo> {
+  private _mapPseudoFamilies(response: Response) : PseudoFamily[] {
+    return response.json().map(toPseudoFamily);
+  }
+
+  getPseudos(family: string = "") : Observable<Pseudo[]> {
+    let params: URLSearchParams = new URLSearchParams();
+    
+    if (!!family)
+      params.set('family', family)
+
+    return this._http.get(this._pseudosUrl, {search: params})
+      .map(this._mapPseudos)
+      .catch(this.handleError);
+  }
+
+  private _mapPseudos(res: Response) : Pseudo[] {
     let plist = res.json();
 
     if (!plist)
