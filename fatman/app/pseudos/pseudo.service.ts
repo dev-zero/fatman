@@ -24,11 +24,11 @@ export class PseudoService {
     return response.json().map(toPseudoFamily);
   }
 
-  getPseudos(family: string = "") : Observable<Pseudo[]> {
+  getPseudos(family: PseudoFamily) : Observable<Pseudo[]> {
     let params: URLSearchParams = new URLSearchParams();
     
-    if (!!family)
-      params.set('family', family)
+    if (family)
+      params.set('family', family.name)
 
     return this._http.get(this._pseudosUrl, {search: params})
       .map(this._mapPseudos)

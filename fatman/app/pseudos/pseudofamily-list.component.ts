@@ -1,7 +1,8 @@
-import {Component, OnInit} from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
-import {Pseudo, PseudoFamily} from './pseudo';
-import {PseudoService} from './pseudo.service';
+import { Pseudo, PseudoFamily } from './pseudo';
+import { PseudoService }        from './pseudo.service';
+import { PseudoTable }          from './pseudo-table.component';
 
 @Component({
   template: `
@@ -9,9 +10,8 @@ import {PseudoService} from './pseudo.service';
     <div class="col-md-12">
       <div class="form-group">
         <label for="familyselection">Select Pseudopotential Family:</label>
-        <select class="form-control" id="familyselection">
-          <option></option>
-          <option *ngFor="let family of pseudofamilies">
+        <select [(ngModel)]="selectedFamily" class="form-control" id="familyselection">
+          <option *ngFor="let family of pseudofamilies" [ngValue]="family">
             {{ family.name }}
           </option>
         </select>
@@ -20,14 +20,17 @@ import {PseudoService} from './pseudo.service';
   </div>
   <div class="row">
     <div class="col-md-12">
+      <pseudotable [family]=selectedFamily></pseudotable>
     </div>
   </div>
   `,
+  directives: [PseudoTable],
 })
 
 export class PseudoFamilyList implements OnInit {
   errorMessage: string;
   pseudofamilies: PseudoFamily[];
+  selectedFamily: PseudoFamily;
 
   constructor(private _pseudoService: PseudoService) { }
 
