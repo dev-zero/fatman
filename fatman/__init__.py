@@ -1,7 +1,7 @@
 
 import logging
 
-from flask import Flask, redirect, url_for
+from flask import Flask
 from playhouse.postgres_ext import PostgresqlExtDatabase
 from flask_uploads import UploadSet, configure_uploads
 from flask_security import Security, PeeweeUserDatastore
