@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
 
 import { Pseudo, PseudoFamily } from './pseudo';
 import { PseudoService }        from './pseudo.service';
@@ -10,7 +12,8 @@ import { PseudoTable }          from './pseudo-table.component';
     <div class="col-md-12">
       <div class="form-group">
         <label for="familyselection">Select Pseudopotential Family:</label>
-        <select [(ngModel)]="selectedFamily" class="form-control" id="familyselection">
+        <select [(ngModel)]="selectedFamily" (ngModelChange)="updateUrl($event)"
+            class="form-control" id="familyselection">
           <option *ngFor="let family of pseudofamilies" [ngValue]="family">
             {{ family.name }}
           </option>
@@ -27,20 +30,43 @@ import { PseudoTable }          from './pseudo-table.component';
   directives: [PseudoTable],
 })
 
-export class PseudoFamilyList implements OnInit {
+export class PseudoFamilyList implements OnInit, OnDestroy {
   errorMessage: string;
   pseudofamilies: PseudoFamily[];
   selectedFamily: PseudoFamily;
+  selectedFamilyString: string;
 
-  constructor(private _pseudoService: PseudoService) { }
+  private _sub: any;
+
+  constructor(
+      private _route: ActivatedRoute,
+      private _router: Router,
+      private _location: Location,
+      private _pseudoService: PseudoService) { }
+
+  ngOnInit() {
+    this._sub = this._route.params.subscribe(params => {
+      this.selectedFamilyString = params['family'];
+      this.getPseudoFamilies();
+    });
+  }
+
+  ngOnDestroy() {
+    this._sub.unsubscribe();
+  }
 
   getPseudoFamilies() {
     this._pseudoService.getPseudoFamilies().subscribe(
-      pseudofamilies => this.pseudofamilies = pseudofamilies,
+      pseudofamilies => {
+        this.pseudofamilies = pseudofamilies;
+
+        if (this.selectedFamilyString)
+          this.selectedFamily = this.pseudofamilies.find(family => family.name === this.selectedFamilyString);
+      },
       error          => this.errorMessage = <any>error);
   }
 
-  ngOnInit() {
-    this.getPseudoFamilies();
+  updateUrl(family: PseudoFamily) {
+    this._location.replaceState(`/pseudos/${family.name}`)
   }
 }

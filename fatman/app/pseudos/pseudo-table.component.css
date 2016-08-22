@@ -12,7 +12,7 @@
 @media (min-width: 768px) {
   .element-container, .element-gap-1, .element-gap-2, .element-gap-3 {
     float: left;
-    height: 4em;
+    height: 5em;
   }
   .element-container {
     width: 5.55556%;

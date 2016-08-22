@@ -1,29 +1,38 @@
-export class Pseudo {
 
-  public id: number = -1;
-  public element: string = '';
-  public family: string = '';
-  public format: string = '';
-  public converted_from: Pseudo;
-  converted_pseudos: Pseudo[] = [];
+export interface PseudoRef {
+  id: number;
+  format: string;
+  links: { [desc: string]: string };
+}
 
-  constructor(json : Object) {
-    this.id = json['id'];
-    this.element = json['element'];
-    this.family = json['family'];
-    this.format = json['format'];
-    this.converted_from = json['converted_from'];
-  }
+export interface Pseudo {
+  id: number;
+  element: string;
+  family: string;
+  format: string;
+  converted_from: Pseudo;
+  converted_pseudos: Pseudo[];
+  links: { [desc: string]: string };
+}
 
-  public addConverted(cp: Pseudo) {
-    this.converted_pseudos.push(cp);
-  }
+export function toPseudoRef(r: any) : PseudoRef {
+  return <PseudoRef>({
+    id: r.id,
+    format: r.format,
+    links: r._links,
+  });
+}
 
-  public getAllFormats() : string[] {
-    return [this.format].concat(
-      this.converted_pseudos.map(function(cp) { return cp.format; })
-    );
-  }
+export function toPseudo(r: any) : Pseudo {
+  return <Pseudo>({
+    id: r.id,
+    element: r.element,
+    family: r.family,
+    format: r.format,
+    converted_from: Object.getOwnPropertyNames(r.converted_from).length > 0 ?  toPseudoRef(r.converted_from) : null,
+    converted_pseudos: [],
+    links: r._links,
+  });
 }
 
 export interface PseudoFamily {

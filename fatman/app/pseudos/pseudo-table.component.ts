@@ -2,22 +2,13 @@ import { Component, Input, OnChanges, SimpleChange,  Pipe, PipeTransform } from 
 
 import { Pseudo, PseudoFamily } from './pseudo';
 import { PseudoService } from './pseudo.service';
-
-@Pipe({name: 'pseudoFormats'})
-export class PseudoFormatList implements PipeTransform {
-  transform(pseudo: Pseudo) {
-    if (!pseudo)
-      return;
-
-    return pseudo.getAllFormats().join(', ');
-  }
-}
+import { PseudoTableElement } from './pseudo-table-element.component';
 
 @Component({
   selector: 'pseudotable',
   templateUrl: 'pseudos/pseudo-table.component.html',
   styleUrls: ['pseudos/pseudo-table.component.css'],
-  pipes: [PseudoFormatList],
+  directives: [PseudoTableElement],
 })
 
 export class PseudoTable implements OnChanges {

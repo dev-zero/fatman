@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
 
-import { Pseudo, PseudoFamily, toPseudoFamily } from './pseudo.ts';
+import { Pseudo, toPseudo, PseudoFamily, toPseudoFamily } from './pseudo.ts';
 
 @Injectable()
 export class PseudoService {
@@ -36,18 +36,18 @@ export class PseudoService {
   }
 
   private _mapPseudos(res: Response) : Pseudo[] {
-    let plist = res.json();
-
-    if (!plist)
+    if (!res.json())
       return [];
+
+    let plist = res.json().map(toPseudo);
 
     let pseudos : Pseudo[] = [];
     let unmatched : Pseudo[] = [];
 
     for (let pseudo of plist) {
       // add non-converted pseudos directly to the list of pseudos
-      if (Object.getOwnPropertyNames(pseudo.converted_from).length === 0) {
-        pseudos.push(new Pseudo(pseudo));
+      if (!pseudo.converted_from) {
+        pseudos.push(pseudo);
         continue;
       }
 
@@ -63,16 +63,16 @@ export class PseudoService {
 
       // nevertheless, it may be that a converted pseudo was added before the original one
       if (idx >= 0) {
-        pseudos[idx].addConverted(pseudo);
+        pseudos[idx].converted_pseudos.push(pseudo);
       } else {
-        unmatched.push(new Pseudo(pseudo));
+        unmatched.push(pseudo);
       }
     }
 
     // it is guaranteed that the converted_from id exists in the database if non-zero
     for (let pseudo of unmatched) {
       let spseudo = pseudos.find(function(p) { return p.id == pseudo.converted_from.id; })
-      spseudo.addConverted(pseudo);
+      spseudo.converted_pseudos.push(pseudo);
     }
 
     return pseudos;

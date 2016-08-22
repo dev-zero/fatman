@@ -26,6 +26,7 @@ const appRoutes: Routes = [
   { path: 'details/:test1', component: Details },
   { path: 'methodlist', component: MethodList },
   { path: 'pseudos', component: PseudoFamilyList },
+  { path: 'pseudos/:family', component: PseudoFamilyList },
 ];
 
 export const routing = RouterModule.forRoot(appRoutes);
