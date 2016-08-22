@@ -12,3 +12,4 @@ Flask-Security>=1.7.5
 matplotlib>=1.5.1
 ase>=3.11.0
 click>=6.6
+Flask-Caching>=1.0.0

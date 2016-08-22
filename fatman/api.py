@@ -2,7 +2,6 @@
 
 from datetime import datetime as dt
 import json
-import pickle
 from os import path
 import bz2
 from io import BytesIO, StringIO
@@ -13,7 +12,7 @@ from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
 
-from fatman import app, resultfiles
+from fatman import app, resultfiles, cache
 from fatman.models import *
 from fatman.utils import route_from
 from fatman.tools import calcDelta, eos, Json2Atoms, Atoms2Json
@@ -741,6 +740,32 @@ class StructureResource(Resource):
         return response
 
 class Comparison(Resource):
+    @cache.cached(timeout=60*60, key_prefix='comparison_1method')
+    def get_1method(self, method1):
+        ret = {"test": {}, "methods": [], "method": {}, "summary": {}}
+
+        testlist = [t.name for t in Test.select()]
+
+        # loop over method2
+        q2 = Method.select().order_by(Method.id)
+        for method2 in q2:
+            ret["methods"].append(method2.id)
+            all_delta = []
+            for testname in testlist:
+                result_data = self._getResultData(method1, method2, testname)
+                if result_data:
+                    all_delta.append(result_data[-1])
+
+            if len(all_delta) > 0:
+                all_delta = np.array(all_delta)
+                ret['method'][method2.id] = [str(method2),
+                                             np.average(all_delta),
+                                             np.std(all_delta), len(all_delta)]
+            else:
+                ret['method'][method2.id] = [str(method2), -1, -1, 0]
+
+        return ret
+
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('method1', type=int, required=True)
@@ -777,8 +802,6 @@ class Comparison(Resource):
                     ret["method"][method2.id] = [str(method2)] + result_data
                     all_delta.append(result_data[-1])
 
-            ret["summary"] = {}
-
         elif mode == "2methods":
             if args["test"] is not None:
                 testlist = args["test"]
@@ -796,35 +819,7 @@ class Comparison(Resource):
             ret["methods"] = [method1.id, method2.id]
 
         elif mode == "1method":
-            cachefilename = '/tmp/apicache_{:}'.format(method1.id)
-            if path.exists(cachefilename) \
-                    and (dt.fromtimestamp(path.getmtime(cachefilename))-dt.now()).total_seconds()<60*60*3:
-                with open(cachefilename, 'rb') as infile:
-                    ret = pickle.load(infile)
-                    return ret
-
-            testlist = [t.name for t in Test.select()]
-
-            # loop over method2
-            q2 = Method.select().order_by(Method.id)
-            for method2 in q2:
-                ret["methods"].append(method2.id)
-                matrixline = []
-
-                all_delta = []
-                for testname in testlist:
-                    result_data = self._getResultData(method1, method2, testname)
-                    if not result_data == False:
-                        all_delta.append(result_data[-1])
-
-                if len(all_delta) > 0: 
-                    all_delta = np.array(all_delta)
-                    ret['method'][method2.id] = [str(method2), np.average(all_delta), np.std(all_delta), len(all_delta)] 
-                else:
-                    ret['method'][method2.id] = [str(method2), -1, -1, 0] 
-
-            with open(cachefilename, 'wb') as outfile:
-                pickle.dump(ret, outfile)
+            return self.get_1method(method1)
 
         return ret
     
