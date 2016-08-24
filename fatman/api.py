@@ -740,8 +740,75 @@ class StructureResource(Resource):
         return response
 
 class Comparison(Resource):
-    @cache.cached(timeout=60*60, key_prefix='comparison_1method')
-    def get_1method(self, method1):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('method1', type=int, required=True)
+        parser.add_argument('method2', type=int, required=False)
+        parser.add_argument('test', type=str, action="append")
+        args = parser.parse_args()
+
+        all_delta = []
+
+        # COMPARE all tests for 1 reference method
+        # if neither method2 nor test are not specified
+        mode = "1method"
+
+        method1 = Method.get(Method.id == args["method1"])
+
+        if args["method2"] is not None:
+            # COMPARE 2 METHODS
+            mode = "2methods"
+            method2 = Method.get(Method.id == args["method2"])
+        elif args["method2"] is None and args["test"] is not None:
+            # COMPARE all tests for 1 reference method
+            mode = "methodbytest"
+            if len(args["test"]) > 1:
+                raise ParameterError(("Specify either 2 methods "
+                                      "and optionally a list of tests, "
+                                      "or 1 method and 1 test"))
+
+        ret = {"test": {}, "methods": [], "method": {}, "summary": {}}
+
+        if mode == "methodbytest":
+            ret["methods"] = [method1.id]
+
+            testname = args["test"][0]
+
+            for method2 in Method.select():
+                result_data = self._getResultData(method1.id, method2.id,
+                                                  testname)
+                if result_data:
+                    ret["method"][method2.id] = [str(method2)] + result_data
+
+        elif mode == "2methods":
+            if args["test"] is not None:
+                testlist = args["test"]
+            else:
+                testlist = [t.name for t in Test.select()]
+
+            for testname in testlist:
+                result_data = self._getResultData(method1.id, method2.id,
+                                                  testname)
+                if result_data:
+                    ret["test"][testname] = result_data
+                    all_delta.append(result_data[-1])
+
+            all_delta = np.array(all_delta)
+            ret["summary"] = {"avg": np.average(all_delta),
+                              "stdev": np.std(all_delta),
+                              "N": len(all_delta)}
+            ret["methods"] = [method1.id, method2.id]
+
+        elif mode == "1method":
+            return self._get_1method(method1.id)
+
+        return ret
+
+    @staticmethod
+    @cache.memoize(timeout=3600)
+    def _get_1method(method1_id):
+        """We need the ID here and not the object to get a proper cache key"""
+
         ret = {"test": {}, "methods": [], "method": {}, "summary": {}}
 
         testlist = [t.name for t in Test.select()]
@@ -752,7 +819,8 @@ class Comparison(Resource):
             ret["methods"].append(method2.id)
             all_delta = []
             for testname in testlist:
-                result_data = self._getResultData(method1, method2, testname)
+                result_data = Comparison._getResultData(method1_id, method2.id,
+                                                        testname)
                 if result_data:
                     all_delta.append(result_data[-1])
 
@@ -760,113 +828,82 @@ class Comparison(Resource):
                 all_delta = np.array(all_delta)
                 ret['method'][method2.id] = [str(method2),
                                              np.average(all_delta),
-                                             np.std(all_delta), len(all_delta)]
+                                             np.std(all_delta),
+                                             len(all_delta)]
             else:
                 ret['method'][method2.id] = [str(method2), -1, -1, 0]
 
         return ret
 
-    def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('method1', type=int, required=True)
-        parser.add_argument('method2', type=int, required=False)
-        parser.add_argument('test', type=str, action="append")
-        args = parser.parse_args()
+    @staticmethod
+    def _getResultData(method1_id, method2_id, testname):
+        """Fetch test results from the database and calculate some metric.
 
-        all_delta = []
-        # COMPARE all tests for 1 reference method if method2 and test are not specified
-        mode = "1method"
+        This returns a list of values.
+        The meaning of those values depends on the respective test:
 
-        method1 = Method.get(Method.id == args["method1"])
+        For deltatest-tests: [V_m1, B0_m1, B1_m1, V_m2, B0_m2, B1_m2, Δ].
+        For GMTKN: [Δ]
 
-        if args["method2"] is not None:
-            #COMPARE 2 METHODS
-            mode = "2methods"
-            method2 = Method.get(Method.id == args["method2"])
-        elif args["method2"] is None and args["test"] is not None:
-            #COMPARE all tests for 1 reference method
-            mode = "methodbytest"
-            if len(args["test"]) > 1:
-                raise ParameterError("Specify either 2 methods and optionally a list of tests, or 1 method and 1 test")
+        In the following cases False is returned:
+        * the specified test is missing for at least one of the methods
+        * the specified test is unknown
+        * the calculation the relevant metric fails
+        """
 
-        ret = {"test": {}, "methods": [], "method":{}, "summary": {}}
-
-        if mode == "methodbytest":
-            ret["methods"] = [method1.id]
-
-            testname = args["test"][0]
-
-            for method2 in Method.select():
-                result_data = self._getResultData(method1, method2, testname)
-                if not result_data == False:
-                    ret["method"][method2.id] = [str(method2)] + result_data
-                    all_delta.append(result_data[-1])
-
-        elif mode == "2methods":
-            if args["test"] is not None:
-                testlist = args["test"]
-            else:
-                testlist = [t.name for t in Test.select()]
-
-            for testname in testlist:
-                result_data = self._getResultData(method1, method2, testname)
-                if not result_data == False:
-                    ret["test"][testname] = result_data
-                    all_delta.append(result_data[-1])
-
-            all_delta = np.array(all_delta)
-            ret["summary"] = {"avg": np.average(all_delta), "stdev": np.std(all_delta), "N": len(all_delta)}
-            ret["methods"] = [method1.id, method2.id]
-
-        elif mode == "1method":
-            return self.get_1method(method1)
-
-        return ret
-    
-    def _getResultData(self, method1, method2, testname):
-        #implement some kind of caching here?
-        dontadd = False
         try:
-            r1 = TestResult.select(TestResult) \
-                    .join(Test) \
-                    .where((TestResult.method == method1) & (Test.name == testname)) \
-                    .get()
-            r2 = TestResult.select(TestResult) \
-                    .join(Test) \
-                    .where((TestResult.method == method2) & (Test.name == testname)) \
-                    .get()
-        except:
+            r1 = (TestResult.select(TestResult)
+                  .join(Test)
+                  .where((TestResult.method == method1_id) &
+                         (Test.name == testname))
+                  .get())
+            r2 = (TestResult.select(TestResult)
+                  .join(Test)
+                  .where((TestResult.method == method2_id) &
+                         (Test.name == testname))
+                  .get())
+        except Exception as e:
+            app.logger.warning(('Invalid method ids specified (%d, %d) or '
+                                'test %s does not exist for both methods: '
+                                '%s'), method1_id, method2_id, testname, e)
             return False
-            #ret["test"][test.name] = "N/A"
 
-        data_f = []
-        data_w = []
+        try:
+            if "deltatest" in testname:
+                data_f = [r1.result_data["V"],
+                          r1.result_data["B0"],
+                          r1.result_data["B1"]]
+                data_w = [r2.result_data["V"],
+                          r2.result_data["B0"],
+                          r2.result_data["B1"]]
 
-        if "deltatest" in testname:
-            try:
-                data_f = [r1.result_data["V"], r1.result_data["B0"], r1.result_data["B1"]]
-                data_w = [r2.result_data["V"], r2.result_data["B0"], r2.result_data["B1"]]
-            
                 delta = calcDelta(data_f, data_w)
-            except:
-                dontadd = True
 
-        elif "GMTKN" in testname:
-            try:
+                return data_f + data_w + [delta]
+
+            elif "GMTKN" in testname:
                 n = 0
                 mad = 0.
-                for e1, e2 in zip(r1.result_data["energies"], r2.result_data["energies"]):
-                    mad+= abs(e1-e2)
-                    n+=1
+
+                for e1, e2 in zip(r1.result_data["energies"],
+                                  r2.result_data["energies"]):
+                    mad += abs(e1-e2)
+                    n += 1
 
                 delta = mad/n
-            except:
-                dontadd = True
 
-        if not dontadd:
-            return data_f + data_w +  [delta]
-        else:
+                return [delta]
+
+        except Exception as e:
+            app.logger.error(('Calculating the metric between methods '
+                              '%d and %d failed for %s: %s'),
+                             method1_id, method2_id, testname, e)
             return False
+
+        app.logger.warning('Invalid testname specified to get results: %s',
+                           testname)
+        return False
+
 
 class StatsResource(Resource):
     """Return a list of summary stats, including links to go to the details:
