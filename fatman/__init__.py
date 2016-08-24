@@ -48,7 +48,7 @@ resultfiles = UploadSet('results')
 configure_uploads(app, (resultfiles,))
 
 # initialize Flask-Caching
-cache = Cache(app, config=app.config)
+cache = Cache(app)
 
 # The imports are deliberately at this place.
 # They import this file itself, but need the app and db objects to be ready.
