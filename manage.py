@@ -6,7 +6,7 @@ from flask_security.script import \
         AddRoleCommand, RemoveRoleCommand, \
         CreateUserCommand, ActivateUserCommand, DeactivateUserCommand
 
-from fatman import app, db, models, user_datastore
+from fatman import app, db, models, user_datastore, tasks
 
 manager = Manager(app)
 
@@ -119,7 +119,7 @@ manager.add_command("clean", Clean())
 @manager.shell
 def make_shell_context():
     """Automatically load our app, db and models in the shell started by `manage.py shell`"""
-    return dict(app=app, db=db, models=models)
+    return dict(app=app, db=db, models=models, tasks=tasks)
 
 if __name__ == '__main__':
     manager.debug=True
