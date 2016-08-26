@@ -1025,43 +1025,54 @@ def eos(V0,B0, B1, E0=0.):
     return rng, np.array(E)
 
 
-def get_data_from_outputfile(fn, code):
+class OutputParseError(Exception):
+    pass
+
+
+def get_data_from_outputfile(filename, code):
+    with open(filename) as fhandle:
+        try:
+            return get_data_from_output(fhandle, code)
+        except:
+            return None
+
+
+def get_data_from_output(fhandle, code):
     data = {}
 
-    with open(fn) as infile:
-        try:
-            if code == 'cp2k':
-                for line in infile:
-                    if 'source code revision number' in line:
-                        data['version'] = line.split()[-1]
-                    if 'Total number of message passing processes' in line:
-                        data['mpiranks'] = int(line.split()[-1])
-                    if 'Number of threads for this process' in line:
-                        data['threads'] = int(line.split()[-1])
-                    if 'PROGRAM STARTED BY' in line:
-                        data['username'] = line.split()[-1]
-                    if 'List of Kpoints' in line:
-                        data['nkpoints'] = int(line.split()[-1])
-                    if 'qs_forces' in line:
-                        data['runtime'] = float(line.split()[-1])
+    if code == 'cp2k':
+        for line in fhandle:
+            if 'source code revision number' in line:
+                data['version'] = line.split()[-1]
+            if 'Total number of message passing processes' in line:
+                data['mpiranks'] = int(line.split()[-1])
+            if 'Number of threads for this process' in line:
+                data['threads'] = int(line.split()[-1])
+            if 'PROGRAM STARTED BY' in line:
+                data['username'] = line.split()[-1]
+            if 'List of Kpoints' in line:
+                data['nkpoints'] = int(line.split()[-1])
+            if 'qs_forces' in line:
+                data['runtime'] = float(line.split()[-1])
 
-            elif code == 'espresso':
-                for line in infile:
-                    if 'Program PWSCF v' in line:
-                        data['version'] = line.split()[2]
-                    if 'Number of MPI processes:' in line:
-                        data['mpiranks'] = int(line.split()[-1])
-                    if 'Threads/MPI process:' in line:
-                        data['threads'] = int(line.split()[-1])
-                    if 'number of k points=' in line:
-                        data['nkpoints'] = int(line.split()[4])
-                    if 'total cpu time spent up to now is' in line:
-                        data['runtime'] = float(line.split()[-2])
+    elif code == 'espresso':
+        for line in fhandle:
+            if 'Program PWSCF v' in line:
+                data['version'] = line.split()[2]
+            if 'Number of MPI processes:' in line:
+                data['mpiranks'] = int(line.split()[-1])
+            if 'Threads/MPI process:' in line:
+                data['threads'] = int(line.split()[-1])
+            if 'number of k points=' in line:
+                data['nkpoints'] = int(line.split()[4])
+            if 'total cpu time spent up to now is' in line:
+                data['runtime'] = float(line.split()[-2])
 
-            return data
+    else:
+        raise OutputParseError("Unknown code: %s".format(code))
 
-        except Exception as e:
-            return None
+    return data
+
 
 def test1():
     from ase import Atoms
@@ -1103,3 +1114,5 @@ if __name__=="__main__":
     #if called execute "unit" tests
     test1()
     test2()
+
+#  vim: set ts=4 sw=4 tw=0 :
