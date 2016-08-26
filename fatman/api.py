@@ -7,7 +7,7 @@ import bz2
 from io import BytesIO, StringIO
 
 from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
-from flask import make_response, url_for
+from flask import make_response, url_for, request
 from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
@@ -16,6 +16,7 @@ from . import app, resultfiles, cache
 from .models import *
 from .utils import route_from
 from .tools import calcDelta, eos, Json2Atoms, Atoms2Json
+from .tasks import postprocess_result_file, postprocess_result_files
 
 import numpy as np
 
@@ -279,6 +280,8 @@ class ResultFileResource(Resource):
         result.filename = filename
         result.save()
 
+        postprocess_result_file.delay(id)
+
         # use a raw werkzeug Response object to return 201 status code without a body
         return Response(status=201)
 
@@ -288,12 +291,105 @@ class ResultFileResource(Resource):
         if result.filename is None:
             abort(400, message="No data available")
 
-        #return the file
+        # return the file
         with bz2.BZ2File(resultfiles.path(result.filename)) as infile:
             response = make_response(infile.read())
             response.headers["Content-Disposition"] = "attachment; filename={:}".format(path.splitext(result.filename)[0])
             response.headers["Content-Type"] = "text/plain"
             return response
+
+
+class ResultActionResource(Resource):
+    def get(self, rid, action, tid):
+        Result.get(Result.id == rid)
+
+        if action == 'doPostprocessing':
+            async_result = postprocess_result_file.AsyncResult(tid)
+
+            if not async_result.ready():
+                return Response(status=202, headers={'Location': request.path})
+
+            resp = {'status': async_result.status,
+                    'parent': api.url_for(ResultResource, id=rid)}
+
+            if async_result.successful():
+                resp['result'] = {'updated': async_result.result}
+
+            return resp
+
+        raise ParameterError("invalid action specified: {}".format(action))
+
+
+class ResultActionList(Resource):
+    def post(self, rid):
+        Result.get(Result.id == rid)
+
+        parser = reqparse.RequestParser()
+        parser.add_argument('doPostprocessing', type=dict, required=False)
+        args = parser.parse_args()
+
+        if args['doPostprocessing'] is not None:
+            if ('update' in args['doPostprocessing'].keys() and not
+               type(args['doPostprocessing']['update']) == bool):
+                raise ParameterError("the 'update' parameter must be a boolean")
+
+            update = args['doPostprocessing'].get('update', False)
+            async_result = postprocess_result_file.delay(rid, update)
+
+            return Response(status=202, headers={'Location': api.url_for(
+                        ResultActionResource,
+                        rid=rid, action='doPostprocessing',
+                        tid=async_result.id)})
+
+        raise ParameterError("invalid action specified: {}".format(action))
+
+
+class ResultsActionResource(Resource):
+    def get(self, action, tid):
+
+        if action == 'doPostprocessing':
+            group_result = postprocess_result_files.AsyncResult(tid)
+
+            if not group_result.ready():
+                return Response(status=202, headers={'Location': request.path})
+
+            rids, results = group_result.result
+            all_done = all(r.ready() for r in results)
+
+            resp = [{'status': res.status,
+                     '_links': {'parent': api.url_for(ResultResource, id=rid)},
+                     'result': {'updated': res.result} if res.successful() else {}}
+                    for rid, res in zip(rids, results)]
+
+            if all_done:
+                return resp
+            else:
+                return resp, 202, {'Location': request.path}
+
+        raise ParameterError("invalid action specified: {}".format(action))
+
+
+class ResultsActionList(Resource):
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('doPostprocessing', type=dict, required=False)
+        args = parser.parse_args()
+
+        if args['doPostprocessing'] is not None:
+            if ('update' in args['doPostprocessing'].keys() and not
+               type(args['doPostprocessing']['update']) == bool):
+                raise ParameterError("the 'update' parameter must be a boolean")
+
+            update = args['doPostprocessing'].get('update', False)
+
+            async_result = postprocess_result_files.delay(update)
+
+            return Response(status=202, headers={'Location': api.url_for(
+                        ResultsActionResource, action='doPostprocessing',
+                        tid=async_result.id)})
+
+        raise ParameterError("invalid action specified: {}".format(action))
+
 
 class ResultList(Resource):
     def get(self):
@@ -956,12 +1052,20 @@ errors = {
             },
         }
 
+
 api = Api(app, errors=errors)
 
 api.add_resource(TaskResource, '/tasks/<int:id>')
 api.add_resource(TaskList, '/tasks')
 api.add_resource(ResultResource, '/results/<int:id>')
+api.add_resource(ResultsActionResource,
+                 '/results/action/<string:action>:<string:tid>')
+api.add_resource(ResultsActionList, '/results/action')
 api.add_resource(ResultFileResource, '/results/<int:id>/file')
+api.add_resource(ResultActionList,
+                 '/results/<int:rid>/action')
+api.add_resource(ResultActionResource,
+                 '/results/<int:rid>/action/<string:action>:<string:tid>')
 api.add_resource(ResultList, '/results')
 api.add_resource(Basissets, '/basis')
 api.add_resource(PseudopotentialResource, '/pseudos/<int:id>')
