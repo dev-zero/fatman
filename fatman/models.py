@@ -3,7 +3,7 @@ from peewee import *
 from playhouse.postgres_ext import BinaryJSONField
 from flask_security import UserMixin, RoleMixin
 
-from fatman import db
+from . import db
 
 class BaseModel(Model):
     class Meta:

@@ -12,10 +12,10 @@ from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
 
-from fatman import app, resultfiles, cache
-from fatman.models import *
-from fatman.utils import route_from
-from fatman.tools import calcDelta, eos, Json2Atoms, Atoms2Json
+from . import app, resultfiles, cache
+from .models import *
+from .utils import route_from
+from .tools import calcDelta, eos, Json2Atoms, Atoms2Json
 
 import numpy as np
 
@@ -104,6 +104,21 @@ pseudo_resource_fields = {
 pseudofamily_list_fields = {
     'name': fields.Raw,
     }
+
+result_resource_fields = {
+    'id': fields.Raw,
+    'energy': fields.Float,
+    'task': fields.Nested(task_resource_fields),
+    '_links': {'self': fields.Url('resultresource'),
+               'file': fields.Url('resultfileresource')},
+    'filename': fields.String,
+    'data': fields.Raw,
+    }
+
+
+class ParameterError(Exception):
+    pass
+
 
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
@@ -220,15 +235,6 @@ class TaskList(Resource):
         return ret
 
 
-result_resource_fields = {
-   'id': fields.Raw,
-   'energy': fields.Float,
-   'task': fields.Nested(task_resource_fields),
-   '_links': { 'self': fields.Url('resultresource'), 'file': fields.Url('resultfileresource') },
-   'filename': fields.String,
-   'data': fields.Raw,
-   }
-
 class ResultResource(Resource):
     @marshal_with(result_resource_fields)
     def get(self, id):
@@ -255,6 +261,7 @@ class ResultResource(Resource):
 
         return model_to_dict(res)
 
+
 class ResultFileResource(Resource):
     def post(self, id):
         result = Result.get(Result.id == id)
@@ -263,8 +270,10 @@ class ResultFileResource(Resource):
             abort(400, message="Data is already uploaded for this result")
 
         parser = reqparse.RequestParser()
-        parser.add_argument('file', type=FileStorage, location='files', required=True)
+        parser.add_argument('file', required=True,
+                            type=FileStorage, location='files')
         args = parser.parse_args()
+
         filename = resultfiles.save(args['file'], folder=str(result.id))
 
         result.filename = filename
@@ -664,8 +673,6 @@ class Plot(Resource):
         response.headers['Content-Type'] = 'image/png'
         return response
 
-class ParameterError(Exception):
-    pass
 
 class StructureResource(Resource):
     def get(self):

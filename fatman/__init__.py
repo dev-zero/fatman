@@ -18,14 +18,18 @@ if 'SECURITY_POST_LOGIN_VIEW' not in app.config:
 if 'SECURITY_POST_LOGOUT_VIEW' not in app.config:
     app.config['SECURITY_POST_LOGOUT_VIEW'] = app.config['APPLICATION_ROOT']
 
-if app.config.get('DATABASE_LOG_QUERIES', False):
+
+def configure_db_logger():
     logger = logging.getLogger('peewee')
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
 
+if app.config.get('DATABASE_LOG_QUERIES', False):
+    configure_db_logger()
+
 db = PostgresqlExtDatabase(
     app.config['DATABASE'],
-    autorollback=True, # automatically rollback when a query failed to avoid dead threads
+    autorollback=True,  # automatically rollback when a query failed to avoid dead threads
     register_hstore=False,
     user=app.config.get('DATABASE_USER'),
     password=app.config.get('DATABASE_PASSWORD'),
@@ -33,10 +37,12 @@ db = PostgresqlExtDatabase(
     port=app.config.get('DATABASE_PORT')
     )
 
+
 # Explicitly connect
 @app.before_request
 def _db_connect():
     db.connect()
+
 
 # Explicitly disconnect
 @app.teardown_request
@@ -50,15 +56,13 @@ configure_uploads(app, (resultfiles,))
 # initialize Flask-Caching
 cache = Cache(app)
 
-# The imports are deliberately at this place.
-# They import this file itself, but need the app and db objects to be ready.
-# On the other hand we import them here to finish initialization of the app and db objects.
-import fatman.models
 
-from fatman.models import User, Role, UserRole
+from .models import User, Role, UserRole
 user_datastore = PeeweeUserDatastore(db, User, Role, UserRole)
 security = Security(app, user_datastore)
 
-import fatman.admin
-import fatman.api
-import fatman.views
+
+# The imports are deliberately at this place.
+# They import this file itself, but need all other global objects to be ready.
+# On the other hand we import them here to hook them up into Flask.
+from . import models, views, admin, api

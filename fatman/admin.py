@@ -9,15 +9,13 @@ from flask_security import current_user
 from flask_admin.contrib.peewee.form import CustomModelConverter
 from playhouse.postgres_ext import BinaryJSONField
 from wtforms import fields
+
+from . import security, app
+from .models import *
+
+# Make flask_admin render the BinaryJSONFields as TextAreas
 CustomModelConverter.defaults[BinaryJSONField] = fields.TextAreaField
 
-from fatman import app, security
-from fatman.models import *
-
-admin = Admin(app,
-              name='FATMAN', template_mode='bootstrap3',
-              base_template='my_master.html',
-             )
 
 class BaseDataView(ModelView):
     """
@@ -29,7 +27,8 @@ class BaseDataView(ModelView):
     can_export = True
     page_size = 150
     can_view_details = True
-    column_formatters = {'basis': lambda v,c,m,p: m.basis[:400]+"...", 'pseudo': lambda v,c,m,p: m.pseudo[:400]+"..."}
+    column_formatters = {'basis': lambda v, c, m, p: m.basis[:400]+"...",
+                         'pseudo': lambda v, c, m, p: m.pseudo[:400]+"..."}
 
     def is_accessible(self):
         """
@@ -72,6 +71,12 @@ class BaseManagementView(ModelView):
                 # login
                 return redirect(url_for('security.login', next=request.url))
 
+
+admin = Admin(app,
+              name='FATMAN', template_mode='bootstrap3',
+              base_template='my_master.html',
+              )
+
 admin.add_view(BaseManagementView(User))
 admin.add_view(BaseManagementView(Role))
 admin.add_view(BaseManagementView(UserRole))
@@ -91,8 +96,9 @@ admin.add_view(BaseDataView(Result))
 admin.add_view(BaseDataView(ResultWithoutTestResult))
 admin.add_view(BaseDataView(TestResult))
 
-# define a context processor for merging flask-admin's template context into the
-# flask-security views.
+
+# define a context processor for merging flask-admin's template
+# context into the flask-security views.
 @security.context_processor
 def security_context_processor():
     return dict(
@@ -100,3 +106,5 @@ def security_context_processor():
         admin_view=admin.index_view,
         h=admin_helpers,
     )
+
+#  vim: set ts=4 sw=4 tw=0 :
