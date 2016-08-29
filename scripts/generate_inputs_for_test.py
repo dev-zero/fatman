@@ -10,7 +10,7 @@ import requests
 import sys
 import json
 
-from fatman.tools import Json2Atoms, randomword, get_data_from_outputfile
+from fatman.tools import Json2Atoms, randomword
 from codehandling import HandlerFactory
 from time import sleep
 from datetime import datetime

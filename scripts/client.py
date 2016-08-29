@@ -20,7 +20,7 @@ import subprocess
 import requests
 import click
 
-from fatman.tools import Json2Atoms, randomword, get_data_from_outputfile
+from fatman.tools import Json2Atoms, randomword
 from codehandling import HandlerFactory
 
 TASKS_URL           = '{}/tasks'
@@ -283,13 +283,8 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
 
                 print('{:}: Task {:} done. Energy: {:18.12f}'.format(dt.now(), task['id'], e))
 
-                extradata = get_data_from_outputfile(output_file_path, mymethod['code'])
-
                 # REMOTE: throw the energy into the DB, get the id of the stored result
-                if extradata is not None:
-                    req = sess.post(RESULTS_URL.format(url), data={'energy': e, 'task_id': task['id'], 'data': json.dumps(extradata, sort_keys=True)})
-                else:
-                    req = sess.post(RESULTS_URL.format(url), data={'energy': e, 'task_id': task['id']})
+                req = sess.post(RESULTS_URL.format(url), data={'energy': e, 'task_id': task['id']})
                 req.raise_for_status()
                 done_task = req.json()
 

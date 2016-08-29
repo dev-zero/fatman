@@ -1029,14 +1029,6 @@ class OutputParseError(Exception):
     pass
 
 
-def get_data_from_outputfile(filename, code):
-    with open(filename) as fhandle:
-        try:
-            return get_data_from_output(fhandle, code)
-        except:
-            return None
-
-
 def get_data_from_output(fhandle, code):
     data = {}
 
