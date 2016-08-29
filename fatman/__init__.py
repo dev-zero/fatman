@@ -60,6 +60,10 @@ cache = Cache(app)
 
 # initialize Celery
 def setup_celery():
+    # we need pickle support to serialize exceptions from
+    # tasks, otherwise we would need a catch-all handler in them.
+    app.config['CELERY_ACCEPT_CONTENT'] = ['pickle', 'json']
+
     celery = Celery(app.import_name,
                     backend=app.config['CELERY_BACKEND'],
                     broker=app.config['CELERY_BROKER_URL'])
