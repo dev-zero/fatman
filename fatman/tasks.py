@@ -56,6 +56,8 @@ def postprocess_result_file(rid, update=False):
                          filepath, rid, exc)
             return False
 
+    logger.info("Parsing %s for result id %d succeeded", filepath, rid)
+
     if result.data is None:
         result.data = data
     else:
