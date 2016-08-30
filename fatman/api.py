@@ -896,26 +896,33 @@ class Comparison(Resource):
                     ret["method"][method2.id] = [str(method2)] + result_data
 
         elif mode == "2methods":
-            if args["test"] is not None:
-                testlist = args["test"]
-            else:
-                testlist = [t.name for t in Test.select()]
-
-            for testname in testlist:
-                result_data = self._getResultData(method1.id, method2.id,
-                                                  testname)
-                if result_data:
-                    ret["test"][testname] = result_data
-                    all_delta.append(result_data[-1])
-
-            all_delta = np.array(all_delta)
-            ret["summary"] = {"avg": np.average(all_delta),
-                              "stdev": np.std(all_delta),
-                              "N": len(all_delta)}
-            ret["methods"] = [method1.id, method2.id]
-
+            return self._get_2methods(method1.id, method2.id, args['test'])
         elif mode == "1method":
             return self._get_1method(method1.id)
+
+        return ret
+
+    @staticmethod
+    @cache.memoize(timeout=3600)
+    def _get_2methods(method1_id, method2_id, testlist=None):
+        ret = {"test": {}, "methods": [], "method": {}, "summary": {}}
+
+        if not testlist:
+            testlist = [t.name for t in Test.select()]
+
+        all_delta = []
+        for testname in testlist:
+            result_data = Comparison._getResultData(method1_id, method2_id,
+                                                    testname)
+            if result_data:
+                ret["test"][testname] = result_data
+                all_delta.append(result_data[-1])
+
+        all_delta = np.array(all_delta)
+        ret["summary"] = {"avg": np.average(all_delta),
+                          "stdev": np.std(all_delta),
+                          "N": len(all_delta)}
+        ret["methods"] = [method1_id, method2_id]
 
         return ret
 
