@@ -1,7 +1,6 @@
-import {Component, OnInit, Pipe, PipeTransform} from '@angular/core';
-import {Router} from '@angular/router';
+import { Component, Input, OnChanges, SimpleChange, Pipe, PipeTransform } from '@angular/core';
 
-import {DetailsService} from './details.service';
+import { DetailsService } from './details.service';
 
 /**
  * Iterable Pipe
@@ -57,7 +56,6 @@ export class ConcatPipe implements PipeTransform {
 
 @Component({
   selector:'methoddetails', 
-  inputs: ['method_id', 'small'],
   providers: [DetailsService],
   pipes: [SettingsPipe, IterablePipe, ConcatPipe],
   template: `
@@ -86,13 +84,17 @@ export class ConcatPipe implements PipeTransform {
     </span>
   `,
 })
-export class MethoddetailsComponent implements OnInit {
+export class MethoddetailsComponent implements OnChanges {
+  @Input()
+  method_id: number;
+  @Input()
+  small: boolean = false;
+
   constructor(private _service: DetailsService) { }
 
   errorMessage: string;
   method: Object[];
 
-  public method_id: number;
 
   getMethodDetails(method_id) {
     this._service.getMethodDetails(method_id).subscribe(
@@ -100,8 +102,9 @@ export class MethoddetailsComponent implements OnInit {
       error => this.errorMessage = <any>error);
   };
 
-  ngOnInit(){
-    this.getMethodDetails(this.method_id);
+  ngOnChanges(changes: {[propertyName: string]: SimpleChange}) {
+    if (changes['method_id'])
+      this.getMethodDetails(this.method_id);
   }
 }
 //  vim: set ts=2 sw=2 tw=0 :
