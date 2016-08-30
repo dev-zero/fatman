@@ -4,13 +4,13 @@ import bz2
 from celery.utils.log import get_task_logger
 from celery import group
 
-from . import celery, resultfiles, tools, db
+from . import capp, resultfiles, tools, db
 from .models import Result, Task, Method
 
 logger = get_task_logger(__name__)
 
 
-@celery.task()
+@capp.task
 def postprocess_result_files(update=False):
     """Postprocess all results files.
     Returns a tuple of rids and a group task."""
@@ -24,7 +24,7 @@ def postprocess_result_files(update=False):
                         for r in rids)())
 
 
-@celery.task()
+@capp.task
 @db.atomic()
 def postprocess_result_file(rid, update=False):
     """Parse the file uploaded for a result.

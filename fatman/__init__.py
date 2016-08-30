@@ -64,12 +64,12 @@ def setup_celery():
     # tasks, otherwise we would need a catch-all handler in them.
     app.config['CELERY_ACCEPT_CONTENT'] = ['pickle', 'json']
 
-    celery = Celery(app.import_name,
+    capp = Celery(app.import_name,
                     backend=app.config['CELERY_BACKEND'],
                     broker=app.config['CELERY_BROKER_URL'])
-    celery.conf.update(app.config)
+    capp.conf.update(app.config)
 
-    TaskBase = celery.Task
+    TaskBase = capp.Task
 
     # Inject the Flask context in Celery tasks
     class ContextTask(TaskBase):
@@ -78,11 +78,11 @@ def setup_celery():
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return TaskBase.__call__(self, *args, **kwargs)
-    celery.Task = ContextTask
+    capp.Task = ContextTask
 
-    return celery
+    return capp
 
-celery = setup_celery()
+capp = setup_celery()
 
 
 from .models import User, Role, UserRole
