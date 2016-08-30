@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+
+import numpy as np
+from ase.utils.eos import EquationOfState
+from ase.units import kJ
+
 gmtkn_coefficients = {
     "ADIM6":   [
         [        ("AM2",   2),        ("AD2",  -1), ],
@@ -1025,6 +1030,8 @@ def eos(V0,B0, B1, E0=0.):
     return rng, np.array(E)
 
 
+
+
 class OutputParseError(Exception):
     pass
 
@@ -1064,6 +1071,80 @@ def get_data_from_output(fhandle, code):
         raise OutputParseError("Unknown code: %s".format(code))
 
     return data
+
+
+class FullEquationOfState(EquationOfState):
+
+    """Fit equation of state for bulk systems.
+
+    Salvaged from https://gitlab.com/ase/ase/blob/3.8.1/ase/test/tasks/dcdft.py
+    Based on eosfit.py from http://molmod.ugent.be/DeltaCodesDFT
+
+    """
+
+    def __init__(self, volumes, energies, eos='birch'):
+        assert eos == 'birch', eos + ' eos not available.'
+        self.v = np.array(volumes)
+        self.e = np.array(energies)
+        self.eos_string = 'birch'
+
+        self.v0 = None
+
+    def fit(self):
+        """Calculate volume (v0), energy (e0), bulk modulus (B0), and
+        bulk modulus pressure derivative (B1).
+
+        Returns v0, e0, B0, B1, fit residuals.
+
+        Notice that the ASE units for the bulk modulus is
+        eV/Angstrom^3 - to get the value in GPa, do this::
+
+          v0, e0, B0, B1, R = eos.fit()
+          print B0 / kJ * 1.0e24, 'GPa'
+
+        """
+
+        fitdata = np.polyfit(self.v**(-2./3.), self.e, 3, full=True)
+        ssr = fitdata[1]
+        sst = np.sum((self.e - np.average(self.e))**2.)
+        residuals0 = ssr/sst
+        deriv0 = np.poly1d(fitdata[0])
+        deriv1 = np.polyder(deriv0, 1)
+        deriv2 = np.polyder(deriv1, 1)
+        deriv3 = np.polyder(deriv2, 1)
+
+        self.v0 = None
+        for x in np.roots(deriv1):
+            if x > 0 and deriv2(x) > 0:
+                self.v0 = x**(-3./2.)
+                break
+
+        if self.v0 is None:
+            raise ValueError('No minimum!')
+
+        derivV2 = 4./9. * x**5. * deriv2(x)
+        derivV3 = (-20./9. * x**(13./2.) * deriv2(x) -
+                   8./27. * x**(15./2.) * deriv3(x))
+        bulk_modulus0 = derivV2 / x**(3./2.)
+        bulk_deriv0 = -1 - x**(-3./2.) * derivV3 / derivV2
+
+        self.e0 = deriv0(x)
+        self.B0 = bulk_modulus0
+        self.B1 = bulk_deriv0
+
+        return self.v0, self.e0, self.B0, self.B1, residuals0
+
+
+def deltatest_ev_curve(volumes, energies):
+    eos = FullEquationOfState(volumes, energies)
+
+    try:
+        v, e, B0, B1, R = eos.fit()
+    except ValueError:
+        print("failure")
+        return "fail", "fail", "fail", "fail", "fail"
+    else:
+        return v, e, B0/kJ * 1.0e24, B1, R[0]
 
 
 def test1():
