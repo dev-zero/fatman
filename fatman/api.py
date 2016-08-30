@@ -6,7 +6,9 @@ from os import path
 import bz2
 from io import BytesIO, StringIO
 
-from flask_restful import Api, Resource, abort, reqparse, fields, marshal_with, marshal
+from flask_restful import (Api, Resource,
+                           abort, reqparse,
+                           fields, marshal_with, marshal)
 from flask import make_response, url_for, request
 from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
@@ -16,7 +18,10 @@ from . import app, resultfiles, cache
 from .models import *
 from .utils import route_from
 from .tools import calcDelta, eos, Json2Atoms, Atoms2Json
-from .tasks import postprocess_result_file, postprocess_result_files
+from .tasks import (postprocess_result_file,
+                    postprocess_result_files,
+                    postprocess_result,
+                    )
 
 import numpy as np
 
@@ -401,17 +406,19 @@ class ResultList(Resource):
         parser.add_argument('code', type=str)
         args = parser.parse_args()
 
-        q = Result.select(Result, Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
-            .join(Task) \
-               .join(TaskStatus).switch(Task) \
-               .join(Method) \
-                  .join(PseudopotentialFamily).switch(Method) \
-                  .join(BasissetFamily).switch(Method) \
-                  .switch(Task) \
-               .join(Structure).switch(Task) \
-               .join(Test).switch(Task) \
-               .switch(Result) \
-            .order_by(Result.id.asc())
+        q = (Result
+             .select(Result, Task, TaskStatus, Method, Structure, Test,
+                     PseudopotentialFamily, BasissetFamily)
+             .join(Task)
+             .join(TaskStatus).switch(Task)
+             .join(Method)
+                 .join(PseudopotentialFamily).switch(Method)
+                 .join(BasissetFamily).switch(Method)
+                 .switch(Task)
+             .join(Structure).switch(Task)
+             .join(Test).switch(Task)
+             .switch(Result)
+             .order_by(Result.id.asc()))
 
         if args['test'] is not None:
             t = Test.get(Test.name == args['test'])
@@ -420,7 +427,7 @@ class ResultList(Resource):
         if args['method'] is not None:
             m = Method.get(Method.id == args['method'])
             q = q.where(Task.method == m)
-        
+
         if args['structure']:
             q = q.where(Structure.name == args['structure'])
 
@@ -432,7 +439,6 @@ class ResultList(Resource):
 
         return [marshal(model_to_dict(x), result_resource_fields) for x in q]
 
-
     @marshal_with(result_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
@@ -442,26 +448,32 @@ class ResultList(Resource):
         parser.add_argument('data', type=str)
         args = parser.parse_args()
 
-        if args['task'] is not None:
+        task_id = args['task_id']
+
+        if args['task']:
             url, data = route_from(args['task'], 'GET')
             if url != 'taskresource':
-                abort(400, message="Invalid URL specified for task")
+                raise ParameterError("Invalid URL specified for task")
             task_id = data['id']
-        else:
-            task_id = args['task_id']
 
-        if task_id is None:
-            abort(400, message="Either task or task_id must be specified")
+        if not task_id:
+            raise ParameterError("Either task or task_id must be specified")
 
         if args['data'] is not None:
             extradata = json.loads(args['data'])
         else:
             extradata = None
 
-        result = Result(task=Task.get(Task.id==task_id), energy=args['energy'], data=extradata)
+        result = Result(task=Task.get(Task.id == task_id),
+                        energy=args['energy'],
+                        data=extradata)
         result.save()
 
-        return model_to_dict(result), 201, {'Location': api.url_for(ResultResource, id=result.id)}
+        postprocess_result.delay(result.id)
+
+        return (model_to_dict(result), 201,
+                {'Location': api.url_for(ResultResource, id=result.id)})
+
 
 class TestResource(Resource):
     @marshal_with(test_resource_fields)
