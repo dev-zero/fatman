@@ -27,8 +27,6 @@ class BaseDataView(ModelView):
     can_export = True
     page_size = 150
     can_view_details = True
-    column_formatters = {'basis': lambda v, c, m, p: m.basis[:400]+"...",
-                         'pseudo': lambda v, c, m, p: m.pseudo[:400]+"..."}
 
     def is_accessible(self):
         """
@@ -38,7 +36,8 @@ class BaseDataView(ModelView):
 
     def _handle_view(self, name, **kwargs):
         """
-        Override builtin _handle_view in order to redirect users when a view is not accessible.
+        Override builtin _handle_view in order to redirect users
+        when a view is not accessible.
         """
         if not self.is_accessible():
             if current_user.is_authenticated:
@@ -47,6 +46,7 @@ class BaseDataView(ModelView):
             else:
                 # login
                 return redirect(url_for('security.login', next=request.url))
+
 
 class BaseManagementView(ModelView):
     """
@@ -56,12 +56,14 @@ class BaseManagementView(ModelView):
         """
         Make them only accessible to users with the admin role
         """
-        return current_user.is_active and current_user.is_authenticated \
-                and current_user.has_role('admin')
+        return (current_user.is_active and
+                current_user.is_authenticated and
+                current_user.has_role('admin'))
 
     def _handle_view(self, name, **kwargs):
         """
-        Override builtin _handle_view in order to redirect users when a view is not accessible.
+        Override builtin _handle_view in order to redirect users
+        when a view is not accessible.
         """
         if not self.is_accessible():
             if current_user.is_authenticated:
@@ -70,6 +72,66 @@ class BaseManagementView(ModelView):
             else:
                 # login
                 return redirect(url_for('security.login', next=request.url))
+
+
+class StructureSetView(BaseDataView):
+    column_list = ('id', 'name', 'description')
+
+
+class StructureView(BaseDataView):
+    column_list = ('id', 'name', 'ase_structure')
+
+
+class StructureSetStructureView(BaseDataView):
+    column_display_pk = False
+    column_list = ('set', 'structure')
+
+
+class MethodView(BaseDataView):
+    column_list = ('id', 'code', 'pseudopotential', 'basis_set', 'settings')
+
+
+class BasisSetView(BaseDataView):
+    column_list = ('id', 'element', 'family', 'basis')
+    column_formatters = {'basis': lambda v, c, m, p: m.basis[:80]+"..."}
+
+
+class BasissetFamilyView(BaseDataView):
+    column_display_pk = False
+    column_list = ('name',)
+
+
+class PseudopotentialView(BaseDataView):
+    column_list = ('id', 'element', 'family', 'format',
+                   'pseudo', 'converted_from', )
+    column_formatters = {'pseudo': lambda v, c, m, p: m.pseudo[:80]+"..."}
+
+
+class PseudopotentialFamilyView(BaseDataView):
+    column_display_pk = False
+    column_list = ('name',)
+
+
+class TestView(BaseDataView):
+    column_list = ('id', 'name', 'description')
+
+
+class TestStructureView(BaseDataView):
+    column_display_pk = False
+    column_list = ('test', 'structure')
+
+
+class TaskView(BaseDataView):
+    column_list = ('id', 'status', 'test', 'structure', 'method',
+                   'machine', 'priority', 'ctime', 'mtime',)
+
+
+class ResultView(BaseDataView):
+    column_list = ('id', 'task', 'energy', 'filename', 'data',)
+
+
+class TestResultView(BaseDataView):
+    column_list = ('id', 'test', 'method', 'ctime', 'result_data',)
 
 
 admin = Admin(app,
@@ -81,20 +143,20 @@ admin.add_view(BaseManagementView(User))
 admin.add_view(BaseManagementView(Role))
 admin.add_view(BaseManagementView(UserRole))
 
-admin.add_view(BaseDataView(Structure))
-admin.add_view(BaseDataView(StructureSet))
-admin.add_view(BaseDataView(StructureSetStructure))
-admin.add_view(BaseDataView(Method))
-admin.add_view(BaseDataView(BasisSet))
-admin.add_view(BaseDataView(BasissetFamily))
-admin.add_view(BaseDataView(Pseudopotential))
-admin.add_view(BaseDataView(PseudopotentialFamily))
-admin.add_view(BaseDataView(Test))
-admin.add_view(BaseDataView(TestStructure))
-admin.add_view(BaseDataView(Task))
-admin.add_view(BaseDataView(Result))
-admin.add_view(BaseDataView(ResultWithoutTestResult))
-admin.add_view(BaseDataView(TestResult))
+admin.add_view(StructureView(Structure))
+admin.add_view(StructureSetView(StructureSet))
+admin.add_view(StructureSetStructureView(StructureSetStructure))
+admin.add_view(MethodView(Method))
+admin.add_view(BasisSetView(BasisSet))
+admin.add_view(BasissetFamilyView(BasissetFamily))
+admin.add_view(PseudopotentialView(Pseudopotential))
+admin.add_view(PseudopotentialFamilyView(PseudopotentialFamily))
+admin.add_view(TestView(Test))
+admin.add_view(TestStructureView(TestStructure))
+admin.add_view(TaskView(Task))
+admin.add_view(ResultView(Result))
+admin.add_view(ResultView(ResultWithoutTestResult))
+admin.add_view(TestResultView(TestResult))
 
 
 # define a context processor for merging flask-admin's template
