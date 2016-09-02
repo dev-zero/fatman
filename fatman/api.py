@@ -45,7 +45,7 @@ method_list_fields = {
 structure_resource_fields = {
     'id': fields.Raw,
     'name': fields.Raw,
-    'ase_structure' : fields.Raw, 
+    'ase_structure': fields.Raw,
     }
 
 structure_list_fields = {
@@ -76,7 +76,7 @@ task_list_fields = {
     '_links': {'self': fields.Url('taskresource')},
     }
 
-test_resource_fields = {
+teststructure_resource_fields = {
     'id': fields.Raw,
     'test': fields.Raw,
     'structure': fields.Nested(structure_resource_fields),
@@ -119,6 +119,19 @@ result_resource_fields = {
                'file': fields.Url('resultfileresource')},
     'filename': fields.String,
     'data': fields.Raw,
+    }
+
+test_resource_fields = {
+    'id': fields.Raw,
+    'name': fields.String,
+    }
+
+testresult_resource_fields = {
+    'id': fields.Raw,
+    'test': fields.Nested(test_resource_fields),
+    'method': fields.Nested(method_resource_fields),
+    'ctime': fields.String,
+    'data': fields.Raw(attribute='result_data'),
     }
 
 
@@ -476,14 +489,15 @@ class ResultList(Resource):
 
 
 class TestResource(Resource):
-    @marshal_with(test_resource_fields)
+    @marshal_with(teststructure_resource_fields)
     def get(self, testname):
         st = TestStructure.select(TestStructure, Test, Structure) \
                 .join(Test).switch(TestStructure) \
                 .join(Structure).switch(Structure) \
                 .where(Test.name == testname)
 
-        return [marshal(model_to_dict(s), test_resource_fields) for s in st]
+        return [marshal(model_to_dict(s), teststructure_resource_fields) for s in st]
+
 
 class TestList(Resource):
     def get(self):
@@ -675,22 +689,32 @@ class MachineStatus(Resource):
 
         return [(m.machine, m.running, m.total) for m in q]
 
-class TestResultResource(Resource):
+
+class TestResultList(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('method', type=int, required=False)
-        parser.add_argument('test', type=str, required=True)
+        parser.add_argument('test', type=str, required=False)
         args = parser.parse_args()
 
-        q = TestResult.select(Test, TestResult) \
-                .join(Test) \
-                .where(Test.name == args["test"])
+        query = (TestResult
+                 .select(Test, TestResult, Method,
+                         PseudopotentialFamily, BasissetFamily)
+                 .join(Test).switch(TestResult)
+                 .join(Method)
+                 .join(PseudopotentialFamily).switch(Method)
+                 .join(BasissetFamily).switch(TestResult)
+                 .order_by(TestResult.ctime.desc()))
+
+        if args['test']:
+            query = query.where(Test.name == args["test"])
 
         if args['method']:
-            q = q.where(TestResult.method == args["method"])
-            return [{tr.test.name: tr.result_data} for tr in q]
-        else:
-            return [{tr.method_id: tr.result_data} for tr in q]
+            query = query.where(TestResult.method == args["method"])
+
+        return [marshal(model_to_dict(tr), testresult_resource_fields)
+                for tr in query]
+
 
 class Plot(Resource):
     def get(self):
@@ -1091,7 +1115,7 @@ api.add_resource(PseudopotentialResource, '/pseudos/<int:id>')
 api.add_resource(PseudopotentialList, '/pseudos')
 api.add_resource(PseudopotentialFamilyList, '/pseudofamilies')
 api.add_resource(MachineStatus, '/machinestatus')
-api.add_resource(TestResultResource, '/testresult')
+api.add_resource(TestResultList, '/testresults')
 api.add_resource(Comparison, '/compare')
 api.add_resource(MethodResource, '/methods/<int:id>')
 api.add_resource(MethodList, '/methods')

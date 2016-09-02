@@ -11,7 +11,7 @@ export class DetailsService {
   private _methodsUrl = '../methods';
   private _testlistUrl = '../tests';
   private _resultsUrl = '../results';
-  private _testresultUrl = '../testresult';
+  private _testresultUrl = '../testresults';
   private _compareUrl = '../compare';
 
   getComparisonOneTest(method1, method2, test): Observable<Object[]> {

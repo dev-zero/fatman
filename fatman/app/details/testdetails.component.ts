@@ -28,9 +28,9 @@ export class TruncatePipe {
         </div>
         <div *ngIf='testresults' class='col-md-2'>
           <table>
-            <tr><td style='padding-right: 10px'>V<sub>0</sub></td><td> <b>{{ testresults[0][test].V  | number: ".3"}}</b></td></tr>
-            <tr><td style='padding-right: 10px'>B<sub>0</sub></td><td> <b>{{ testresults[0][test].B0 | number: ".3"}}</b></td></tr>
-            <tr><td style='padding-right: 10px'>B<sub>1</sub></td><td> <b>{{ testresults[0][test].B1 | number: ".3"}}</b></td></tr>
+            <tr><td style='padding-right: 10px'>V<sub>0</sub></td><td> <b>{{ testresults[0].data.V  | number: ".3"}}</b></td></tr>
+            <tr><td style='padding-right: 10px'>B<sub>0</sub></td><td> <b>{{ testresults[0].data.B0 | number: ".3"}}</b></td></tr>
+            <tr><td style='padding-right: 10px'>B<sub>1</sub></td><td> <b>{{ testresults[0].data.B1 | number: ".3"}}</b></td></tr>
           </table>
         </div>
       </div>
