@@ -28,8 +28,8 @@ import { TaskService }   from './tasks/tasks.service';
 import { PseudoService } from './pseudos/pseudo.service';
 
 import { TruncatePipe }                           from './details/testdetails.component';
-import { IterablePipe, SettingsPipe, ConcatPipe } from './details/methoddetails.component';
 import { DeltavaluePipe }                         from './periodictable/periodictable-list.component';
+import { IterablePipe, SettingsPipe, ConcatPipe } from './common/pipes';
 
 @NgModule({
   imports: [
