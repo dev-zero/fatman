@@ -695,6 +695,9 @@ class TestResultList(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('method', type=int, required=False)
         parser.add_argument('test', type=str, required=False)
+        # method ID of the reference for the deltatest:
+        parser.add_argument('deltaref', type=int, required=False)
+        parser.add_argument('limit', type=int, required=False)
         args = parser.parse_args()
 
         query = (TestResult
@@ -712,8 +715,42 @@ class TestResultList(Resource):
         if args['method']:
             query = query.where(TestResult.method == args["method"])
 
-        return [marshal(model_to_dict(tr), testresult_resource_fields)
-                for tr in query]
+        if args['limit']:
+            query = query.limit(args['limit'])
+
+        results = [marshal(model_to_dict(tr), testresult_resource_fields)
+                   for tr in query]
+
+        if args['deltaref']:
+            # get the test result entries for the reference method:
+            ref_res_query = (TestResult.select(TestResult, Method, Test)
+                             .join(Method).switch(TestResult)
+                             .join(Test)
+                             .where((Method.id == args['deltaref'])))
+
+            # create a dictionary for faster lookup with the test name as key:
+            refresults = {r.test.name: r for r in ref_res_query}
+
+            for result in results:
+                # note: the results here are now dicts, not ORM objects
+
+                # ignore results with missing V,B0,B1 coefficients
+                if not result['data']['_status'] == 'fitted':
+                    continue
+
+                try:
+                    refdata = refresults[result['test']['name']].result_data
+                except KeyError:
+                    # do not calculate delta if the ref method doesn't have it
+                    continue
+
+                result['data']['deltavalue'] = calcDelta(
+                    (refdata['V'], refdata['B0'], refdata['B1']),
+                    (result['data']['V'],
+                     result['data']['B0'],
+                     result['data']['B1']))
+
+        return results
 
 
 class Plot(Resource):
