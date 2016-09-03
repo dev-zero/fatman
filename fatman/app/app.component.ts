@@ -9,9 +9,16 @@ import './rxjs-operators';
     <nav class="navbar navbar-inverse navbar-static-top">
       <div class="container-fluid">
         <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+            data-target="#main-navbar" aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          </button>
           <a class="navbar-brand" href="#">{{title}}</a>
         </div>
-        <div id="navbar" class="collapse navbar-collapse">
+        <div id="main-navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li><a routerLink="/home" routerLinkActive="active">Home</a></li>
             <li><a routerLink="/tasks" routerLinkActive="active">Tasks</a></li>
