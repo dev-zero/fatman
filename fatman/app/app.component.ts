@@ -22,11 +22,19 @@ import './rxjs-operators';
           <ul class="nav navbar-nav">
             <li><a routerLink="/home" routerLinkActive="active">Home</a></li>
             <li><a routerLink="/tasks" routerLinkActive="active">Tasks</a></li>
-            <li><a routerLink="/reports" routerLinkActive="active">Reports</a></li>
             <li><a routerLink="/machinestatus" routerLinkActive="active">Machine Status</a></li>
-            <li><a routerLink="/periodictable/3/72" routerLinkActive="active">Periodic Table</a></li>
             <li><a routerLink="/methodlist" routerLinkActive="active">Method Overview</a></li>
             <li><a routerLink="/pseudos" routerLinkActive="active">Pseudos</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                role="button" aria-haspopup="true" aria-expanded="false">
+                Deltatest <span class="caret"></span></a>
+                <ul class="dropdown-menu">
+                  <li><a routerLink="/deltatest/results" routerLinkActive="active">All results</a></li>
+                  <li><a routerLink="/periodictable/3/72" routerLinkActive="active">Periodic Table</a></li>
+                  <li><a routerLink="/reports" routerLinkActive="active">Comparison matrix</a></li>
+                </ul>
+            </li>
           </ul>
         </div> <!--/.navbar-collapse -->
       </div>
