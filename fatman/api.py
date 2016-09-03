@@ -707,7 +707,7 @@ class TestResultList(Resource):
                  .order_by(TestResult.ctime.desc()))
 
         if args['test']:
-            query = query.where(Test.name == args["test"])
+            query = query.where(Test.name.contains(args["test"]))
 
         if args['method']:
             query = query.where(TestResult.method == args["method"])
