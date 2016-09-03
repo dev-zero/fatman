@@ -1,11 +1,8 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
-import {ROUTER_DIRECTIVES} from '@angular/router';
-import {MethoddetailsComponent} from '../details/methoddetails.component';
-import {HomeService} from './home.service';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { HomeService } from './home.service';
 
 @Component({
   providers: [HomeService],
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   template: `
     <h3>Welcome to FATMAN</h3>
 

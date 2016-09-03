@@ -1,7 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 
 import {TaskService} from './tasks.service';
-import {TasksList} from './tasks-list.component';
 
 @Component({
   template: `
@@ -19,8 +18,7 @@ import {TasksList} from './tasks-list.component';
     </button>
   </div>
   <tasks-list [statusname]="selectedStatus"></tasks-list>
-  `,
-  directives: [TasksList]
+  `
 })
 
 export class TasksStats implements OnInit {

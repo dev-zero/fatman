@@ -1,10 +1,8 @@
-import {Component, OnInit} from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
-import {PeriodictableService} from '../periodictable/periodictable.service';
-import {MethoddetailsComponent} from '../details/methoddetails.component';
+import { PeriodictableService } from '../periodictable/periodictable.service';
 
 @Component({
-  directives: [MethoddetailsComponent],
   template: `
   <!-- <div class="form-group container" style="width: 1100px; height: 900px; overflow-y: scroll; border: 2px solid">-->
      <div class="container">

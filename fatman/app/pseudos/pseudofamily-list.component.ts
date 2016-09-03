@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { PseudoFamily }  from './pseudo';
 import { PseudoService } from './pseudo.service';
-import { PseudoTable }   from './pseudo-table.component';
 
 @Component({
   template: `
@@ -26,7 +25,6 @@ import { PseudoTable }   from './pseudo-table.component';
     </div>
   </div>
   `,
-  directives: [PseudoTable],
 })
 
 export class PseudoFamilyList implements OnInit, OnDestroy {

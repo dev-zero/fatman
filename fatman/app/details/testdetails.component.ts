@@ -1,11 +1,10 @@
-import {Component, OnInit, Pipe, PipeTransform} from '@angular/core';
-import {Router} from '@angular/router';
+import { Component, OnInit, Pipe, PipeTransform } from '@angular/core';
+import { Router } from '@angular/router';
 
-import {DetailsService} from './details.service';
-import {MethoddetailsComponent} from '../details/methoddetails.component';
+import { DetailsService } from './details.service';
 
 @Pipe({name: 'truncate'})
-export class TruncatePipe {
+export class TruncatePipe implements PipeTransform {
   transform(value: string, args: string[]) : string {
     let limit = args.length > 0 ? parseInt(args[0], 10) : 16;
 
@@ -16,8 +15,6 @@ export class TruncatePipe {
 @Component({
   selector:'testdetails', 
   inputs: ['method_id', 'test'],
-  directives: [MethoddetailsComponent],
-  pipes: [TruncatePipe],
   providers: [DetailsService],
   template: `
   <div class='panel panel-info'>

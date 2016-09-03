@@ -1,11 +1,9 @@
-import {Component, OnInit, OnDestroy, ViewChild, AfterViewChecked} from '@angular/core';
-import {Router, ActivatedRoute, ROUTER_DIRECTIVES} from '@angular/router';
+import { Component, OnInit, OnDestroy, ViewChild, AfterViewChecked } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 
-import {ReportService} from './reports.service';
-import {MethoddetailsComponent} from '../details/methoddetails.component';
+import { ReportService } from './reports.service';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   templateUrl: 'reports/reports-comparison.component.html',
   styleUrls: ['reports/reports.component.css'],
 })

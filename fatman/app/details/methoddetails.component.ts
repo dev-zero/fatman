@@ -57,7 +57,6 @@ export class ConcatPipe implements PipeTransform {
 @Component({
   selector:'methoddetails', 
   providers: [DetailsService],
-  pipes: [SettingsPipe, IterablePipe, ConcatPipe],
   template: `
     <div *ngIf="method && !small" class="panel panel-default">
       <div class="panel-body">

@@ -1,6 +1,6 @@
-import {Component, OnInit, ViewChild, Pipe, PipeTransform} from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
-import {DetailsService} from './details.service';
+import { DetailsService } from './details.service';
 
 @Component({
   selector:'comparematrix', 

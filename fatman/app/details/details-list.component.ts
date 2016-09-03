@@ -1,15 +1,11 @@
-import {Component, OnInit, OnDestroy, ViewChild, AfterViewChecked} from '@angular/core';
-import {Router, ActivatedRoute, ROUTER_DIRECTIVES} from '@angular/router';
-import {Location} from '@angular/common';
-import {SafeResourceUrl, DomSanitizationService} from '@angular/platform-browser';
+import { Component, OnInit, OnDestroy, ViewChild, AfterViewChecked } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
+import { SafeResourceUrl, DomSanitizer } from '@angular/platform-browser';
 
-import {DetailsService} from './details.service';
-import {MethoddetailsComponent} from '../details/methoddetails.component';
-import {TestdetailsComponent} from '../details/testdetails.component';
-import {ComparematrixComponent} from '../details/comparematrix.component';
+import { DetailsService } from './details.service';
 
 @Component({
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent, TestdetailsComponent, ComparematrixComponent],
   inputs: ['test1'],
   providers: [DetailsService],
    template: `
@@ -68,7 +64,7 @@ export class Details implements OnInit, OnDestroy {
     private _route: ActivatedRoute,
     private _router: Router,
     private _location: Location,
-    private _sanitizer: DomSanitizationService,
+    private _sanitizer: DomSanitizer,
     private _service: DetailsService) {}
 
 

@@ -1,8 +1,7 @@
 import { Component, OnInit, OnDestroy, Pipe, PipeTransform, ViewChild, AfterViewChecked } from '@angular/core';
-import { ActivatedRoute, Router, ROUTER_DIRECTIVES } from '@angular/router';
+import { ActivatedRoute, Router} from '@angular/router';
 
-import {PeriodictableService} from './periodictable.service';
-import {MethoddetailsComponent} from '../details/methoddetails.component';
+import { PeriodictableService } from './periodictable.service';
 
 @Pipe({name: 'deltavalue'})
 export class DeltavaluePipe implements PipeTransform {
@@ -16,11 +15,9 @@ export class DeltavaluePipe implements PipeTransform {
 
 @Component({
   selector: 'periodictable',
-  directives: [ROUTER_DIRECTIVES, MethoddetailsComponent],
   templateUrl: 'periodictable/periodictable-list.component.html',
   styleUrls: ['periodictable/periodictable-list.component.css'],
   providers: [PeriodictableService],
-  pipes: [DeltavaluePipe],
 })
 
 export class Periodictable implements OnInit, OnDestroy {

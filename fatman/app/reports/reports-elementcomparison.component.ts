@@ -1,11 +1,9 @@
-import {Component, OnInit, OnDestroy, ViewChild, AfterViewChecked} from '@angular/core';
-import {Router, ActivatedRoute} from '@angular/router';
+import { Component, OnInit, OnDestroy, ViewChild, AfterViewChecked } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 
-import {ReportService} from './reports.service';
-import {MethoddetailsComponent} from '../details/methoddetails.component';
+import { ReportService } from './reports.service';
 
 @Component({
-  directives: [MethoddetailsComponent],
   template: `
     <div class="row">
       <div class="col-md-12">

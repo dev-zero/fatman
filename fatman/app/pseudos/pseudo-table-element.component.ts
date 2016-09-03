@@ -1,4 +1,4 @@
-import { Component, Input, SimpleChange,  Pipe, PipeTransform } from '@angular/core';
+import { Component, Input, SimpleChange } from '@angular/core';
 
 import { Pseudo } from './pseudo';
 
