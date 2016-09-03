@@ -740,18 +740,16 @@ class TestResultList(Resource):
 
                 try:
                     refdata = refresults[result['test']['name']].result_data
+
+                    result['data']['deltavalue'] = calcDelta(
+                        (refdata['V'], refdata['B0'], refdata['B1']),
+                        (result['data']['V'],
+                         result['data']['B0'],
+                         result['data']['B1']))
+
                 except KeyError:
                     # do not calculate delta if the ref method doesn't have it
                     continue
-
-                if not refdata['_status'] == 'fitted':
-                    continue
-
-                result['data']['deltavalue'] = calcDelta(
-                    (refdata['V'], refdata['B0'], refdata['B1']),
-                    (result['data']['V'],
-                     result['data']['B0'],
-                     result['data']['B1']))
 
         return results
 
