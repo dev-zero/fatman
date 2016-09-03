@@ -744,6 +744,9 @@ class TestResultList(Resource):
                     # do not calculate delta if the ref method doesn't have it
                     continue
 
+                if not refdata['_status'] == 'fitted':
+                    continue
+
                 result['data']['deltavalue'] = calcDelta(
                     (refdata['V'], refdata['B0'], refdata['B1']),
                     (result['data']['V'],
