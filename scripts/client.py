@@ -5,8 +5,6 @@ from __future__ import print_function
 import os
 from os import path
 import sys
-import json
-import tempfile
 from time import sleep
 from datetime import datetime as dt
 from datetime import timedelta
