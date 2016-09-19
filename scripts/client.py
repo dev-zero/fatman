@@ -73,23 +73,25 @@ def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340, mi
     return max(minimum, estimated_rt)
 
 @click.command()
-@click.option('--url', type=str, default='http://localhost:5000',
-              help='The URL where FATMAN is running (default: http://localhost:5000/)')
+@click.option('--url', type=str, default='http://localhost:5000', show_default=True,
+              help='The URL where FATMAN is running')
 @click.option('--workdir', type=click.Path(exists=True, resolve_path=True),
-              default='./fatman-client', help="Work directory (default: ./fatman-client)")
-@click.option('--hpc-mode/--no-hpc-mode', default=False,
+              default='./fatman-client', help="Work directory",
+              show_default=True)
+@click.option('--hpc-mode/--no-hpc-mode', default=False, show_default=True,
               help='whether to run this client for a HPC system')
-@click.option('--calc/--no-calc', default=True, help="do not run the actual calculation")
-@click.option('--update/--no-update', default=True,
-              help="Do not update the task's status on the server")
-@click.option('--upload/--no-upload', default=True,
-              help="Do not upload the task to the hpc node (only create the directory structure)")
-@click.option('--submit/--no-submit', default=True,
-              help="Submit the job to SLURM after upload, otherwise you have to submit it manually")
+@click.option('--calc/--no-calc', default=True, show_default=True,
+              help="run the actual calculation")
+@click.option('--update/--no-update', default=True, show_default=True,
+              help="update the task's status on the server")
+@click.option('--upload/--no-upload', default=True, show_default=True,
+              help="upload the task to the hpc node (only create the directory structure)")
+@click.option('--submit/--no-submit', default=True, show_default=True,
+              help="Submit the job to SLURM after upload (otherwise you have to submit it manually)")
 @click.option('--maxtask', '-m', type=int, default=0,
-              help="Number of tasks after which to stop (default: never stop)")
-@click.option('--exit-on-error/--no-exit-on-error', default=False,
-              help="Exit on error (default: no)")
+              help="Number of tasks after which to stop [default: never]")
+@click.option('--exit-on-error/--no-exit-on-error', default=False, show_default=True,
+              help="Exit on error")
 def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_error):
     """The fatman client queries the DB for new tasks and runs them until none are left"""
 
