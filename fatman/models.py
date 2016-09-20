@@ -186,24 +186,6 @@ class Result(BaseModel):
     filename = CharField(null=True)
     data = BinaryJSONField(null=True)
 
-class ResultWithoutTestResult(BaseModel):
-    # need to create a VIEW in postgres that feeds into this model
-    # https://github.com/coleifer/peewee/issues/378
-    #
-    #CREATE VIEW resultwithouttestresult AS 
-    #SELECT result.* FROM result JOIN task a  ON a.id = result.task_id 
-    #    WHERE NOT EXISTS 
-    #        (SELECT 1 FROM testresult b 
-    #             WHERE a.method_id = b.method_id AND 
-    #                   a.test_id = b.test_id
-    #        );
-    
-    energy = DoubleField()
-    task = ForeignKeyField(Task, related_name='resultswithout')
-    filename = CharField(null=True)
-
-    class Meta:
-        db_table = 'resultwithouttestresult'
 
 class TestResult(BaseModel):
     ctime = DateTimeField()

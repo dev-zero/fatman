@@ -155,7 +155,6 @@ admin.add_view(TestView(Test))
 admin.add_view(TestStructureView(TestStructure))
 admin.add_view(TaskView(Task))
 admin.add_view(ResultView(Result))
-admin.add_view(ResultView(ResultWithoutTestResult))
 admin.add_view(TestResultView(TestResult))
 
 
