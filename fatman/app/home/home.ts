@@ -7,17 +7,21 @@ import { HomeService } from './home.service';
     <h3>Welcome to FATMAN</h3>
 
     <div style="font-size: 12pt" class="container" style="overflow-y:scroll; height:600px;">
-      <p>Reference Method:
-        <select #meth1 (change)="onSelect(meth1.value);">
-            <option *ngFor="let method of methods" value="{{ method.id }}">{{ method.id }} ({{ method.pseudopotential }})</option>
+      <div class="form-group">
+        <label for="methodselection">Reference method:</label>
+        <select [(ngModel)]="reference_method" (ngModelChange)="onSelect()"
+            class="form-control" id="methodselection">
+          <option *ngFor="let method of methods" [ngValue]="method.id">
+            {{ method.code }} / {{ method.pseudopotential }} / {{ method.basis_set }}
+          </option>
         </select>
-      </p>
+      </div>
 
       <table class="table table-bordered table-striped table-condensed">
         <thead>
           <tr>
-            <th (click)="re_sort(0)">Code</th>
-            <th (click)="re_sort(2)">Average Delta</th>
+            <th>Code</th>
+            <th>Average Delta</th>
           </tr>
         </thead>
         <tbody>
@@ -51,65 +55,42 @@ export class Home implements OnInit {
 
   getMethods() {
     this._service.getMethods().subscribe(
-      methods => this.methods = methods,
-      error => this.errorMessage = <any>error,
-          ()=>this.completeMethod() );
-  };
+      methods => {
+        this.methods = methods;
+        this.getResults();
+      },
+      error => this.errorMessage = <any>error
+    );
+  }
 
-  getResults(method) {
+  getResults() {
     this.f_results = [];
-    if (this.methods) {
-      for (var i=0; i<this.methods.length; i++) {
-        this._service.getResults(method, this.methods[i]['id']).subscribe(
-          results => {
-            this.f_results.push([results['methods'][1]]
-                                .concat(results['summary']['avg'])
-                                .concat(results['summary']['stdev'])
-                                .concat(results['summary']['N']))
-          },
-          error => this.errorMessage = <any>error,
-          () => this.re_sort(1)
-        );
-      }
+    for (var i=0; i < this.methods.length; i++) {
+      this._service.getResults(this.reference_method, this.methods[i]['id']).subscribe(
+        results => {
+          this.f_results.push([results['methods'][1]]
+                              .concat(results['summary']['avg'])
+                              .concat(results['summary']['stdev'])
+                              .concat(results['summary']['N']))
+        },
+        error => this.errorMessage = <any>error,
+        () => this.re_sort(1)
+      );
     }
-  };
+  }
 
   ngOnInit(): void {
     this.getMethods();
-    this.getResults(this.method1);
   }
 
-  onSelect(method1){
-    this.method1 = method1;
-    this.getResults(method1);
+  onSelect(reference_method){
+    this.results = [];
+    this.getResults();
   }
-
-  completeMethod() { 
-     var opts = this.mymeth1.nativeElement.options;
-     for(var j = 0; j<opts.length; j++) {
-        var opt = opts[j];
-        if(opt.value == this.method1) {
-            this.mymeth1.nativeElement.selectedIndex = j;
-        }
-     }
-     this.getResults(this.method1);
-  };
-
-//completeResult() {
-//  for (var i =0;i<this.results['methods'].length; i++) {
-//      if (this.results['method'][this.results['methods'][i]][1]>=0){
-//         this.f_results.push([this.results['methods'][i]].concat(this.results['method'][this.results['methods'][i]]));
-//      }
-//      }
-//   this.re_sort(2);
-//}
 
   re_sort(col) {
      this.f_results = this.f_results.sort(function(a,b) { return a[col] - b[col]});
   };
 
-//ngAfterViewChecked() {
-//  this.completeMethod();
-//}
 }
 //  vim: set ts=2 sw=2 tw=0 :
