@@ -5,13 +5,13 @@
       <select [ngModel]="method1" (ngModelChange)="onSelect($event, method2)"
         class="form-control">
         <option *ngFor="let method of methods" [ngValue]="method.id">
-        {{ method.id }} ({{ method.pseudopotential }})
+          {{ method.code }} / {{ method.pseudopotential }} / {{ method.basis_set }}
         </option>
       </select> and
       <select [ngModel]="method2" (ngModelChange)="onSelect(method1, $event)"
         class="form-control">
         <option *ngFor="let method of methods" [ngValue]="method.id">
-        {{ method.id }} ({{ method.pseudopotential }})
+          {{ method.code }} / {{ method.pseudopotential }} / {{ method.basis_set }}
         </option>
       </select>
 

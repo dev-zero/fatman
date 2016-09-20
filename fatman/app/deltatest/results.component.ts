@@ -12,7 +12,7 @@ import { TestResult } from './testresult';
         <select [(ngModel)]="reference_method" (ngModelChange)="onSelect()"
             class="form-control" id="methodselection">
           <option *ngFor="let method of methods" [ngValue]="method.id">
-            {{ method.id }} ({{ method.pseudopotential }})
+            {{ method.code }} / {{ method.pseudopotential }} / {{ method.basis_set }}
           </option>
         </select>
       </div>
@@ -28,7 +28,6 @@ import { TestResult } from './testresult';
       <table class="table table-bordered table-striped table-condensed">
         <thead>
           <tr>
-            <th>#</th>
             <th>Added</th>
             <th>Test</th>
             <th>Method</th>
@@ -37,12 +36,11 @@ import { TestResult } from './testresult';
         </thead>
         <tbody>
           <tr *ngFor="let testresult of testresults">
-            <td>{{ testresult.id }}</td>
             <td>{{ testresult.ctime }}</td>
             <td>{{ testresult.test.name }}</td>
             <td>
               <a [routerLink]="['/periodictable', reference_method, testresult.method.id]">
-                {{ testresult.method.id }} ({{ testresult.method.pseudopotential }})
+                {{ testresult.method.code }} / {{ testresult.method.pseudopotential }} / {{ testresult.method.basis_set }}
               </a>
             </td>
             <td>{{ testresult.data.deltavalue }}</td>

@@ -26,7 +26,9 @@ import { DetailsService } from './details.service';
     <span *ngIf="method && small" title="{{ method.settings | mapToIterable | concatkvpairlist }}">
       <span title="{{ method.settings | mapToIterable | concatkvpairlist }}">
         <span class="text-muted">{{ method.id }}</span>
-        <span class="small">{{ method.basis_set }} / {{ method.pseudopotential }} ({{ method.code }})</span>
+        <span class="small">
+            {{ method.code }} / {{ method.pseudopotential }} / {{ method.basis_set }}
+        </span>
       </span>
     </span>
   `,
