@@ -28,7 +28,7 @@ import { HomeService } from './home.service';
           <tr *ngFor="let id of f_results">
             <td><methoddetails method_id="{{ id[0] }}" small=True></methoddetails></td>
             <td>
-              <a [routerLink]="['/periodictable',method1, id[0]]">
+              <a [routerLink]="['/periodictable', reference_method, id[0]]">
                 {{ id[1] | number:'.3'}} &plusmn; {{ id[2] | number:'.3'}} ({{ id[3] | number:'.0'}})
               </a>
             </td>
