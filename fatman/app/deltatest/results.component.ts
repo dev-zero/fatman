@@ -61,7 +61,6 @@ export class DeltatestResultsComponent implements OnInit {
   constructor(private _deltatestresultsServce: DeltatestResultsService) { }
 
   ngOnInit() {
-    this.getTestResults();
     this.getMethods();
   }
 
@@ -74,7 +73,10 @@ export class DeltatestResultsComponent implements OnInit {
 
   getMethods() {
     this._deltatestresultsServce.getMethods().subscribe(
-      methods => this.methods = methods,
+      methods => {
+        this.methods = methods;
+        this.getTestResults();
+      },
       error => this.errorMessage = <any>error,
     );
   }
