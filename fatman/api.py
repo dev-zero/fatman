@@ -528,11 +528,11 @@ class MethodList(Resource):
         parser.add_argument('code', type=str, required=True)
         # TODO: the column and the attribute are called pseudopotential, but are in fact family-references
         parser.add_argument('pseudopotential', type=str, required=True)
-        parser.add_argument('basis_set', type=int, required=True)
+        parser.add_argument('basis_set', type=str, required=True)
         parser.add_argument('settings', type=str, required=True)
         args = parser.parse_args()
 
-        b = BasissetFamily.get(BasissetFamily.id == args['basis_set'])
+        b = BasissetFamily.get(BasissetFamily.name == args['basis_set'])
         p = PseudopotentialFamily.get(PseudopotentialFamily.name == args['pseudopotential'])
 
         # the client relies on this method doing deduplication by using get_or_create
