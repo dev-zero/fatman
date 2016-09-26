@@ -35,7 +35,7 @@ import { DetailsService } from './details.service';
 })
 export class MethoddetailsComponent implements OnChanges {
   @Input()
-  method_id: number;
+  method_id: string;
   @Input()
   small: boolean = false;
 

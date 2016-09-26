@@ -1,10 +1,10 @@
 
 export interface TestResult {
-  id: number;
+  id: string;
   ctime: string;
   data: { [id: string]: Object; };
   test: { id: number; name: string; };
-  method: { id: number; pseudopotential: string };
+  method: { id: string; pseudopotential: string };
 }
 
 export function toTestResult(r: any) : TestResult {

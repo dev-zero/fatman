@@ -24,7 +24,7 @@ export class Periodictable implements OnInit, OnDestroy {
   
   elements = {
     'test': {},
-    'methods': [0, 1],
+    'methods': ['', ''],
     'summary': {'N': 0, 'avg': 0., 'stdev': 0.}
   };
 
@@ -33,8 +33,8 @@ export class Periodictable implements OnInit, OnDestroy {
   errorMessage: string;
 
   methods: Object[];
-  method1: number;
-  method2: number;
+  method1: string;
+  method2: string;
 
   constructor(
     private _route: ActivatedRoute,
@@ -44,8 +44,8 @@ export class Periodictable implements OnInit, OnDestroy {
   ngOnInit() {
     this.getMethodlist();
     this._sub = this._route.params.subscribe(params => {
-      this.method1 = +params['method1'];
-      this.method2 = +params['method2'];
+      this.method1 = params['method1'];
+      this.method2 = params['method2'];
 
       this.getPeriodictable(this.method1, this.method2);
     });
@@ -61,7 +61,7 @@ export class Periodictable implements OnInit, OnDestroy {
       error => this.errorMessage = <any>error);
   };
 
-  getPeriodictable(method1, method2) {
+  getPeriodictable(method1: string, method2: string) {
     this.elements.test = {}
 
     this._PeriodictableService.getPeriodictable(method1, method2).subscribe(
@@ -79,7 +79,7 @@ export class Periodictable implements OnInit, OnDestroy {
     );
   }
 
-  onSelect(method1: number, method2: number) {
+  onSelect(method1: string, method2: string) {
     this._router.navigate(['/periodictable', method1, method2]);
   }
 }

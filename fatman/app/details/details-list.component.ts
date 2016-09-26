@@ -71,8 +71,8 @@ export class Details implements OnInit, OnDestroy {
   private _sub: any;
 
   errorMessage: string;
-  method1: number;
-  method2: number;
+  method1: string;
+  method2: string;
 
   test1:   string;
   methods: Object[];
