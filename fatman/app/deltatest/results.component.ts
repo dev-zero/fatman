@@ -55,7 +55,7 @@ import { TestResult } from './testresult';
 export class DeltatestResultsComponent implements OnInit {
   errorMessage: string;
   testresults: TestResult[] = [];
-  reference_method: string = 'e9b8854b-6d40-492a-8771-1f355d00f55a';
+  reference_method: string = '3fd3acad-0b20-4038-a0d5-ce49380712ce';
   methods: Object[] = [];
 
   constructor(private _deltatestresultsServce: DeltatestResultsService) { }

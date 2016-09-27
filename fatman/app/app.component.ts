@@ -31,7 +31,7 @@ import './rxjs-operators';
                 Deltatest <span class="caret"></span></a>
                 <ul class="dropdown-menu">
                   <li><a routerLink="/deltatest/results" routerLinkActive="active">All results</a></li>
-                  <li><a routerLink="/periodictable/e9b8854b-6d40-492a-8771-1f355d00f55a/2c2d6b01-c093-413d-922d-d5c5fe05bea4" routerLinkActive="active">Periodic Table</a></li>
+                  <li><a routerLink="/periodictable/3fd3acad-0b20-4038-a0d5-ce49380712ce/2ad699d5-1878-4a32-908e-dee3d7a32cd6" routerLinkActive="active">Periodic Table</a></li>
                   <li><a routerLink="/reports" routerLinkActive="active">Comparison matrix</a></li>
                 </ul>
             </li>
