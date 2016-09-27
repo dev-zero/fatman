@@ -71,8 +71,6 @@ export class Details implements OnInit, OnDestroy {
   private _sub: any;
 
   errorMessage: string;
-  method1: string;
-  method2: string;
 
   test1:   string;
   methods: Object[];
@@ -88,17 +86,9 @@ export class Details implements OnInit, OnDestroy {
 
       let ms = params['methods'];
 
-      if (typeof(ms)=='string') {
-        var methods_str = ms.split(',');
-        for (var i =0;i<methods_str.length;i++) {
-          this.selectedmethods.push(+methods_str[i]);
-        }
-      }
-      else {
-        for (var i =0;i<ms.length;i++) {
-          this.selectedmethods.push(+ms[i]);
-        }
-      }
+      var methods_str = ms.split(',');
+      for (var i =0; i < methods_str.length; i++)
+        this.selectedmethods.push(methods_str[i]);
 
       this.test1 = params['test1'];
       this.getMethods(this.test1);
