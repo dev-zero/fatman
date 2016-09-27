@@ -74,7 +74,7 @@ export class ReportsElementComparison implements OnInit, OnDestroy {
 
   elements: Object[];
   errorMessage: string;
-  method1: number;
+  method1: string;
   test1: string;
   comparetable: Object[];
   comparelist = [];
@@ -84,7 +84,7 @@ export class ReportsElementComparison implements OnInit, OnDestroy {
   ngOnInit() {
     this._sub = this._route.params.subscribe(params => {
       this.test1 = params['test1'];
-      this.method1 = +params['id1'];
+      this.method1 = params['id1'];
 
       this.getMethods();
       this.getTests();

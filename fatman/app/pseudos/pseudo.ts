@@ -1,12 +1,12 @@
 
 export interface PseudoRef {
-  id: number;
+  id: string;
   format: string;
   links: { [desc: string]: string };
 }
 
 export interface Pseudo {
-  id: number;
+  id: string;
   element: string;
   family: string;
   format: string;

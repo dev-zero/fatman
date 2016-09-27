@@ -32,6 +32,7 @@ class UserRole(BaseModel):
     description = property(lambda self: self.role.description)
 
 class Structure(BaseModel):
+    id = UUIDField(primary_key=True)
     name = CharField(unique=True, null=False)
     ase_structure = TextField(null=False)
     class Meta:
@@ -78,6 +79,7 @@ class PseudopotentialFamily(BaseModel):
         return self.name
 
 class BasisSet(BaseModel):
+    id = UUIDField(primary_key=True)
     family = ForeignKeyField(BasissetFamily, related_name='basisset')
     element = CharField(null=False)
     basis = TextField(null=False)
@@ -89,6 +91,7 @@ class BasisSet(BaseModel):
         return self.family.name
 
 class Pseudopotential(BaseModel):
+    id = UUIDField(primary_key=True)
     family = ForeignKeyField(PseudopotentialFamily, related_name='pseudopotential')
     element = CharField(null=False)
     pseudo = TextField(null=False)
@@ -109,6 +112,7 @@ class Pseudopotential(BaseModel):
 class Method(BaseModel):
     # proper database design would demand introduction of
     # separate entities for the following fields, but let's make it easy
+    id = UUIDField(primary_key=True)
     code = CharField()
     pseudopotential = ForeignKeyField(PseudopotentialFamily, related_name = 'method_pp')
     basis_set = ForeignKeyField(BasissetFamily, related_name = 'method_bs')
@@ -164,6 +168,7 @@ class TaskStatus(BaseModel):
         return self.name
 
 class Task(BaseModel):
+    id = UUIDField(primary_key=True)
     structure = ForeignKeyField(Structure, related_name='tasks')
     method = ForeignKeyField(Method, related_name='tasks')
     status = ForeignKeyField(TaskStatus)
@@ -181,6 +186,7 @@ class Task(BaseModel):
                 self.method.id)
 
 class Result(BaseModel):
+    id = UUIDField(primary_key=True)
     energy = DoubleField()
     task = ForeignKeyField(Task, related_name='results')
     filename = CharField(null=True)
@@ -188,8 +194,8 @@ class Result(BaseModel):
 
 
 class TestResult(BaseModel):
+    id = UUIDField(primary_key=True)
     ctime = DateTimeField()
     test = ForeignKeyField(Test, related_name='testresult')
     method = ForeignKeyField(Method, related_name='testresult')
     result_data = BinaryJSONField(null=True)
-

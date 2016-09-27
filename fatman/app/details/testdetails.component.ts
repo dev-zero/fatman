@@ -59,7 +59,7 @@ export class TestdetailsComponent implements OnInit {
   results: Object[];
   testresults: Object[];
 
-  public method_id: number;
+  public method_id: string;
   public test: string;
 
   getResults(method_id, test) {

@@ -46,7 +46,7 @@ export class Home implements OnInit {
     private _service: HomeService) { }
 
   errorMessage: string;
-  reference_method = 3;
+  reference_method: string = 'e9b8854b-6d40-492a-8771-1f355d00f55a';
 
   methods: Object[];
   results: Object[];

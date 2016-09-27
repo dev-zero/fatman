@@ -17,8 +17,8 @@ export class ReportsComparison implements OnInit, OnDestroy {
   private _sub: any;
 
   errorMessage: string;
-  method1: number;
-  method2: number;
+  method1: string;
+  method2: string;
   comparelist = [];
   methods: Object[] = [];
   summary = {'N':0, 'avg': 0., 'stdev':0.};
@@ -26,8 +26,8 @@ export class ReportsComparison implements OnInit, OnDestroy {
   ngOnInit() {
     this.getMethods();
     this._sub = this._route.params.subscribe(params => {
-      this.method1 = +params['id1'];
-      this.method2 = +params['id2'];
+      this.method1 = params['id1'];
+      this.method2 = params['id2'];
 
       this.getComparison(this.method1, this.method2);
     });
@@ -79,7 +79,7 @@ export class ReportsComparison implements OnInit, OnDestroy {
     );
   }
 
-  onSelect(method1: number, method2: number) {
+  onSelect(method1: string, method2: string) {
     this._router.navigate(['/reports/comparison', method1, method2]);
   }
 }

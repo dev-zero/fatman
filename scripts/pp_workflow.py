@@ -396,7 +396,7 @@ def run(ppname, pplocation, atomtype, elements, url, online, cp2k_exe, ignore_mi
             #now, create a 'method' with this PP.
             req = sess.post(METHOD_URL.format(url),
                             data={'code':'espresso',
-                                  'basis_set': 55,
+                                  'basis_set': 'planewave',
                                   'pseudopotential': ppname,
                                   'settings': json.dumps(
                                       {'smearing': 'marzari-vanderbilt',

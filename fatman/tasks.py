@@ -42,12 +42,12 @@ def postprocess_result_file(rid, update=False):
 
     if result.data and not update:
         logger.warning(("Parsed data available and update=False"
-                        ", skipping file parsing for result id %d"),
+                        ", skipping file parsing for result id %s"),
                        rid)
         return False
 
     if not result.filename:
-        logger.error("Missing filename for result id %d", rid)
+        logger.error("Missing filename for result id %s", rid)
         return False
 
     filepath = resultfiles.path(result.filename)
@@ -57,11 +57,11 @@ def postprocess_result_file(rid, update=False):
         try:
             data = tools.get_data_from_output(infile, code)
         except tools.OutputParseError as exc:
-            logger.error("Parsing %s for result id %d failed: %s",
+            logger.error("Parsing %s for result id %s failed: %s",
                          filepath, rid, exc)
             return False
 
-    logger.info("Parsing %s for result id %d succeeded", filepath, rid)
+    logger.info("Parsing %s for result id %s succeeded", filepath, rid)
 
     if result.data is None:
         result.data = data
@@ -98,20 +98,20 @@ def calculate_deltatest(self, tid, rid, trid=None):
 
     if results.count() < 5:
         logger.info(("Not enough datapoints to calculate %s value"
-                     " for Method %d using result %d, skipping"),
+                     " for Method %s using result %s, skipping"),
                     test.name, method.id, rid)
         return False
 
     if results.count() > 5:
         logger.critical(("More than 5 elements found to calculate %s value"
-                         " for Method %d using result %d"),
+                         " for Method %s using result %s"),
                         test.name, method.id, rid)
         return False
 
     lock_id = '{}-lock-{}-method-{}'.format(self.name, test.name, method.id)
     if not cache.cache.add(lock_id, True, 60*60):
         # another task is already calculating the deltavalue for this result
-        logger.info(("Skipping deltatest calculation for %s using Method %d"
+        logger.info(("Skipping deltatest calculation for %s using Method %s"
                      ", another calculation task is already running"),
                     test.name, method.id)
         return False
@@ -147,7 +147,7 @@ def calculate_deltatest(self, tid, rid, trid=None):
                               ctime=datetime.now(),
                               result_data=result_data)
 
-        logger.info("Calculated deltatest value for %s using Method %d",
+        logger.info("Calculated deltatest value for %s using Method %s",
                     test.name, method.id)
 
     finally:
@@ -193,7 +193,7 @@ def calculate_GMTKN(self, tid, rid, trid=None):
     lock_id = '{}-lock-{}-method-{}'.format(self.name, test.name, method.id)
     if not cache.cache.add(lock_id, True, 60*60):
         # another task is already calculating the deltavalue for this result
-        logger.info(("Skipping GMTKN calculation for %s using Method %d"
+        logger.info(("Skipping GMTKN calculation for %s using Method %s"
                      ", another calculation task is already running"),
                     test.name, method.id)
         return False
@@ -230,7 +230,7 @@ def calculate_GMTKN(self, tid, rid, trid=None):
                               ctime=datetime.now(),
                               result_data=result_data)
 
-        logger.info("Calculated GMTKN values for %s using Method %d",
+        logger.info("Calculated GMTKN values for %s using Method %s",
                     test.name, method.id)
 
     finally:
@@ -251,10 +251,10 @@ def postprocess_result(rid, update=False):
     if testresult.count():
         trid = testresult.get().id
         if update:
-            logger.info("Updating TestResult %d for result %d",
+            logger.info("Updating TestResult %s for result %s",
                         trid, rid)
         else:
-            logger.warning(("Found TestResult %d for result %d"
+            logger.warning(("Found TestResult %s for result %s"
                             ", skipping postprocessing"),
                            trid, rid)
             return False

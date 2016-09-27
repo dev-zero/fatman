@@ -5,6 +5,7 @@ import json
 from os import path
 import bz2
 from io import BytesIO, StringIO
+from uuid import UUID
 
 from flask_restful import (Api, Resource,
                            abort, reqparse,
@@ -26,7 +27,7 @@ from .tasks import (postprocess_result_file,
 import numpy as np
 
 method_resource_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
@@ -35,7 +36,7 @@ method_resource_fields = {
     }
 
 method_list_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'code': fields.Raw,
     'pseudopotential': fields.String(attribute='pseudopotential.name'),
     'basis_set': fields.String(attribute='basis_set.name'),
@@ -43,18 +44,18 @@ method_list_fields = {
     }
 
 structure_resource_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'name': fields.Raw,
     'ase_structure': fields.Raw,
     }
 
 structure_list_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'name': fields.Raw,
     }
 
 task_resource_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'ctime': fields.String,
     'mtime': fields.String,
     'machine': fields.Raw,
@@ -66,7 +67,7 @@ task_resource_fields = {
     }
 
 task_list_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'ctime': fields.String,
     'mtime': fields.String,
     'machine': fields.Raw,
@@ -83,13 +84,13 @@ teststructure_resource_fields = {
     }
 
 pseudo_nested_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'format': fields.Raw,
     '_links': {'self': fields.Url('pseudopotentialresource')},
     }
 
 pseudo_list_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'element': fields.Raw,
     'family': fields.String(attribute='family.name'),
     'format': fields.Raw,
@@ -98,7 +99,7 @@ pseudo_list_fields = {
     }
 
 pseudo_resource_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'element': fields.Raw,
     'family': fields.String(attribute='family.name'),
     'format': fields.Raw,
@@ -112,7 +113,7 @@ pseudofamily_list_fields = {
     }
 
 result_resource_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'energy': fields.Float,
     'task': fields.Nested(task_resource_fields),
     '_links': {'self': fields.Url('resultresource'),
@@ -127,7 +128,7 @@ test_resource_fields = {
     }
 
 testresult_resource_fields = {
-    'id': fields.Raw,
+    'id': fields.String,
     'test': fields.Nested(test_resource_fields),
     'method': fields.Nested(method_resource_fields),
     'ctime': fields.String,
@@ -221,7 +222,7 @@ class TaskList(Resource):
         ret = []
         parser = reqparse.RequestParser()
         parser.add_argument('structure', type=str, required=False)
-        parser.add_argument('method', type=int, required=True)
+        parser.add_argument('method', type=UUID, required=True)
         parser.add_argument('status', type=str, default="new")
         parser.add_argument('test', type=str, required=True)
         parser.add_argument('priority', type=int, default=0)
@@ -249,7 +250,7 @@ class TaskList(Resource):
                                                              status = s,
                                                              machine = '-',
                                                              priority = args['priority']))
-            ret.append(ta.id)
+            ret.append(str(ta.id))
 
         return ret
 
@@ -264,7 +265,7 @@ class ResultResource(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('data', type=str, required=False)
         parser.add_argument('energy', type=float, required=False)
-        parser.add_argument('task', type=int, required=False)
+        parser.add_argument('task', type=UUID, required=False)
         args = parser.parse_args()
 
         res = Result.get(Result.id==id)
@@ -413,7 +414,7 @@ class ResultList(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('test', type=str)
-        parser.add_argument('method', type=int)
+        parser.add_argument('method', type=UUID)
         parser.add_argument('structure', type=str)
         parser.add_argument('calculated_on', type=str)
         parser.add_argument('code', type=str)
@@ -457,7 +458,7 @@ class ResultList(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('energy', type=float, required=True)
         parser.add_argument('task', type=str)
-        parser.add_argument('task_id', type=int)
+        parser.add_argument('task_id', type=UUID)
         parser.add_argument('data', type=str)
         args = parser.parse_args()
 
@@ -518,8 +519,6 @@ class MethodList(Resource):
                     .join(Test).switch(Method) \
                 .where(Test.name == args['test']) \
                 .order_by(TestResult.method)
-        else:
-            q = q.order_by(Method.id)
 
         return [marshal(model_to_dict(m), method_list_fields) for m in q]
 
@@ -529,11 +528,11 @@ class MethodList(Resource):
         parser.add_argument('code', type=str, required=True)
         # TODO: the column and the attribute are called pseudopotential, but are in fact family-references
         parser.add_argument('pseudopotential', type=str, required=True)
-        parser.add_argument('basis_set', type=int, required=True)
+        parser.add_argument('basis_set', type=str, required=True)
         parser.add_argument('settings', type=str, required=True)
         args = parser.parse_args()
 
-        b = BasissetFamily.get(BasissetFamily.id == args['basis_set'])
+        b = BasissetFamily.get(BasissetFamily.name == args['basis_set'])
         p = PseudopotentialFamily.get(PseudopotentialFamily.name == args['pseudopotential'])
 
         # the client relies on this method doing deduplication by using get_or_create
@@ -639,7 +638,7 @@ class PseudopotentialList(Resource):
         parser.add_argument('element', type=str, required=True)
         parser.add_argument('pseudo', type=str, required=True)
         parser.add_argument('format', type=str, required=True)
-        parser.add_argument('converted_from', type=int, required=False)
+        parser.add_argument('converted_from', type=UUID, required=False)
         parser.add_argument('overwrite', type=bool, default=False)
 
         args = parser.parse_args()
@@ -693,10 +692,10 @@ class MachineStatus(Resource):
 class TestResultList(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('method', type=int, required=False)
+        parser.add_argument('method', type=UUID, required=False)
         parser.add_argument('test', type=str, required=False)
         # method ID of the reference for the deltatest:
-        parser.add_argument('deltaref', type=int, required=False)
+        parser.add_argument('deltaref', type=UUID, required=False)
         parser.add_argument('limit', type=int, required=False)
         args = parser.parse_args()
 
@@ -757,7 +756,7 @@ class TestResultList(Resource):
 class Plot(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('method', type=int, action="append")
+        parser.add_argument('method', type=UUID, action="append")
         parser.add_argument('test', type=str, required=True)
         args = parser.parse_args()
 
@@ -847,7 +846,7 @@ class Plot(Resource):
 class StructureResource(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('id', type=int, required=False)
+        parser.add_argument('id', type=UUID, required=False)
         parser.add_argument('test', type=str, required=False)
         parser.add_argument('repeat', type=int, required=False, default=1)
         parser.add_argument('viewer', type=bool, required=False, default=False)
@@ -919,12 +918,10 @@ class StructureResource(Resource):
 class Comparison(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('method1', type=int, required=True)
-        parser.add_argument('method2', type=int, required=False)
+        parser.add_argument('method1', type=UUID, required=True)
+        parser.add_argument('method2', type=UUID, required=False)
         parser.add_argument('test', type=str, action="append")
         args = parser.parse_args()
-
-        all_delta = []
 
         # COMPARE all tests for 1 reference method
         # if neither method2 nor test are not specified
@@ -947,7 +944,7 @@ class Comparison(Resource):
         ret = {"test": {}, "methods": [], "method": {}, "summary": {}}
 
         if mode == "methodbytest":
-            ret["methods"] = [method1.id]
+            ret["methods"] = [str(method1.id)]
 
             testname = args["test"][0]
 
@@ -955,7 +952,7 @@ class Comparison(Resource):
                 result_data = self._getResultData(method1.id, method2.id,
                                                   testname)
                 if result_data:
-                    ret["method"][method2.id] = [str(method2)] + result_data
+                    ret["method"][str(method2.id)] = [str(method2)] + result_data
 
         elif mode == "2methods":
             return self._get_2methods(method1.id, method2.id, args['test'])
@@ -984,7 +981,7 @@ class Comparison(Resource):
         ret["summary"] = {"avg": np.average(all_delta),
                           "stdev": np.std(all_delta),
                           "N": len(all_delta)}
-        ret["methods"] = [method1_id, method2_id]
+        ret["methods"] = [str(method1_id), str(method2_id)]
 
         return ret
 
@@ -1000,7 +997,7 @@ class Comparison(Resource):
         # loop over method2
         q2 = Method.select().order_by(Method.id)
         for method2 in q2:
-            ret["methods"].append(method2.id)
+            ret["methods"].append(str(method2.id))
             all_delta = []
             for testname in testlist:
                 result_data = Comparison._getResultData(method1_id, method2.id,
@@ -1136,26 +1133,26 @@ errors = {
 
 api = Api(app, errors=errors)
 
-api.add_resource(TaskResource, '/tasks/<int:id>')
+api.add_resource(TaskResource, '/tasks/<uuid:id>')
 api.add_resource(TaskList, '/tasks')
-api.add_resource(ResultResource, '/results/<int:id>')
+api.add_resource(ResultResource, '/results/<uuid:id>')
 api.add_resource(ResultsActionResource,
                  '/results/action/<string:action>:<string:tid>')
 api.add_resource(ResultsActionList, '/results/action')
-api.add_resource(ResultFileResource, '/results/<int:id>/file')
+api.add_resource(ResultFileResource, '/results/<uuid:id>/file')
 api.add_resource(ResultActionList,
                  '/results/<int:rid>/action')
 api.add_resource(ResultActionResource,
                  '/results/<int:rid>/action/<string:action>:<string:tid>')
 api.add_resource(ResultList, '/results')
 api.add_resource(Basissets, '/basis')
-api.add_resource(PseudopotentialResource, '/pseudos/<int:id>')
+api.add_resource(PseudopotentialResource, '/pseudos/<uuid:id>')
 api.add_resource(PseudopotentialList, '/pseudos')
 api.add_resource(PseudopotentialFamilyList, '/pseudofamilies')
 api.add_resource(MachineStatus, '/machinestatus')
 api.add_resource(TestResultList, '/testresults')
 api.add_resource(Comparison, '/compare')
-api.add_resource(MethodResource, '/methods/<int:id>')
+api.add_resource(MethodResource, '/methods/<uuid:id>')
 api.add_resource(MethodList, '/methods')
 api.add_resource(TestList, '/tests')
 api.add_resource(TestResource, '/tests/<string:testname>')
