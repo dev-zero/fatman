@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+	"_links": {
+	  "type": "object",
+	  "properties": {
+		"self": {
+		  "type": "string"
+		}
+	  },
+	  "required": [ "self" ]
+	},
+	"id": { "$ref": "definitions.json#/uuid" },
+	"ctime": { "$ref": "definitions.json#/datetime" },
+	"mtime": { "$ref": "definitions.json#/datetime" },
+	"machine": { "type": "string" },
+	"method": {
+	  "type": "object",
+	  "properties": {
+		"_links": {
+		  "type": "object",
+		  "properties": {
+			"self": { "type": "string" }
+		  },
+		  "required": [ "self" ]
+		},
+		"basis_set": { "type": "string" },
+		"code": { "type": "string" },
+		"id": { "$ref": "definitions.json#/uuid" },
+		"pseudopotential": { "type": "string" },
+		"settings": { "type": "object" }
+	  },
+	  "required": [
+		"_links",
+		"basis_set",
+		"code",
+		"id",
+		"pseudopotential",
+		"settings"
+	  ]
+	},
+	"priority": { "type": "integer" },
+	"status": { "type": "string" },
+	"structure": {
+	  "type": "object",
+	  "properties": {
+		"ase_structure": { "type": "string" },
+		"id": { "$ref": "definitions.json#/uuid" },
+		"name": { "type": "string" }
+	  },
+	  "required": [
+		"ase_structure",
+		"id",
+		"name"
+	  ]
+	}
+  },
+  "required": [
+	"_links",
+	"ctime",
+	"id",
+	"machine",
+	"method",
+	"mtime",
+	"priority",
+	"status",
+	"structure"
+  ]
+}

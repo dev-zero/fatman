@@ -1,16 +1,18 @@
 
 import json
+import jsonschema
+from os import path
 
 from flask_testing import TestCase as BaseTestCase
 
 from fatman import app
-from fatman.models import Structure
 
-TASK = "ee408098-ff00-436c-b407-40d94055b84e"
-STRUCTURE = "339a5953-5f49-4425-aa25-a85532f92e70"
-METHOD = "a60ead16-e4d9-4fc2-b1f7-52dda03d61ac"
-RESULT = "4e2857df-84bb-4c7d-95dd-f79f2e197fb2"
-PSEUDO = "e0f435b6-da72-4560-aa19-6b2d5eb73f4d"
+TASK = "c0735f0b-78c2-4deb-88ef-b307904d6c8c"
+STRUCTURE = "2f56a08f-2e13-478c-94e6-b9430a99a890"
+METHOD = "3fd3acad-0b20-4038-a0d5-ce49380712ce"
+METHOD2 = "2ad699d5-1878-4a32-908e-dee3d7a32cd6"
+RESULT = "a1b6e8ae-b7d9-4e1e-a8ae-f6ba0eb17c5e"
+PSEUDO = "0d87c358-28f8-4e6e-931a-85d9aa3cbb26"
 
 
 def setUpModule():
@@ -23,8 +25,23 @@ def tearDownModule():
 
 
 class TestCase(BaseTestCase):
+    schema_base = path.join(
+        path.dirname(path.abspath(__file__)),
+        'schemas')
+
     def create_app(self):
         return app
+
+    def assertJSONSchema(self, data):
+        schema_path = path.join(self.schema_base, self.schema_file)
+
+        with open(schema_path, 'r') as schema_fh:
+            schema = json.load(schema_fh)
+            resolver_path = 'file://{}/'.format(self.schema_base)
+            resolver = jsonschema.RefResolver(resolver_path, schema)
+            (jsonschema
+             .Draft4Validator(schema, resolver=resolver)
+             .validate(data))
 
 
 class TestStructures(TestCase):
@@ -66,23 +83,32 @@ class TestMachinestatus(TestCase):
 class TestTasks(TestCase):
     """Tests for the /tasks endpoint"""
 
-    def test_get_list(self):
+    schema_file = "tasks.json"
+
+    def test_get(self):
         """task list"""
         resp = self.client.get('/tasks?limit=3')
         self.assertEqual(resp.status_code, 200)
-        self.assertIsInstance(resp.json, list)
+        self.assertJSONSchema(resp.json)
+
+
+class TestTask(TestCase):
+    """Tests for the /tasks endpoint"""
+
+    schema_file = "task.json"
 
     def test_get(self):
         """single task"""
         resp = self.client.get('/tasks/%s' % TASK)
         self.assertEqual(resp.status_code, 200)
-        self.assertIsInstance(resp.json, dict)
+        self.assertJSONSchema(resp.json)
 
     def test_patch(self):
         """change task"""
         resp = self.client.patch('/tasks/%s?status=done&machine=-&priority=100'
                                  % TASK)
         self.assertEqual(resp.status_code, 200)
+        self.assertJSONSchema(resp.json)
 
     def test_post_multiple(self):
         """create tasks for method"""
@@ -191,7 +217,7 @@ class TestResults(TestCase):
 class TestCompare(TestCase):
     def test_get(self):
         """comparison (2 methods)"""
-        resp = self.client.get('/compare?method1=%s&method2=2735a114-5031-4dbc-928b-98feb630df74' % METHOD)
+        resp = self.client.get('/compare?method1=%s&method2=%s' % (METHOD, METHOD2))
         self.assertEqual(resp.status_code, 200)
         self.assertIsInstance(resp.json, dict)
 
@@ -224,7 +250,7 @@ class TestMethods(TestCase):
         self.assertIsInstance(resp.json, dict)
 
 
-class TestPseudos(TestCase):
+class TestTests(TestCase):
     def test_get(self):
         """single test"""
         resp = self.client.get('/tests/deltatest_H')
