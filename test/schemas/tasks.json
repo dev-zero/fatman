@@ -4,13 +4,7 @@
   "items": {
     "type": "object",
     "properties": {
-      "_links": {
-	"type": "object",
-	"properties": {
-	  "self": { "type": "string" }
-	},
-	"required": [ "self" ]
-      },
+      "_links": { "$ref": "definitions.json#/links" },
       "id": { "$ref": "definitions.json#/uuid" },
       "ctime": { "$ref": "definitions.json#/datetime" },
       "mtime": { "$ref": "definitions.json#/datetime" },
@@ -18,13 +12,7 @@
       "method": {
 	"type": "object",
 	"properties": {
-	  "_links": {
-	    "type": "object",
-	    "properties": {
-	      "self": { "type": "string" }
-	    },
-	    "required": [ "self" ]
-	  },
+	  "_links": { "$ref": "definitions.json#/links" },
 	  "basis_set": { "type": "string" },
 	  "code": { "type": "string" },
 	  "id": { "$ref": "definitions.json#/uuid" },

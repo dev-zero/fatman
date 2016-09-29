@@ -32,8 +32,10 @@ class TestCase(BaseTestCase):
     def create_app(self):
         return app
 
-    def assertJSONSchema(self, data):
-        schema_path = path.join(self.schema_base, self.schema_file)
+    def assertJSONSchema(self, data, schema_file=None):
+        schema_path = path.join(self.schema_base,
+                                schema_file if schema_file
+                                else self.schema_file)
 
         with open(schema_path, 'r') as schema_fh:
             schema = json.load(schema_fh)
@@ -65,8 +67,7 @@ class TestStats(TestCase):
         """task stats"""
         resp = self.client.get('/stats/tasks')
         self.assertEqual(resp.status_code, 200)
-        self.assertIsInstance(resp.json, list)
-        self.assertIsInstance(resp.json[0], dict)
+        self.assertJSONSchema(resp.json, "stats_tasks.json")
 
 
 class TestMachinestatus(TestCase):
