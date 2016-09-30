@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "_links": { "$ref": "definitions.json#/links" },
+    "id": { "$ref": "definitions.json#/uuid" },
+    "converted_from": {
+      "oneOf": [
+	{ "type": "null" },
+	{
+	  "type": "object",
+	  "properties": {
+	    "_links": {
+	      "type": "object",
+	      "properties": {
+		"self": { "type": "string" }
+	      }
+	    },
+	    "format": { "type": "string" },
+	    "id": { "type": "string" }
+	  },
+	  "required": [
+	    "id",
+	    "format",
+	    "_links"
+	  ],
+	  "additionalProperties": "false"
+	}
+      ]
+    },
+    "element": { "type": "string" },
+    "family": { "type": "string" },
+    "format": { "type": "string" },
+    "pseudo": { "type": "string" }
+  },
+  "required": [
+    "_links",
+    "id",
+    "converted_from",
+    "element",
+    "family",
+    "format"
+  ],
+  "additionalProperties": "false"
+}

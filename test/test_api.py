@@ -184,27 +184,36 @@ class TestBasis(TestCase):
         self.assertIsInstance(resp.json, dict)
 
 
-class TestPseudos(TestCase):
+class TestPseudo(TestCase):
+    schema_file = "pseudo.json"
+
     def test_get(self):
         """single pseudo"""
         resp = self.client.get('/pseudos/%s' % PSEUDO)
         self.assertEqual(resp.status_code, 200)
-        self.assertIsInstance(resp.json, dict)
+        self.assertJSONSchema(resp.json)
+
+    # TODO: implement pseudo post
+
+
+class TestPseudos(TestCase):
+    schema_file = "pseudos.json"
 
     def test_get_list(self):
         """get pseudo list"""
         resp = self.client.get('/pseudos?format=CP2K&family=GTH-PBE&element=H')
         self.assertEqual(resp.status_code, 200)
-        self.assertIsInstance(resp.json, list)
+        self.assertJSONSchema(resp.json)
 
-    # TODO: implement pseudo post
 
 class TestPseudoFamilies(TestCase):
+    schema_file = "pseudofamilies.json"
+
     def test_get_list(self):
         """pseudofamily list"""
         resp = self.client.get('/pseudofamilies')
         self.assertEqual(resp.status_code, 200)
-        self.assertIsInstance(resp.json, list)
+        self.assertJSONSchema(resp.json)
 
 
 class TestResults(TestCase):
