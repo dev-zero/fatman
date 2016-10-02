@@ -1,5 +1,5 @@
 
-DATABASE = 'fatman'
+SQLALCHEMY_DATABASE_URI = 'postgresql:///fatman'
 APPLICATION_ROOT = ''
 DEBUG = False
 
