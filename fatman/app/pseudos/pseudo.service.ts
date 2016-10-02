@@ -46,7 +46,7 @@ export class PseudoService {
 
     for (let pseudo of plist) {
       // add non-converted pseudos directly to the list of pseudos
-      if (!pseudo.converted_from) {
+      if (!pseudo.converted_from || pseudo.converted_from == null) {
         pseudos.push(pseudo);
         continue;
       }

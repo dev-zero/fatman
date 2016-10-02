@@ -29,7 +29,7 @@ export function toPseudo(r: any) : Pseudo {
     element: r.element,
     family: r.family,
     format: r.format,
-    converted_from: Object.getOwnPropertyNames(r.converted_from).length > 0 ?  toPseudoRef(r.converted_from) : null,
+    converted_from: r.converted_from != null ? toPseudoRef(r.converted_from) : null,
     converted_pseudos: [],
     links: r._links,
   });

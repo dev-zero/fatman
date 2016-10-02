@@ -2,9 +2,9 @@
 import logging
 
 from flask import Flask
-from playhouse.postgres_ext import PostgresqlExtDatabase
+from flask_sqlalchemy import SQLAlchemy
 from flask_uploads import UploadSet, configure_uploads
-from flask_security import Security, PeeweeUserDatastore
+from flask_security import Security, SQLAlchemyUserDatastore
 from flask_caching import Cache
 from celery import Celery
 
@@ -21,35 +21,15 @@ if 'SECURITY_POST_LOGOUT_VIEW' not in app.config:
 
 
 def configure_db_logger():
-    logger = logging.getLogger('peewee')
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger('sqlalchemy.engine')
+    logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler())
 
 if app.config.get('DATABASE_LOG_QUERIES', False):
     configure_db_logger()
 
-db = PostgresqlExtDatabase(
-    app.config['DATABASE'],
-    autorollback=True,  # automatically rollback when a query failed to avoid dead threads
-    register_hstore=False,
-    user=app.config.get('DATABASE_USER'),
-    password=app.config.get('DATABASE_PASSWORD'),
-    host=app.config.get('DATABASE_HOST'),
-    port=app.config.get('DATABASE_PORT')
-    )
 
-
-# Explicitly connect
-@app.before_request
-def _db_connect():
-    db.connect()
-
-
-# Explicitly disconnect
-@app.teardown_request
-def _db_close(_):
-    if not db.is_closed():
-        db.close()
+db = SQLAlchemy(app)
 
 resultfiles = UploadSet('results')
 configure_uploads(app, (resultfiles,))
@@ -65,8 +45,8 @@ def setup_celery():
     app.config['CELERY_ACCEPT_CONTENT'] = ['pickle', 'json']
 
     capp = Celery(app.import_name,
-                    backend=app.config['CELERY_BACKEND'],
-                    broker=app.config['CELERY_BROKER_URL'])
+                  backend=app.config['CELERY_BACKEND'],
+                  broker=app.config['CELERY_BROKER_URL'])
     capp.conf.update(app.config)
 
     TaskBase = capp.Task
@@ -85,8 +65,8 @@ def setup_celery():
 capp = setup_celery()
 
 
-from .models import User, Role, UserRole
-user_datastore = PeeweeUserDatastore(db, User, Role, UserRole)
+from .models import User, Role
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
 

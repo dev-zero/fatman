@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from datetime import datetime as dt
 import json
 from os import path
 import bz2
@@ -11,12 +10,28 @@ from flask_restful import (Api, Resource,
                            abort, reqparse,
                            fields, marshal_with, marshal)
 from flask import make_response, url_for, request
-from playhouse.shortcuts import model_to_dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import joinedload, defer, contains_eager
+from sqlalchemy import func, case
 
-from . import app, resultfiles, cache
-from .models import *
+from . import app, db, resultfiles, cache
+from .models import (
+    Structure,
+    BasisSet,
+    BasisSetFamily,
+    Pseudopotential,
+    PseudopotentialFamily,
+    Method,
+    Test,
+    TaskStatus,
+    Task,
+    Result,
+    TestResult,
+    TestStructure,
+)
+
 from .utils import route_from
 from .tools import calcDelta, eos, Json2Atoms, Atoms2Json
 from .tasks import (postprocess_result_file,
@@ -25,6 +40,7 @@ from .tasks import (postprocess_result_file,
                     )
 
 import numpy as np
+
 
 method_resource_fields = {
     'id': fields.String,
@@ -63,7 +79,7 @@ task_resource_fields = {
     'method': fields.Nested(method_resource_fields),
     'structure': fields.Nested(structure_resource_fields),
     '_links': {'self': fields.Url('taskresource')},
-    'priority' : fields.Integer,
+    'priority': fields.Integer,
     }
 
 task_list_fields = {
@@ -77,12 +93,6 @@ task_list_fields = {
     '_links': {'self': fields.Url('taskresource')},
     }
 
-teststructure_resource_fields = {
-    'id': fields.Raw,
-    'test': fields.Raw,
-    'structure': fields.Nested(structure_resource_fields),
-    }
-
 pseudo_nested_fields = {
     'id': fields.String,
     'format': fields.Raw,
@@ -94,7 +104,7 @@ pseudo_list_fields = {
     'element': fields.Raw,
     'family': fields.String(attribute='family.name'),
     'format': fields.Raw,
-    'converted_from': fields.Nested(pseudo_nested_fields, default={}),
+    'converted_from': fields.Nested(pseudo_nested_fields, allow_null=True),
     '_links': {'self': fields.Url('pseudopotentialresource')},
     }
 
@@ -104,7 +114,7 @@ pseudo_resource_fields = {
     'family': fields.String(attribute='family.name'),
     'format': fields.Raw,
     'pseudo': fields.Raw,
-    'converted_from': fields.Nested(pseudo_nested_fields, default={}),
+    'converted_from': fields.Nested(pseudo_nested_fields, allow_null=True),
     '_links': {'self': fields.Url('pseudopotentialresource')},
     }
 
@@ -127,6 +137,11 @@ test_resource_fields = {
     'name': fields.String,
     }
 
+teststructure_resource_fields = {
+    'test': fields.Nested(test_resource_fields),
+    'structure': fields.Nested(structure_resource_fields),
+    }
+
 testresult_resource_fields = {
     'id': fields.String,
     'test': fields.Nested(test_resource_fields),
@@ -143,38 +158,33 @@ class ParameterError(Exception):
 class TaskResource(Resource):
     @marshal_with(task_resource_fields)
     def get(self, id):
-        task = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
-            .where(Task.id == id) \
-            .join(TaskStatus).switch(Task) \
-            .join(Method) \
-               .join(PseudopotentialFamily).switch(Method) \
-               .join(BasissetFamily).switch(Method) \
-               .switch(Task) \
-            .join(Structure).switch(Task) \
-            .join(Test).switch(Task) \
-            .get()
-
-        return model_to_dict(task)
+        return (Task.query
+                .options(joinedload("method"))
+                .options(joinedload("structure"))
+                .get_or_404(id))
 
     @marshal_with(task_resource_fields)
     def patch(self, id):
         parser = reqparse.RequestParser()
-        parser.add_argument('status', type=str, required=True)
+        parser.add_argument('status', type=str, required=False)
         parser.add_argument('machine', type=str, required=False)
         parser.add_argument('priority', type=int, required=False)
         args = parser.parse_args()
 
-        # update the status and/or priority and reset the modification time
-        task = Task.get(Task.id == id)
-        task.status = TaskStatus.get(TaskStatus.name == args['status']).id
-        task.mtime = dt.now()
-        if 'machine' in args.keys() and args['machine'] is not None:
-            task.machine = args['machine'] 
-        if 'priority' in args.keys() and args['priority'] is not None:
-            task.priority = args['priority'] 
-        task.save()
+        # update the status and/or priority (mtime is updated by SQLA)
+        task = Task.query.get_or_404(id)
 
-        return model_to_dict(task)
+        if args['status'] is not None:
+            task.status = TaskStatus.query.filter_by(name=args['status']).one()
+        if args['machine'] is not None:
+            task.machine = args['machine']
+        if args['priority'] is not None:
+            task.priority = args['priority']
+
+        db.session.commit()
+
+        return task
+
 
 class TaskList(Resource):
     def get(self):
@@ -187,36 +197,35 @@ class TaskList(Resource):
         parser.add_argument('pseudofamily', type=str)
         args = parser.parse_args()
 
-        q = Task.select(Task, TaskStatus, Method, Structure, Test, PseudopotentialFamily, BasissetFamily) \
-            .join(TaskStatus).switch(Task) \
-            .join(Method) \
-               .join(PseudopotentialFamily).switch(Method) \
-               .join(BasissetFamily).switch(Method) \
-               .switch(Task) \
-            .join(Structure).switch(Task) \
-            .join(Test).switch(Task) \
-            .order_by(Task.priority.desc())
+        q = (Task.query
+             .options(joinedload("method"))
+             .options(joinedload("structure"))
+             .join(TaskStatus)
+             .options(contains_eager("status")))
 
         if args['timeorder']:
             q = q.order_by(Task.mtime.desc())
 
         if args['status'] is not None:
-            status = TaskStatus.get(TaskStatus.name == args['status'])
-            q = q.where(Task.status == status)
+            q = q.filter(TaskStatus.name == args['status'])
 
         if args['machine'] is not None:
-            q = q.where(Task.machine == args['machine'])
+            q = q.filter_by(machine=args['machine'])
 
         if args['structure'] is not None:
-            q = q.where(Structure.name.contains(args['structure']))
+            # explicit join is required since SQLA separates
+            # pre-loading of ORM objects and query-making
+            q = q.join(Structure).filter(
+                Structure.name.contains(args['structure']))
 
         if args['pseudofamily'] is not None:
-            q = q.where(PseudopotentialFamily.name == args['pseudofamily'])
+            q = q.join(Method).filter(
+                Method.pseudopotential.has(name=args['pseudofamily']))
 
         if args['limit'] is not None:
             q = q.limit(args['limit'])
 
-        return [marshal(model_to_dict(t), task_list_fields) for t in q]
+        return [marshal(t, task_list_fields) for t in q]
 
     def post(self):
         ret = []
@@ -228,29 +237,28 @@ class TaskList(Resource):
         parser.add_argument('priority', type=int, default=0)
         args = parser.parse_args()
 
-        m = Method.get(Method.id == args['method'])
-        s = TaskStatus.get(TaskStatus.name == args['status'])
-        t = Test.get(Test.name == args['test'])
+        m = Method.query.get_or_404(args['method'])
+        s = TaskStatus.query.filter_by(name=args['status']).one()
+        t = Test.query.filter_by(name=args['test']).one()
 
-        if 'structure' in args.keys() and args['structure'] is not None:
-            struct = Structure.get(Structure.name == args['structure'])
-            idlist = [struct.id]
+        if args['structure'] is not None:
+            # not using .all() to get exception if nothing found
+            structs = [Structure.query.filter_by(name=args['structure']).one()]
         else:
-            q = TestStructure.select().where(TestStructure.test == t)
-            q.execute()
-            idlist = [x.structure.id for x in q]
+            structs = t.structures
 
-        for id in idlist:
-            struct = Structure.get(Structure.id == id)
-            ta, created = Task.get_or_create(structure = struct,
-                                             method = m, 
-                                             test = t,
-                                             defaults = dict(ctime = dt.now(),
-                                                             mtime = dt.now(),
-                                                             status = s,
-                                                             machine = '-',
-                                                             priority = args['priority']))
-            ret.append(str(ta.id))
+        for struct in structs:
+            task = (Task.query
+                    .filter_by(structure=struct, method=m, test=t)
+                    .first())
+
+            if not task:
+                task = Task(structure=struct, method=m, test=t, status=s,
+                            machine='-', priority=args['priority'])
+                db.session.add(task)
+                db.session.commit()
+
+            ret.append(str(task.id))
 
         return ret
 
@@ -258,7 +266,7 @@ class TaskList(Resource):
 class ResultResource(Resource):
     @marshal_with(result_resource_fields)
     def get(self, id):
-        return model_to_dict(Result.get(Result.id == id))
+        return Result.query.get_or_404(id)
 
     @marshal_with(result_resource_fields)
     def patch(self, id):
@@ -268,7 +276,7 @@ class ResultResource(Resource):
         parser.add_argument('task', type=UUID, required=False)
         args = parser.parse_args()
 
-        res = Result.get(Result.id==id)
+        res = Result.query.get_or_404(id)
 
         if args['data'] is not None:
             res.data = json.loads(args['data'])
@@ -277,14 +285,14 @@ class ResultResource(Resource):
         if args['task'] is not None:
             res.task = Task.get(Task.id == args['task'])
 
-        res.save()
+        db.session.commit()
 
-        return model_to_dict(res)
+        return res
 
 
 class ResultFileResource(Resource):
     def post(self, id):
-        result = Result.get(Result.id == id)
+        result = Result.query.get_or_404(id)
 
         if result.filename is not None:
             abort(400, message="Data is already uploaded for this result")
@@ -297,15 +305,17 @@ class ResultFileResource(Resource):
         filename = resultfiles.save(args['file'], folder=str(result.id))
 
         result.filename = filename
-        result.save()
+
+        db.session.commit()
 
         postprocess_result_file.delay(id)
 
-        # use a raw werkzeug Response object to return 201 status code without a body
+        # use a raw werkzeug Response object to return 201
+        # status code without a body
         return Response(status=201)
 
     def get(self, id):
-        result = Result.get(Result.id == id)
+        result = Result.query.get_or_404(id)
 
         if result.filename is None:
             abort(400, message="No data available")
@@ -313,14 +323,16 @@ class ResultFileResource(Resource):
         # return the file
         with bz2.BZ2File(resultfiles.path(result.filename)) as infile:
             response = make_response(infile.read())
-            response.headers["Content-Disposition"] = "attachment; filename={:}".format(path.splitext(result.filename)[0])
+            response.headers["Content-Disposition"] = \
+                "attachment; filename={:}".format(
+                        path.splitext(result.filename)[0])
             response.headers["Content-Type"] = "text/plain"
             return response
 
 
 class ResultActionResource(Resource):
     def get(self, rid, action, tid):
-        Result.get(Result.id == rid)
+        Result.query.get_or_404(rid)
 
         if action == 'doPostprocessing':
             async_result = postprocess_result_file.AsyncResult(tid)
@@ -341,7 +353,7 @@ class ResultActionResource(Resource):
 
 class ResultActionList(Resource):
     def post(self, rid):
-        Result.get(Result.id == rid)
+        Result.query.get_or_404(rid)
 
         parser = reqparse.RequestParser()
         parser.add_argument('doPostprocessing', type=dict, required=False)
@@ -350,7 +362,8 @@ class ResultActionList(Resource):
         if args['doPostprocessing'] is not None:
             if ('update' in args['doPostprocessing'].keys() and not
                type(args['doPostprocessing']['update']) == bool):
-                raise ParameterError("the 'update' parameter must be a boolean")
+                raise ParameterError(
+                        "the 'update' parameter must be a boolean")
 
             update = args['doPostprocessing'].get('update', False)
             async_result = postprocess_result_file.delay(rid, update)
@@ -360,7 +373,7 @@ class ResultActionList(Resource):
                         rid=rid, action='doPostprocessing',
                         tid=async_result.id)})
 
-        raise ParameterError("invalid action specified: {}".format(action))
+        raise ParameterError("invalid action specified")
 
 
 class ResultsActionResource(Resource):
@@ -377,7 +390,8 @@ class ResultsActionResource(Resource):
 
             resp = [{'status': res.status,
                      '_links': {'parent': api.url_for(ResultResource, id=rid)},
-                     'result': {'updated': res.result} if res.successful() else {}}
+                     'result': {'updated': res.result} if res.successful()
+                     else {}}
                     for rid, res in zip(rids, results)]
 
             if all_done:
@@ -397,7 +411,8 @@ class ResultsActionList(Resource):
         if args['doPostprocessing'] is not None:
             if ('update' in args['doPostprocessing'].keys() and not
                type(args['doPostprocessing']['update']) == bool):
-                raise ParameterError("the 'update' parameter must be a boolean")
+                raise ParameterError(
+                        "the 'update' parameter must be a boolean")
 
             update = args['doPostprocessing'].get('update', False)
 
@@ -407,7 +422,7 @@ class ResultsActionList(Resource):
                         ResultsActionResource, action='doPostprocessing',
                         tid=async_result.id)})
 
-        raise ParameterError("invalid action specified: {}".format(action))
+        raise ParameterError("invalid action specified")
 
 
 class ResultList(Resource):
@@ -420,38 +435,28 @@ class ResultList(Resource):
         parser.add_argument('code', type=str)
         args = parser.parse_args()
 
-        q = (Result
-             .select(Result, Task, TaskStatus, Method, Structure, Test,
-                     PseudopotentialFamily, BasissetFamily)
-             .join(Task)
-             .join(TaskStatus).switch(Task)
-             .join(Method)
-                 .join(PseudopotentialFamily).switch(Method)
-                 .join(BasissetFamily).switch(Method)
-                 .switch(Task)
-             .join(Structure).switch(Task)
-             .join(Test).switch(Task)
-             .switch(Result)
-             .order_by(Result.id.asc()))
+        # ensure we load structure and method in one go
+        q = (db.session.query(Result).join(Task)
+             .options(joinedload("task").joinedload("structure"))
+             .options(joinedload("task").joinedload("method"))
+             )
 
         if args['test'] is not None:
-            t = Test.get(Test.name == args['test'])
-            q = q.where(Task.test == t)
+            q = q.join(Test).filter_by(name=args['test'])
 
         if args['method'] is not None:
-            m = Method.get(Method.id == args['method'])
-            q = q.where(Task.method == m)
+            q = q.join(Method).filter_by(id=args['method'])
 
         if args['structure']:
-            q = q.where(Structure.name == args['structure'])
+            q = q.join(Structure).filter_by(name=args['structure'])
 
         if args['calculated_on']:
-            q = q.where(Task.machine == args['calculated_on'])
+            q = q.filter_by(calculated_on=args['method'])
 
         if args['code']:
-            q = q.where(Method.code == args['code'])
+            q = q.join(Method).filter_by(code=args['code'])
 
-        return [marshal(model_to_dict(x), result_resource_fields) for x in q]
+        return [marshal(x, result_resource_fields) for x in q]
 
     @marshal_with(result_resource_fields)
     def post(self):
@@ -478,31 +483,31 @@ class ResultList(Resource):
         else:
             extradata = None
 
-        result = Result(task=Task.get(Task.id == task_id),
+        result = Result(task_id=task_id,
                         energy=args['energy'],
                         data=extradata)
-        result.save()
+        db.session.commit()
 
         postprocess_result.delay(result.id)
 
-        return (model_to_dict(result), 201,
+        return (result, 201,
                 {'Location': api.url_for(ResultResource, id=result.id)})
 
 
 class TestResource(Resource):
-    @marshal_with(teststructure_resource_fields)
     def get(self, testname):
-        st = TestStructure.select(TestStructure, Test, Structure) \
-                .join(Test).switch(TestStructure) \
-                .join(Structure).switch(Structure) \
-                .where(Test.name == testname)
-
-        return [marshal(model_to_dict(s), teststructure_resource_fields) for s in st]
+        teststructures = (db.session.query(TestStructure, Test, Structure)
+                          .join(Structure).join(Test)
+                          .filter_by(name=testname))
+        return [marshal({'test': ts[2], 'structure': ts[3]},
+                        teststructure_resource_fields)
+                for ts in teststructures]
 
 
 class TestList(Resource):
     def get(self):
-        return [(t.id, str(t)) for t in Test.select()]
+        return [(t.id, str(t)) for t in Test.query]
+
 
 class MethodList(Resource):
     def get(self):
@@ -510,96 +515,88 @@ class MethodList(Resource):
         parser.add_argument('test', type=str)
         args = parser.parse_args()
 
-        q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
-            .join(PseudopotentialFamily).switch(Method) \
-            .join(BasissetFamily).switch(Method)
+        q = Method.query
 
         if args['test']:
-            q = q.join(TestResult) \
-                    .join(Test).switch(Method) \
-                .where(Test.name == args['test']) \
-                .order_by(TestResult.method)
+            q = (q.join(TestResult).join(Test)
+                 .filter_by(name=args['test']))
 
-        return [marshal(model_to_dict(m), method_list_fields) for m in q]
+        return [marshal(m, method_list_fields) for m in q]
 
     @marshal_with(method_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('code', type=str, required=True)
-        # TODO: the column and the attribute are called pseudopotential, but are in fact family-references
+        # TODO: the column and the attribute are called pseudopotential,
+        #       but are in fact family-references
         parser.add_argument('pseudopotential', type=str, required=True)
         parser.add_argument('basis_set', type=str, required=True)
         parser.add_argument('settings', type=str, required=True)
         args = parser.parse_args()
 
-        b = BasissetFamily.get(BasissetFamily.name == args['basis_set'])
-        p = PseudopotentialFamily.get(PseudopotentialFamily.name == args['pseudopotential'])
+        bsfamily = BasisSetFamily.query.filter_by(name=args['basis_set']).one()
+        pfamily = (PseudopotentialFamily.query
+                   .filter_by(name=args['pseudopotential']).one())
 
-        # the client relies on this method doing deduplication by using get_or_create
-        m, _ = Method.get_or_create(code=args['code'],
-                                    basis_set=b, pseudopotential=p,
-                                    settings=json.loads(args['settings']))
+        settings = json.loads(args['settings'])
 
-        return model_to_dict(m)
+        try:
+            return (Method.query
+                    .filter_by(code=args['code'])
+                    .filter_by(basis_set=bsfamily)
+                    .filter_by(pseudopotential=pfamily)
+                    .filter_by(settings=settings)
+                    .one())
+        except NoResultFound:
+            method = Method(code=args['code'],
+                            basis_set=bsfamily,
+                            pseudopotential=pfamily,
+                            settings=settings)
+            db.session.commit()
+
+        return method
+
 
 class MethodResource(Resource):
     """Return all the details for a method, or set them"""
+
     @marshal_with(method_resource_fields)
     def get(self, id):
-        q = Method.select(Method, PseudopotentialFamily, BasissetFamily) \
-            .where(Method.id == id) \
-            .join(PseudopotentialFamily).switch(Method) \
-            .join(BasissetFamily).switch(Method) \
-            .get()
+        return Method.query.get_or_404(id)
 
-        return model_to_dict(q)
 
 class Basissets(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('family', type=str, required=True)
-        parser.add_argument('element', type=str, required=True, action="append")
+        parser.add_argument('element', type=str, required=True,
+                            action="append")
         args = parser.parse_args()
 
-        q = BasisSet \
-                .select(BasisSet, BasissetFamily) \
-                .join(BasissetFamily) \
-                .where((BasissetFamily.name == args['family']) & (BasisSet.element << args['element']))
+        q = (BasisSet.query
+             .filter_by(BasisSet.family.has(name=args['family']))
+             .filter_by(BasisSet.element.in_(args['element'])))
 
         return {b.element: b.basis for b in q}
 
-def pseudo_to_dict(pseudo):
-    '''Convert an empty dict to None to trigger the default for fields.Nested'''
-
-    pdict = model_to_dict(pseudo)
-
-    if not pdict['converted_from']:
-        pdict['converted_from'] = None
-
-    return pdict
 
 class PseudopotentialResource(Resource):
     @marshal_with(pseudo_resource_fields)
     def get(self, id):
-        ConvertedPseudo = Pseudopotential.alias()
-        q = (Pseudopotential
-             .select(Pseudopotential, PseudopotentialFamily.name, ConvertedPseudo)
-             .join(PseudopotentialFamily).switch(Pseudopotential)
-             .join(ConvertedPseudo, JOIN.LEFT_OUTER,
-                   on=(Pseudopotential.converted_from == ConvertedPseudo.id)).switch(Pseudopotential)
-             .where(Pseudopotential.id == id)
-             .get())
+        return (Pseudopotential.query
+                .options((joinedload("converted_from")
+                          .defer('pseudo')))
+                .get_or_404(id))
 
-        return pseudo_to_dict(q)
 
 class PseudopotentialFamilyList(Resource):
     """Get the list of pseudopotential families"""
     def get(self):
-        q = (PseudopotentialFamily
-             .select(PseudopotentialFamily)
+        q = (PseudopotentialFamily.query
              .order_by(PseudopotentialFamily.name))
 
-        return [marshal(model_to_dict(f), pseudofamily_list_fields) for f in q]
+        return [marshal(f, pseudofamily_list_fields) for f in q]
+
 
 class PseudopotentialList(Resource):
     def get(self):
@@ -609,27 +606,29 @@ class PseudopotentialList(Resource):
         parser.add_argument('element', type=str, action="append")
         args = parser.parse_args()
 
-        ConvertedPseudo = Pseudopotential.alias()
-        q = (Pseudopotential
-             .select(Pseudopotential, PseudopotentialFamily.name, ConvertedPseudo)
-             .join(PseudopotentialFamily).switch(Pseudopotential)
-             .join(ConvertedPseudo, JOIN.LEFT_OUTER,
-                   on=(Pseudopotential.converted_from == ConvertedPseudo.id)).switch(Pseudopotential)
-             .order_by(Pseudopotential.id.asc()))
+        # never load the pseudo column for converted_from entries
+        # (would take much more time and memory)
+        q = (Pseudopotential.query
+             .options((joinedload("converted_from")
+                       .defer('pseudo'))))
 
         if args['family']:
-            q = q.where(PseudopotentialFamily.name == args['family'])
+            q = (q.join(PseudopotentialFamily)
+                  .filter(PseudopotentialFamily.name == args['family']))
 
         if args['format']:
-            q = q.where(Pseudopotential.format == args['format'])
+            q = q.filter_by(format=args['format'])
 
         if args['element']:
-            q = q.where(Pseudopotential.element << args['element'])
+            q = q.filter(Pseudopotential.element.in_(args['element']))
 
         if any(args.values()):
-            return [marshal(pseudo_to_dict(p), pseudo_resource_fields) for p in q]
+            return [marshal(p, pseudo_resource_fields) for p in q]
         else:
-            return [marshal(pseudo_to_dict(p), pseudo_list_fields) for p in q]
+            # defer loading of the pseudo column for the primary
+            # pseudo as well (reduces loading time by 80%)
+            q = q.options(defer('pseudo'))
+            return [marshal(p, pseudo_list_fields) for p in q]
 
     @marshal_with(pseudo_resource_fields)
     def post(self):
@@ -643,31 +642,38 @@ class PseudopotentialList(Resource):
 
         args = parser.parse_args()
 
-        f, _ = PseudopotentialFamily.get_or_create(name=args['family'])
+        family = (PseudopotentialFamily.query
+                  .filter_by(name=args['family'])
+                  .one())
 
-        data = {'family': f,
+        data = {'family': family,
                 'element': args['element'],
                 'format': args['format']}
 
         if args['converted_from']:
-            print('here')
             data['converted_from'] = args['converted_from']
 
-        p, created = Pseudopotential.get_or_create(defaults=dict(pseudo=args['pseudo']), **data)
+        try:
+            pseudo = (Pseudopotential.query
+                      .filter(**data)
+                      .one())
 
-        if created:
-            return pseudo_to_dict(p), 201, {'Location': api.url_for(PseudopotentialResource, id=p.id)}
+            if args['overwrite']:
+                pseudo.pseudo = args['pseudo']
+                db.session.commit()
+                return (pseudo, 200,
+                        {'Location': api.url_for(PseudopotentialResource,
+                                                 id=pseudo.id)})
 
-        # the user can specify overwriting of the pseudo
-        if args['overwrite']:
-            q = (Pseudopotential
-                    .update(pseudo=args['pseudo'])
-                    .where(Pseudopotential.id == p.id)
-                    .returning(Pseudopotential)
-                    .execute())
-            return pseudo_to_dict(next(q)), 200, {'Location': api.url_for(PseudopotentialResource, id=p.id)}
-        else:
-            abort(400, message="Pseudo is already uploaded for this result")
+        except NoResultFound:
+            pseudo = Pseudopotential(**args, pseudo=args['pseudo'])
+            db.session.commit()
+            return (pseudo, 201,
+                    {'Location': api.url_for(PseudopotentialResource,
+                                             id=pseudo.id)})
+
+        abort(400, message="Pseudo is already uploaded for this result")
+
 
 class MachineStatus(Resource):
     """Return a dictionary with the number of running and total tasks per machine:
@@ -677,16 +683,14 @@ class MachineStatus(Resource):
               machine3   0    242
      """
     def get(self):
-        ret = {}
-
-        # see https://github.com/coleifer/peewee/issues/1010
-        q = Task.select(Task.machine,
-                    fn.COUNT(Task.id).alias('total'),
-                    fn.COUNT(SQL('CASE WHEN t2.name = %s THEN t1.id END', 'running')).alias('running')) \
-                .join(TaskStatus).alias('ts').switch(Task) \
+        return (db.session.query(Task.machine,
+                                 func.count(Task.id),
+                                 func.count(
+                                     case([(Task.status.has(name="running"),
+                                            Task.id)]))
+                                 )
                 .group_by(Task.machine)
-
-        return [(m.machine, m.running, m.total) for m in q]
+                .all())
 
 
 class TestResultList(Resource):
@@ -699,33 +703,30 @@ class TestResultList(Resource):
         parser.add_argument('limit', type=int, required=False)
         args = parser.parse_args()
 
-        query = (TestResult
-                 .select(Test, TestResult, Method,
-                         PseudopotentialFamily, BasissetFamily)
-                 .join(Test).switch(TestResult)
+        query = (TestResult.query
+                 .join(Test)
                  .join(Method)
-                 .join(PseudopotentialFamily).switch(Method)
-                 .join(BasissetFamily).switch(TestResult)
+                 .options(contains_eager(TestResult.method))
+                 .options(contains_eager(TestResult.test))
                  .order_by(TestResult.ctime.desc()))
 
         if args['test']:
-            query = query.where(Test.name.contains(args["test"]))
+            query = query.filter(Test.name.contains(args["test"]))
 
         if args['method']:
-            query = query.where(TestResult.method == args["method"])
+            query = query.filter(Method.id == args["method"])
 
         if args['limit']:
             query = query.limit(args['limit'])
 
-        results = [marshal(model_to_dict(tr), testresult_resource_fields)
+        results = [marshal(tr, testresult_resource_fields)
                    for tr in query]
 
         if args['deltaref']:
             # get the test result entries for the reference method:
-            ref_res_query = (TestResult.select(TestResult, Method, Test)
-                             .join(Method).switch(TestResult)
-                             .join(Test)
-                             .where((Method.id == args['deltaref'])))
+            ref_res_query = (TestResult.query
+                             .options(joinedload("test"))
+                             .filter_by(method_id=args['deltaref']))
 
             # create a dictionary for faster lookup with the test name as key:
             refresults = {r.test.name: r for r in ref_res_query}
@@ -760,67 +761,70 @@ class Plot(Resource):
         parser.add_argument('test', type=str, required=True)
         args = parser.parse_args()
 
-        test1 = Test.get(Test.name==args["test"])
+        test1 = Test.query.filter_by(name=args['test']).one()
 
-
-        from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-       #from matplotlib.figure import Figure
-       #from matplotlib.dates import DateFormatter
+        from matplotlib.backends.backend_agg import FigureCanvasAgg \
+            as FigureCanvas
         import matplotlib.pyplot as plt
         import itertools
-        colors = itertools.cycle(["#1D0662", "#8F1E00", "#00662C", "#8F7700", "#3E1BA7", "#F33D0D", "#0AAD51", "#F3CD0D", "#8E7BC5", "#FFAA93", "#75CA9A", "#FFED93"])
+        colors = itertools.cycle([
+            "#1D0662", "#8F1E00", "#00662C", "#8F7700",
+            "#3E1BA7", "#F33D0D", "#0AAD51", "#F3CD0D",
+            "#8E7BC5", "#FFAA93", "#75CA9A", "#FFED93"])
 
-
-        fig = plt.figure(figsize=(12,8),dpi=200, facecolor="#FFFFFF")
-        fig.subplots_adjust(left=0.07,right=0.98,top=0.99,bottom=0.04)
+        fig = plt.figure(figsize=(12, 8), dpi=200, facecolor="#FFFFFF")
+        fig.subplots_adjust(left=0.07, right=0.98, top=0.99, bottom=0.04)
         ax = plt.subplot(111)
-        stride = int(min(35./len(args['method']),7))
+        stride = int(min(35./len(args['method']), 7))
         label_xpos = 5
         warning_yshift = 0
-        i=0
+        i = 0
 
-        for m in args['method']:
-            i+=1
-            meth = Method.get(Method.id==m)
+        for mid in args['method']:
+            i += 1
 
-            #here the curve, based on the fitted data
+            method = Method.query.get_or_404(mid)
+
+            # here the curve, based on the fitted data
             try:
-                r = TestResult.get((TestResult.method==meth) & (TestResult.test==test1))
-            except TestResult.DoesNotExist:
-                ax.text(0.5,0.5+warning_yshift, "No data for method {:}".format(m), transform=ax.transAxes, color="#FF0000")
-                warning_yshift+=0.05
+                r = TestResult.query.filter_by(method=method, test=test1).one()
+            except NoResultFound:
+                ax.text(0.5, 0.5+warning_yshift,
+                        "No data for method {:}".format(method),
+                        transform=ax.transAxes,
+                        color="#FF0000")
+                warning_yshift += 0.05
                 continue
 
-            if not (r.result_data['_status']=='fitted' or r.result_data['_status']=='reference'):
-                ax.text(0.5,0.5+warning_yshift, "Fitting problem for method {:}".format(m), transform=ax.transAxes, color="#FF0000")
-                warning_yshift+=0.05
+            if not (r.result_data['_status'] == 'fitted' or
+                    r.result_data['_status'] == 'reference'):
+                ax.text(0.5, 0.5+warning_yshift,
+                        "Fitting problem for method {:}".format(method),
+                        transform=ax.transAxes,
+                        color="#FF0000")
+                warning_yshift += 0.05
                 continue
 
             mycolor = next(colors)
             V0 = r.result_data['V']
             B0 = r.result_data['B0']
             B1 = r.result_data['B1']
-            xfit,yfit = eos(V0,B0,B1)
-            ax.plot(xfit,yfit, color=mycolor)
+            xfit, yfit = eos(V0, B0, B1)
+            ax.plot(xfit, yfit, color=mycolor)
 
-
-            #here the points
-            q = Result.select(Result, Task, TaskStatus, Method, Structure, Test) \
-                .join(Task) \
-                   .join(TaskStatus).switch(Task) \
-                   .join(Method).switch(Task) \
-                   .join(Structure).switch(Task) \
-                   .join(Test).switch(Task) \
-                   .switch(Result) \
-                .order_by(Result.id.asc()) \
-                .where(Task.method == meth) \
-                .where(Task.test == test1)
+            # here the points
+            q = (Result.query
+                 .join(Task)
+                 .join(Structure)
+                 .filter(Task.method == method)
+                 .filter(Task.test == test1))
 
             E = []
             V = []
             for x in q:
-                natom = len(Json2Atoms(x.task.structure.ase_structure).get_masses())
-                V.append(Json2Atoms(x.task.structure.ase_structure).get_volume()/natom)
+                atoms = Json2Atoms(x.task.structure.ase_structure)
+                natom = len(atoms.get_masses())
+                V.append(atoms.get_volume()/natom)
                 E.append(x.energy/natom)
             x2 = np.array(V)
             y2 = np.array(E)
@@ -829,16 +833,25 @@ class Plot(Resource):
                 E0 = r.result_data['E0']
                 y2 -= E0
 
-            ax.plot(x2,y2, 's', color=mycolor)
-             
+            ax.plot(x2, y2, 's', color=mycolor)
 
-            ax.annotate("Method {:}".format(m), xy= (xfit[label_xpos], yfit[label_xpos]), xytext = (-5,-30 if i!=3 else 20), textcoords = "offset points", fontsize=10, arrowprops=dict(facecolor='black', shrink=0.05, headwidth=3, width=1), horizontalalignment='right', color=mycolor)
+            ax.annotate("Method {:}".format(method),
+                        xy=(xfit[label_xpos], yfit[label_xpos]),
+                        xytext=(-5, -30 if i != 3 else 20),
+                        textcoords="offset points",
+                        fontsize=10,
+                        arrowprops={'facecolor': 'black',
+                                    'shrink': 0.05,
+                                    'headwidth': 3,
+                                    'width': 1},
+                        horizontalalignment='right',
+                        color=mycolor)
             label_xpos += stride
 
-        canvas=FigureCanvas(fig)
+        canvas = FigureCanvas(fig)
         png_output = BytesIO()
         canvas.print_png(png_output)
-        response=make_response(png_output.getvalue())
+        response = make_response(png_output.getvalue())
         response.headers['Content-Type'] = 'image/png'
         return response
 
@@ -854,17 +867,17 @@ class StructureResource(Resource):
         parser.add_argument('format', type=str, required=False,
                             default="xyz", choices=("xyz", "json"))
         args = parser.parse_args()
-    
+
         if args['id'] and args['test']:
-            raise ParameterError("exactly one of id or test parameter is required")
+            raise ParameterError(
+                    "exactly one of id or test parameter is required")
 
         if args['id'] is not None:
-            s = Structure.get(Structure.id == args['id'])
+            s = Structure.query.get_or_404(args['id'])
         elif args['test']:
-            s = Structure.select() \
-                    .join(TestStructure).join(Test) \
-                    .where(Test.name == args['test']) \
-                    .get()
+            s = (Structure.query
+                 .filter(Structure.tests.any(name=args['test']))
+                 .first())
         else:
             raise ParameterError("exactly one of id or test parameter is required")
 
@@ -908,12 +921,14 @@ class StructureResource(Resource):
         xyz_output += "CELL: {:}\n".format(str(atoms.get_cell()).replace('\n', ';'))
         xyz_output += "\n".join(["{:}   {:10.6f} {:10.6f} {:10.6f}" \
                 .format(x[0], x[1][0], x[1][1], x[1][2]) for x in
-                                 zip(atoms_rep.get_chemical_symbols(), atoms_rep.get_positions())
+                                 zip(atoms_rep.get_chemical_symbols(),
+                                     atoms_rep.get_positions())
                                 ])
         response = make_response(xyz_output)
         response.headers["Content-Type"] = "text/plain"
 
         return response
+
 
 class Comparison(Resource):
     def get(self):
@@ -927,12 +942,12 @@ class Comparison(Resource):
         # if neither method2 nor test are not specified
         mode = "1method"
 
-        method1 = Method.get(Method.id == args["method1"])
+        method1 = Method.query.get_or_404(args["method1"])
 
         if args["method2"] is not None:
             # COMPARE 2 METHODS
             mode = "2methods"
-            method2 = Method.get(Method.id == args["method2"])
+            method2 = Method.query.get_or_404(args["method2"])
         elif args["method2"] is None and args["test"] is not None:
             # COMPARE all tests for 1 reference method
             mode = "methodbytest"
@@ -948,7 +963,7 @@ class Comparison(Resource):
 
             testname = args["test"][0]
 
-            for method2 in Method.select():
+            for method2 in Method.query.all():
                 result_data = self._getResultData(method1.id, method2.id,
                                                   testname)
                 if result_data:
@@ -967,7 +982,7 @@ class Comparison(Resource):
         ret = {"test": {}, "methods": [], "method": {}, "summary": {}}
 
         if not testlist:
-            testlist = [t.name for t in Test.select()]
+            testlist = [t.name for t in Test.query]
 
         all_delta = []
         for testname in testlist:
@@ -992,10 +1007,10 @@ class Comparison(Resource):
 
         ret = {"test": {}, "methods": [], "method": {}, "summary": {}}
 
-        testlist = [t.name for t in Test.select()]
+        testlist = [t.name for t in Test.query.all()]
 
         # loop over method2
-        q2 = Method.select().order_by(Method.id)
+        q2 = Method.query.order_by(Method.id).all()
         for method2 in q2:
             ret["methods"].append(str(method2.id))
             all_delta = []
@@ -1033,16 +1048,16 @@ class Comparison(Resource):
         """
 
         try:
-            r1 = (TestResult.select(TestResult)
+            r1 = (TestResult.query
+                  .filter_by(method_id=method1_id)
                   .join(Test)
-                  .where((TestResult.method == method1_id) &
-                         (Test.name == testname))
-                  .get())
-            r2 = (TestResult.select(TestResult)
+                  .filter(Test.name == testname)
+                  .one())
+            r2 = (TestResult.query
+                  .filter_by(method_id=method2_id)
                   .join(Test)
-                  .where((TestResult.method == method2_id) &
-                         (Test.name == testname))
-                  .get())
+                  .filter(Test.name == testname)
+                  .one())
         except Exception as e:
             app.logger.warning(('Invalid method ids specified (%d, %d) or '
                                 'test %s does not exist for both methods: '
@@ -1095,16 +1110,17 @@ class StatsResource(Resource):
     """
     def get(self, what):
         if what == "tasks":
-            q = (TaskStatus
-                 .select(TaskStatus.name, fn.COUNT(Task.id))
-                 .join(Task, JOIN.LEFT_OUTER)
+
+            q = (db.session.query(TaskStatus.name,
+                                  func.count(Task.id).label("count"))
+                 .outerjoin(TaskStatus.tasks)
                  .group_by(TaskStatus.name)
                  .order_by(TaskStatus.name))
 
             stats = [{"status": e.name,
                       "count": e.count,
-                      "_links": {"self": url_for("tasklist", status=e.name)}
-                     } for e in q]
+                      "_links": {"self": url_for("tasklist", status=e.name)},
+                      } for e in q]
 
             return stats
 

@@ -2,19 +2,25 @@
 from flask import redirect, abort, url_for, request
 from flask_admin import Admin
 from flask_admin import helpers as admin_helpers
-from flask_admin.contrib.peewee import ModelView
+from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
-# Wire-up JSONB fields from peewee-playhouse to WTForms
-from flask_admin.contrib.peewee.form import CustomModelConverter
-from playhouse.postgres_ext import BinaryJSONField
-from wtforms import fields
-
-from . import security, app
-from .models import *
-
-# Make flask_admin render the BinaryJSONFields as TextAreas
-CustomModelConverter.defaults[BinaryJSONField] = fields.TextAreaField
+from . import security, app, db
+from .models import (
+    User,
+    Role,
+    Structure,
+    StructureSet,
+    BasisSet,
+    BasisSetFamily,
+    Pseudopotential,
+    PseudopotentialFamily,
+    Method,
+    Test,
+    Task,
+    Result,
+    TestResult,
+)
 
 
 class BaseDataView(ModelView):
@@ -74,12 +80,18 @@ class BaseManagementView(ModelView):
                 return redirect(url_for('security.login', next=request.url))
 
 
+class UserView(BaseManagementView):
+    column_list = ('email', 'active', 'confirmed_at')
+
+
 class StructureSetView(BaseDataView):
     column_list = ('id', 'name', 'description')
 
 
 class StructureView(BaseDataView):
-    column_list = ('id', 'name', 'ase_structure')
+    column_list = ('id', 'name')
+    column_searchable_list = ('name',)
+    column_filters = ('name',)
 
 
 class StructureSetStructureView(BaseDataView):
@@ -88,15 +100,22 @@ class StructureSetStructureView(BaseDataView):
 
 
 class MethodView(BaseDataView):
-    column_list = ('id', 'code', 'pseudopotential', 'basis_set', 'settings')
+    column_list = (
+        'id',
+        'code',
+        'pseudopotential_id',
+        'basis_set_id',
+        'settings',
+        )
 
 
 class BasisSetView(BaseDataView):
     column_list = ('id', 'element', 'family', 'basis')
     column_formatters = {'basis': lambda v, c, m, p: m.basis[:80]+"..."}
+    column_filters = ('element', 'family',)
 
 
-class BasissetFamilyView(BaseDataView):
+class BasisSetFamilyView(BaseDataView):
     column_display_pk = False
     column_list = ('name',)
 
@@ -105,6 +124,7 @@ class PseudopotentialView(BaseDataView):
     column_list = ('id', 'element', 'family', 'format',
                    'pseudo', 'converted_from', )
     column_formatters = {'pseudo': lambda v, c, m, p: m.pseudo[:80]+"..."}
+    column_filters = ('element', 'family', 'format',)
 
 
 class PseudopotentialFamilyView(BaseDataView):
@@ -113,7 +133,8 @@ class PseudopotentialFamilyView(BaseDataView):
 
 
 class TestView(BaseDataView):
-    column_list = ('id', 'name', 'description')
+    column_display_pk = False
+    column_list = ('name', 'description')
 
 
 class TestStructureView(BaseDataView):
@@ -122,40 +143,37 @@ class TestStructureView(BaseDataView):
 
 
 class TaskView(BaseDataView):
-    column_list = ('id', 'status', 'test', 'structure', 'method',
+    column_list = ('id', 'status', 'test_id', 'structure_id', 'method_id',
                    'machine', 'priority', 'ctime', 'mtime',)
+    column_filters = ('status',)
 
 
 class ResultView(BaseDataView):
-    column_list = ('id', 'task', 'energy', 'filename', 'data',)
+    column_list = ('id', 'task_id', 'energy', 'filename', 'data',)
 
 
 class TestResultView(BaseDataView):
-    column_list = ('id', 'test', 'method', 'ctime', 'result_data',)
+    column_list = ('id', 'test', 'method_id', 'ctime', 'result_data',)
 
 
 admin = Admin(app,
               name='FATMAN', template_mode='bootstrap3',
-              base_template='my_master.html',
-              )
+              base_template='my_master.html')
 
-admin.add_view(BaseManagementView(User))
-admin.add_view(BaseManagementView(Role))
-admin.add_view(BaseManagementView(UserRole))
+admin.add_view(UserView(User, db.session))
+admin.add_view(BaseManagementView(Role, db.session))
 
-admin.add_view(StructureView(Structure))
-admin.add_view(StructureSetView(StructureSet))
-admin.add_view(StructureSetStructureView(StructureSetStructure))
-admin.add_view(MethodView(Method))
-admin.add_view(BasisSetView(BasisSet))
-admin.add_view(BasissetFamilyView(BasissetFamily))
-admin.add_view(PseudopotentialView(Pseudopotential))
-admin.add_view(PseudopotentialFamilyView(PseudopotentialFamily))
-admin.add_view(TestView(Test))
-admin.add_view(TestStructureView(TestStructure))
-admin.add_view(TaskView(Task))
-admin.add_view(ResultView(Result))
-admin.add_view(TestResultView(TestResult))
+admin.add_view(StructureView(Structure, db.session))
+admin.add_view(StructureSetView(StructureSet, db.session))
+admin.add_view(MethodView(Method, db.session))
+admin.add_view(BasisSetView(BasisSet, db.session))
+admin.add_view(BasisSetFamilyView(BasisSetFamily, db.session))
+admin.add_view(PseudopotentialView(Pseudopotential, db.session))
+admin.add_view(PseudopotentialFamilyView(PseudopotentialFamily, db.session))
+admin.add_view(TestView(Test, db.session))
+admin.add_view(TaskView(Task, db.session))
+admin.add_view(ResultView(Result, db.session))
+admin.add_view(TestResultView(TestResult, db.session))
 
 
 # define a context processor for merging flask-admin's template

@@ -1,12 +1,13 @@
 
 import bz2
-from datetime import datetime
 from collections import OrderedDict
 
 from celery.utils.log import get_task_logger
 from celery import group
 
 from ase.units import kcal, mol
+
+from sqlalchemy.orm import joinedload, contains_eager
 
 from . import capp, resultfiles, tools, db, cache
 from .models import Result, Task, Method, Test, TestResult
@@ -20,8 +21,9 @@ def postprocess_result_files(update=False):
     """Postprocess all results files.
     Returns a tuple of rids and a group task."""
 
-    query = (Result.select(Result.id)
-             .where(~(Result.filename >> None)))
+    query = (db.session.query(Result.id)
+             .filter(Result.filename != None)
+             .all())
 
     rids = [r.id for r in query]
 
@@ -30,15 +32,14 @@ def postprocess_result_files(update=False):
 
 
 @capp.task
-@db.atomic()
 def postprocess_result_file(rid, update=False):
     """Parse the file uploaded for a result.
     Set update to True to re-parse the file and update already present data"""
 
-    result = (Result.select(Result, Task, Method)
-              .where(Result.id == rid)
-              .join(Task).join(Method)
-              .get())
+    result = (Result.query
+              .options(joinedload("task")
+                       .joinedload("method"))
+              .get(rid))
 
     if result.data and not update:
         logger.warning(("Parsed data available and update=False"
@@ -82,19 +83,21 @@ def calculate_deltatest(self, tid, rid, trid=None):
     If `trid` is given, update the respective TestResult instead of
     creating a new entry"""
 
-    test = Test.get(Test.id == tid)
-    method = (Method.select()
+    test = Test.query.get(tid)
+    method = (Method.query
               .join(Task)
               .join(Result)
-              .where(Result.id == rid)
-              .get())
+              .filter(Result.id == rid)
+              .one())
 
     # select all results which share the same method
     # and are from the same test (deltatest_<El>_<Vol>)
-    results = (Result.select()
-               .join(Task).join(Method)
-               .switch(Task).join(Test)
-               .where((Method.id == method.id) & (Test.id == tid)))
+    results = (Result.query
+               .join(Task)
+               .join(Method)
+               .join(Test)
+               .options(contains_eager(Result.task))
+               .filter(Method.id == method.id, Test.id == test.id))
 
     if results.count() < 5:
         logger.info(("Not enough datapoints to calculate %s value"
@@ -137,15 +140,13 @@ def calculate_deltatest(self, tid, rid, trid=None):
                            "V": v, "E0": e, "B0": B0, "B1": B1, "R": R}
 
         if trid:
-            testresult = TestResult.get(TestResult.id == trid)
-            testresult.ctime = datetime.now()
+            testresult = TestResult.query.get(trid)
             testresult.result_data = result_data
-            testresult.save()
         else:
-            TestResult.create(test=test,
-                              method=method,
-                              ctime=datetime.now(),
-                              result_data=result_data)
+            testresult = TestResult(test=test,
+                                    method=method,
+                                    result_data=result_data)
+        db.session.commit()
 
         logger.info("Calculated deltatest value for %s using Method %s",
                     test.name, method.id)
@@ -164,19 +165,21 @@ def calculate_GMTKN(self, tid, rid, trid=None):
     If `trid` is given, update the respective TestResult instead of
     creating a new entry"""
 
-    test = Test.get(Test.id == tid)
-    method = (Method.select()
+    test = Test.query.get(tid)
+    method = (Method.query
               .join(Task)
               .join(Result)
-              .where(Result.id == rid)
-              .get())
+              .filter(Result.id == rid)
+              .one())
 
     # select all results which share the same method
     # and are from the same test (GMTKN_<sub-set>)
-    results = (Result.select()
-               .join(Task).join(Method)
-               .switch(Task).join(Test)
-               .where((Method.id == method.id) & (Test.id == tid)))
+    results = (Result.query
+               .join(Task)
+               .join(Method)
+               .join(Test)
+               .options(contains_eager(Result.task))
+               .filter(Method.id == method.id, Test.id == test.id))
 
     sub_db = test.name[6:]
     all_structures = set([item[0]
@@ -220,15 +223,13 @@ def calculate_GMTKN(self, tid, rid, trid=None):
         result_data["_status"] = "done"
 
         if trid:
-            testresult = TestResult.get(TestResult.id == trid)
-            testresult.ctime = datetime.now()
+            testresult = TestResult.query.get(trid)
             testresult.result_data = result_data
-            testresult.save()
         else:
-            TestResult.create(test=test,
-                              method=method,
-                              ctime=datetime.now(),
-                              result_data=result_data)
+            testresult = TestResult(test=test,
+                                    method=method,
+                                    result_data=result_data)
+        db.session.commit()
 
         logger.info("Calculated GMTKN values for %s using Method %s",
                     test.name, method.id)
@@ -241,15 +242,16 @@ def calculate_GMTKN(self, tid, rid, trid=None):
 
 @capp.task
 def postprocess_result(rid, update=False):
-    testresult = (TestResult.select()
-                  .join(Test).join(Task).join(Result)
-                  .where((Task.method == TestResult.method) &
-                         (Result.id == rid)))
+    # check whether there is already testresult using this result
+    # and the same method
+    trid = (db.session.query(TestResult.id)
+            .join(Test)
+            .join(Task)
+            .join(Result)
+            .filter(Task.method_id == TestResult.method_id,
+                    Result.id == rid))
 
-    trid = None
-
-    if testresult.count():
-        trid = testresult.get().id
+    if trid:
         if update:
             logger.info("Updating TestResult %s for result %s",
                         trid, rid)
@@ -259,10 +261,11 @@ def postprocess_result(rid, update=False):
                            trid, rid)
             return False
 
-    test = (Test.select(Test)
-            .join(Task).join(Result)
-            .where(Result.id == rid)
-            .get())
+    test = (Test.query
+            .join(Task)
+            .join(Result)
+            .filter(Result.id == rid)
+            .one())
 
     if test.name.startswith('deltatest'):
         return calculate_deltatest(test.id, rid, trid)
