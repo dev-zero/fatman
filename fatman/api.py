@@ -666,7 +666,7 @@ class PseudopotentialList(Resource):
                                                  id=pseudo.id)})
 
         except NoResultFound:
-            pseudo = Pseudopotential(**args, pseudo=args['pseudo'])
+            pseudo = Pseudopotential(pseudo=args['pseudo'], **args)
             db.session.commit()
             return (pseudo, 201,
                     {'Location': api.url_for(PseudopotentialResource,
