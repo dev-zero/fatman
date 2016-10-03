@@ -7,3 +7,4 @@ node_modules
 fatman/static/*map
 fatman/static/*.bundle.js
 fatman.cfg
+__pycache__
