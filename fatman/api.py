@@ -335,7 +335,7 @@ class ResultActionResource(Resource):
         Result.query.get_or_404(rid)
 
         if action == 'doPostprocessing':
-            async_result = postprocess_result_file.AsyncResult(tid)
+            async_result = postprocess_result_file.AsyncResult(str(tid))
 
             if not async_result.ready():
                 return Response(status=202, headers={'Location': request.path})
@@ -380,7 +380,7 @@ class ResultsActionResource(Resource):
     def get(self, action, tid):
 
         if action == 'doPostprocessing':
-            group_result = postprocess_result_files.AsyncResult(tid)
+            group_result = postprocess_result_files.AsyncResult(str(tid))
 
             if not group_result.ready():
                 return Response(status=202, headers={'Location': request.path})
