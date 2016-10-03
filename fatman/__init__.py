@@ -3,6 +3,7 @@ import logging
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_uploads import UploadSet, configure_uploads
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_caching import Cache
@@ -30,6 +31,7 @@ if app.config.get('DATABASE_LOG_QUERIES', False):
 
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 resultfiles = UploadSet('results')
 configure_uploads(app, (resultfiles,))
