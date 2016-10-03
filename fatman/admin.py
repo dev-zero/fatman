@@ -103,8 +103,8 @@ class MethodView(BaseDataView):
     column_list = (
         'id',
         'code',
-        'pseudopotential_id',
-        'basis_set_id',
+        'pseudopotential',
+        'basis_set',
         'settings',
         )
 
@@ -143,17 +143,17 @@ class TestStructureView(BaseDataView):
 
 
 class TaskView(BaseDataView):
-    column_list = ('id', 'status', 'test_id', 'structure_id', 'method_id',
+    column_list = ('id', 'status', 'test', 'structure', 'method',
                    'machine', 'priority', 'ctime', 'mtime',)
     column_filters = ('status',)
 
 
 class ResultView(BaseDataView):
-    column_list = ('id', 'task_id', 'energy', 'filename', 'data',)
+    column_list = ('id', 'task', 'energy', 'filename', 'data',)
 
 
 class TestResultView(BaseDataView):
-    column_list = ('id', 'test', 'method_id', 'ctime', 'result_data',)
+    column_list = ('id', 'test', 'method', 'ctime', 'result_data',)
 
 
 admin = Admin(app,
