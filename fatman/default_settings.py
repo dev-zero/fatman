@@ -1,5 +1,7 @@
 
 SQLALCHEMY_DATABASE_URI = 'postgresql:///fatman'
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
 APPLICATION_ROOT = ''
 DEBUG = False
 
