@@ -249,7 +249,8 @@ def postprocess_result(rid, update=False):
             .join(Task)
             .join(Result)
             .filter(Task.method_id == TestResult.method_id,
-                    Result.id == rid))
+                    Result.id == rid)
+            .scalar())
 
     if trid:
         if update:

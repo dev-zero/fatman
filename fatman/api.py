@@ -486,6 +486,7 @@ class ResultList(Resource):
         result = Result(task_id=task_id,
                         energy=args['energy'],
                         data=extradata)
+        db.session.add(result)
         db.session.commit()
 
         postprocess_result.delay(result.id)
@@ -552,6 +553,7 @@ class MethodList(Resource):
                             basis_set=bsfamily,
                             pseudopotential=pfamily,
                             settings=settings)
+            db.session.add(method)
             db.session.commit()
 
         return method
@@ -667,6 +669,7 @@ class PseudopotentialList(Resource):
 
         except NoResultFound:
             pseudo = Pseudopotential(pseudo=args['pseudo'], **args)
+            db.session.add(pseudo)
             db.session.commit()
             return (pseudo, 201,
                     {'Location': api.url_for(PseudopotentialResource,
