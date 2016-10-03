@@ -111,6 +111,13 @@ def calculate_deltatest(self, tid, rid, trid=None):
                         test.name, method.id, rid)
         return False
 
+    for result in results:
+        if 'total_energy' not in result.data.keys():
+            logger.info(("total_energy missing for %s to calculate %s value"
+                         " for Method %s from result %s, skipping"),
+                        result.id, test.name, method.id, rid)
+            return False
+
     lock_id = '{}-lock-{}-method-{}'.format(self.name, test.name, method.id)
     if not cache.cache.add(lock_id, True, 60*60):
         # another task is already calculating the deltavalue for this result
@@ -128,7 +135,7 @@ def calculate_deltatest(self, tid, rid, trid=None):
             struct = Json2Atoms(result.task.structure.ase_structure)
             natom = len(struct.get_atomic_numbers())
 
-            energies.append(result.energy/natom)
+            energies.append(result.data['total_energy']/natom)
             volumes.append(struct.get_volume()/natom)
 
         v, e, B0, B1, R = deltatest_ev_curve(volumes, energies)
@@ -193,6 +200,13 @@ def calculate_GMTKN(self, tid, rid, trid=None):
                      ", skipping"), results_count, required_count, test.name)
         return False
 
+    for result in results:
+        if 'total_energy' not in result.data.keys():
+            logger.info(("total_energy missing for %s to calculate %s value"
+                         " for Method %s from result %s, skipping"),
+                        result.id, test.name, method.id, rid)
+            return False
+
     lock_id = '{}-lock-{}-method-{}'.format(self.name, test.name, method.id)
     if not cache.cache.add(lock_id, True, 60*60):
         # another task is already calculating the deltavalue for this result
@@ -205,7 +219,8 @@ def calculate_GMTKN(self, tid, rid, trid=None):
         result_data = {"_status": "incomplete", "energies": []}
 
         prefix = "gmtkn30_{}_".format(sub_db)
-        struct2energies = OrderedDict([(x.task.structure.name, x.energy)
+        struct2energies = OrderedDict([(x.task.structure.name,
+                                        x.data['total_energy'])
                                        for x in results])
         for rxn in gmtkn_coefficients[sub_db]:
             etot = 0.

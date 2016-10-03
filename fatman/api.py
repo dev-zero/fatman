@@ -124,7 +124,6 @@ pseudofamily_list_fields = {
 
 result_resource_fields = {
     'id': fields.String,
-    'energy': fields.Float,
     'task': fields.Nested(task_resource_fields),
     '_links': {'self': fields.Url('resultresource'),
                'file': fields.Url('resultfileresource')},
@@ -272,7 +271,6 @@ class ResultResource(Resource):
     def patch(self, id):
         parser = reqparse.RequestParser()
         parser.add_argument('data', type=str, required=False)
-        parser.add_argument('energy', type=float, required=False)
         parser.add_argument('task', type=UUID, required=False)
         args = parser.parse_args()
 
@@ -280,8 +278,6 @@ class ResultResource(Resource):
 
         if args['data'] is not None:
             res.data = json.loads(args['data'])
-        if args['energy'] is not None:
-            res.energy = args['energy']
         if args['task'] is not None:
             res.task = Task.get(Task.id == args['task'])
 
@@ -308,7 +304,9 @@ class ResultFileResource(Resource):
 
         db.session.commit()
 
-        postprocess_result_file.delay(id)
+        # have the file indexed before gathering higher-level results
+        postprocess_result_file.apply_async((id,),
+                                            link=postprocess_result.si(id))
 
         # use a raw werkzeug Response object to return 201
         # status code without a body
@@ -489,6 +487,8 @@ class ResultList(Resource):
         db.session.add(result)
         db.session.commit()
 
+        # run postprocessing for higher-level results since
+        # extradata may already contain everything they need
         postprocess_result.delay(result.id)
 
         return (result, 201,
@@ -828,7 +828,7 @@ class Plot(Resource):
                 atoms = Json2Atoms(x.task.structure.ase_structure)
                 natom = len(atoms.get_masses())
                 V.append(atoms.get_volume()/natom)
-                E.append(x.energy/natom)
+                E.append(x.data['total_energy']/natom)
             x2 = np.array(V)
             y2 = np.array(E)
 

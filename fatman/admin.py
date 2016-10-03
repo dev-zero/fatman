@@ -149,7 +149,7 @@ class TaskView(BaseDataView):
 
 
 class ResultView(BaseDataView):
-    column_list = ('id', 'task', 'energy', 'filename', 'data',)
+    column_list = ('id', 'task', 'filename', 'data',)
 
 
 class TestResultView(BaseDataView):

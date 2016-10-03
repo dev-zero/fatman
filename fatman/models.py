@@ -285,7 +285,6 @@ class Task(Base):
 
 class Result(Base):
     id = UUIDPKColumn()
-    energy = Column(Float, nullable=False)
     task_id = Column(UUID(as_uuid=True), ForeignKey('task.id'), nullable=False)
     task = relationship("Task", backref=backref('results', lazy='dynamic'))
     filename = Column(String(255))

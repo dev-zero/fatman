@@ -1066,6 +1066,9 @@ def get_data_from_output(fhandle, code):
                 data['nkpoints'] = int(line.split()[4])
             if 'total cpu time spent up to now is' in line:
                 data['runtime'] = float(line.split()[-2])
+            if '!    total energy' in line:
+                # extract the total energy and convert from Ry to eV
+                data['total_energy'] = float(line.split()[-2])*13.605697827758654
 
     else:
         raise OutputParseError("Unknown code: %s".format(code))

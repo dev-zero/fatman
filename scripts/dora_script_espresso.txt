@@ -84,13 +84,12 @@ EOF
   if [ $retval -eq 0 ]
   then
       echo 'No Error'
-      en=`grep "!    total energy              =" ${{INP}}.out | awk '{{printf "%24.18f", $5 * 13.605697827758654}}'` 
 
       bzip2 "$INPDIR/pw.inp.out"
 
       cat >> "{workdir}/update_fatman.py" << EOF
 # {projectname}  correct `date`
-req = sess.post('{results_url}', data={{'energy': $en, 'task_id': {id}}})
+req = sess.post('{results_url}', data={{'task_id': {id}}})
 req.raise_for_status()
 done_task = req.json()
 
