@@ -1153,13 +1153,13 @@ api.add_resource(TaskResource, '/tasks/<uuid:id>')
 api.add_resource(TaskList, '/tasks')
 api.add_resource(ResultResource, '/results/<uuid:id>')
 api.add_resource(ResultsActionResource,
-                 '/results/action/<string:action>:<string:tid>')
+                 '/results/action/<string:action>:<uuid:tid>')
 api.add_resource(ResultsActionList, '/results/action')
 api.add_resource(ResultFileResource, '/results/<uuid:id>/file')
 api.add_resource(ResultActionList,
-                 '/results/<int:rid>/action')
+                 '/results/<uuid:rid>/action')
 api.add_resource(ResultActionResource,
-                 '/results/<int:rid>/action/<string:action>:<string:tid>')
+                 '/results/<uuid:rid>/action/<string:action>:<uuid:tid>')
 api.add_resource(ResultList, '/results')
 api.add_resource(Basissets, '/basis')
 api.add_resource(PseudopotentialResource, '/pseudos/<uuid:id>')
