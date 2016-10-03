@@ -71,7 +71,7 @@ def postprocess_result_file(rid, update=False):
         # nested dicts/lists get overwritten
         result.data.update(data)
 
-    result.save()
+    db.session.commit()
 
     return True
 
