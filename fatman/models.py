@@ -9,8 +9,8 @@ from datetime import datetime as dt
 from flask_security import UserMixin, RoleMixin
 
 from sqlalchemy import text
-from sqlalchemy import Column, ForeignKey
-from sqlalchemy import Integer, Float, String, Boolean, DateTime, Text
+from sqlalchemy import Column, ForeignKey, UniqueConstraint
+from sqlalchemy import Integer, String, Boolean, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 # Flask-SQLAlchemy wraps only a part of all the attributes from SQLAlchemy.ORM
@@ -113,11 +113,9 @@ class StructureSet(Base):
 class BasisSet(Base):
     id = UUIDPKColumn()
     element = Column(String(255), nullable=False)
-    family_id = Column(Integer, ForeignKey("basis_set_family.id"),
-                       nullable=False)
-    family = relationship("BasisSetFamily",
-                          foreign_keys="BasisSet.family_id",
-                          lazy='joined')
+    family_id = Column(Integer, ForeignKey("basis_set_family.id"))
+    family = relationship("BasisSetFamily", lazy='joined',
+                          backref=backref('basissets', lazy='dynamic'))
     basis = Column(Text, nullable=False)
 
     def __repr__(self):
@@ -131,7 +129,6 @@ class BasisSet(Base):
 class BasisSetFamily(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
-    basissets = relationship("BasisSet", backref="families")
 
     __mapper_args__ = {
         "order_by": name,
@@ -148,15 +145,20 @@ class Pseudopotential(Base):
     id = UUIDPKColumn()
     element = Column(String(255), nullable=False)
     pseudo = Column(Text, nullable=False)
-    family_id = Column(Integer, ForeignKey("pseudopotential_family.id"),
-                       nullable=False)
-    family = relationship("PseudopotentialFamily",
-                          lazy='joined', innerjoin=True,
+    family_id = Column(Integer, ForeignKey("pseudopotential_family.id"))
+    family = relationship("PseudopotentialFamily", lazy='joined',
                           backref=backref('pseudos', lazy='dynamic'))
 
     format = Column(String(255), nullable=False)
+    core_electrons = Column(Integer, nullable=False)
+    description = Column(Text)
+
     converted_from_id = Column(UUID(as_uuid=True), ForeignKey('pseudopotential.id'))
     converted_from = relationship("Pseudopotential", remote_side=[id])
+
+    __table_args__ = (
+        UniqueConstraint('element', 'family_id', 'core_electrons', 'format'),
+    )
 
     def __repr__(self):
         return "<Pseudopotential(id='{}', element='{}', family_id={}, format={})>".format(

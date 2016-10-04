@@ -122,7 +122,7 @@ class BasisSetFamilyView(BaseDataView):
 
 class PseudopotentialView(BaseDataView):
     column_list = ('id', 'element', 'family', 'format',
-                   'pseudo', 'converted_from', )
+                   'pseudo', 'core_electrons', 'converted_from', )
     column_formatters = {'pseudo': lambda v, c, m, p: m.pseudo[:80]+"..."}
     column_filters = ('element', 'family', 'format',)
 

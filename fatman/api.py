@@ -639,18 +639,39 @@ class PseudopotentialList(Resource):
         parser.add_argument('element', type=str, required=True)
         parser.add_argument('pseudo', type=str, required=True)
         parser.add_argument('format', type=str, required=True)
+        parser.add_argument('core_electroncs', type=int, required=False)
         parser.add_argument('converted_from', type=UUID, required=False)
         parser.add_argument('overwrite', type=bool, default=False)
-
         args = parser.parse_args()
 
         family = (PseudopotentialFamily.query
                   .filter_by(name=args['family'])
                   .one())
 
-        data = {'family': family,
-                'element': args['element'],
-                'format': args['format']}
+        if not args['core_electrons']:
+            if args['format'] != 'CP2K':
+                if args['converted_from']:
+                    ref_pseudo = (Pseudopotential.query
+                                  .get(args['converted_from'])
+                                  .one())
+                    args['core_electrons'] = ref_pseudo.core_electrons
+
+                raise ParameterError(("guessing the number of core_electrons"
+                                      " from the uploaded pseudo is only"
+                                      " supported for the CP2K pseudos"))
+
+            # for the CP2K format we can parse the uploaded pseudo
+            # and calculate the number of core electrons by getting the
+            # first line of the pseudo and summing the numbers up
+            electron_config = map(int, args['pseudo'].splitlines()[0].split())
+            args['core_electrons'] = sum(electron_config)
+
+        data = {
+            'family': family,
+            'element': args['element'],
+            'format': args['format'],
+            'core_electrons': args['core_electrons'],
+        }
 
         if args['converted_from']:
             data['converted_from'] = args['converted_from']
