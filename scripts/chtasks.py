@@ -4,8 +4,8 @@ import requests
 import click
 from tabulate import tabulate
 
-TASKS_URL = '{}/tasks'
-TASK_URL = '{}/tasks/{}'
+TASKS_URL = '{}/api/v1/tasks'
+TASK_URL = '{}/api/v1/tasks/{}'
 
 @click.command()
 @click.option('--status', '-s', type=str, help='only tasks with given status (default: all)')

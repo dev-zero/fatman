@@ -11,8 +11,8 @@ export class DeltatestResultsService {
   constructor(private _http: Http) {
   }
 
-  private _testresultsUrl = '../testresults';
-  private _methodsUrl = '../methods';
+  private _testresultsUrl = '../api/v1/testresults';
+  private _methodsUrl = '../api/v1/methods';
 
   getTestResults(ref_method: string = null) : Observable<TestResult[]> {
     let params: URLSearchParams = new URLSearchParams();

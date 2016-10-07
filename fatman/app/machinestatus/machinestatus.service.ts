@@ -9,7 +9,7 @@ export class MachinestatusService {
   constructor(private _http: Http) {
   }
 
-  private _machinestatusUrl = '../machinestatus';
+  private _machinestatusUrl = '../api/v1/machinestatus';
 
   getMachinestatus(): Observable<Object[]> {
     return this._http.get(this._machinestatusUrl)

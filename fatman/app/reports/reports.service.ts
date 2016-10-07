@@ -8,9 +8,9 @@ export class ReportService {
   constructor(private _http: Http) {
   }
 
-  private _methodsUrl = '../methods';
-  private _compareUrl = '../compare';
-  private _testlistUrl = '../tests';
+  private _methodsUrl = '../api/v1/methods';
+  private _compareUrl = '../api/v1/compare';
+  private _testlistUrl = '../api/v1/tests';
 
   getMethods(): Observable<Object[]> {
     return this._http.get(this._methodsUrl)

@@ -1171,7 +1171,7 @@ errors = {
         }
 
 
-api = Api(app, errors=errors)
+api = Api(app, prefix='/api/v1', errors=errors)
 
 api.add_resource(TaskResource, '/tasks/<uuid:id>')
 api.add_resource(TaskList, '/tasks')

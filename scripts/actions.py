@@ -42,10 +42,10 @@ def postproc(ctx):
     action_data = {'doPostprocessing': {'update': ctx.obj['update'], }}
 
     if ctx.obj['rid']:
-        req_url = '{base}/results/{rid}/action'.format(
+        req_url = '{base}/api/v1/results/{rid}/action'.format(
             base=ctx.obj['base'], rid=ctx.obj['rid'])
     else:
-        req_url = '{base}/results/action'.format(
+        req_url = '{base}/api/v1/results/action'.format(
             base=ctx.obj['base'])
 
     req = sess.post(req_url, json=action_data)

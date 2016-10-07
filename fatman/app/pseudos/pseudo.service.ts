@@ -11,8 +11,8 @@ export class PseudoService {
   constructor(private _http: Http) {
   }
 
-  private _pseudosUrl = '../pseudos';
-  private _pseudoFamiliesUrl = '../pseudofamilies';
+  private _pseudosUrl = '../api/v1/pseudos';
+  private _pseudoFamiliesUrl = '../api/v1/pseudofamilies';
 
   getPseudoFamilies() : Observable<PseudoFamily[]> {
     return this._http.get(this._pseudoFamiliesUrl)

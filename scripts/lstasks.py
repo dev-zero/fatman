@@ -5,7 +5,7 @@ import click
 import collections
 from tabulate import tabulate
 
-TASKS_URL = '{}/tasks'
+TASKS_URL = '{}/api/v1/tasks'
 
 # from http://stackoverflow.com/questions/6027558/flatten-nested-python-dictionaries-compressing-keys
 def flatten(d, parent_key='', sep='/'):

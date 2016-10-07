@@ -8,8 +8,8 @@ export class HomeService {
   constructor(private _http: Http) {
   }
 
-  private _methodsUrl = '../methods';
-  private _compareUrl = '../compare';
+  private _methodsUrl = '../api/v1/methods';
+  private _compareUrl = '../api/v1/compare';
 
   getMethods(): Observable<Object[]> {
     return this._http.get(this._methodsUrl)

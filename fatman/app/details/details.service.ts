@@ -8,11 +8,11 @@ export class DetailsService {
   constructor(private _http: Http) {
   }
 
-  private _methodsUrl = '../methods';
-  private _testlistUrl = '../tests';
-  private _resultsUrl = '../results';
-  private _testresultUrl = '../testresults';
-  private _compareUrl = '../compare';
+  private _methodsUrl = '../api/v1/methods';
+  private _testlistUrl = '../api/v1/tests';
+  private _resultsUrl = '../api/v1/results';
+  private _testresultUrl = '../api/v1/testresults';
+  private _compareUrl = '../api/v1/compare';
 
   getComparisonOneTest(method1, method2, test): Observable<Object[]> {
     let myoptions = new RequestOptions ({

@@ -9,8 +9,8 @@ export class PeriodictableService {
   constructor(private _http: Http) {
   }
 
-  private _periodictableUrl = '../compare';
-  private _methodlistUrl = '../methods';
+  private _periodictableUrl = '../api/v1/compare';
+  private _methodlistUrl = '../api/v1/methods';
 
   elements: Object[];
 

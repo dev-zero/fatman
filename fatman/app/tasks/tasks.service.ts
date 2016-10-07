@@ -9,8 +9,8 @@ export class TaskService {
   constructor(private _http: Http) {
   }
 
-  private _tasksUrl = '../tasks';
-  private _statsUrl = '../stats/tasks';
+  private _tasksUrl = '../api/v1/tasks';
+  private _statsUrl = '../api/v1/stats/tasks';
 
   getTasks(statusName: string = ""): Observable<Object[]> {
     let params: URLSearchParams = new URLSearchParams();
