@@ -13,7 +13,7 @@ TASK_URL = '{}/api/v1/tasks/{}'
 @click.option('--pseudofamily', '-p', type=str,
               help='pseudopotential family used in the method for a task')
 @click.option('--structure', '-t', type=str, help='structure calculated (also partially matched)')
-@click.option('--id', '-i', 'ids', type=int, multiple=True,
+@click.option('--id', '-i', 'ids', type=click.UUID, multiple=True,
               help='task ID to change (can be specified multiple times)')
 @click.option('--url', type=str, default='https://tctdb.chem.uzh.ch/fatman',
               help='The URL where FATMAN is running (default: https://tctdb.chem.uzh.ch/fatman)')
