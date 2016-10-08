@@ -9,15 +9,19 @@ from uuid import UUID
 from flask_restful import (Api, Resource,
                            abort, reqparse,
                            fields, marshal_with, marshal)
-from flask import make_response, url_for, request
+from flask import g, make_response, url_for, request
+from flask_httpauth import HTTPBasicAuth
+from flask_security.utils import verify_password as fs_verify_password
 from werkzeug.datastructures import FileStorage
 from werkzeug.wrappers import Response
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import joinedload, defer, contains_eager
 from sqlalchemy import func, case
+import numpy as np
 
 from . import app, db, resultfiles, cache
 from .models import (
+    User,
     Structure,
     BasisSet,
     BasisSetFamily,
@@ -39,7 +43,26 @@ from .tasks import (postprocess_result_file,
                     postprocess_result,
                     )
 
-import numpy as np
+# will be replaced by a MultiAuth using tokens later
+auth = HTTPBasicAuth(realm=app.name)
+
+
+@auth.verify_password
+def verify_password(username, password):
+    g.user = None
+    try:
+        user = (User.query
+                .filter_by(email=username)
+                .one())
+
+        if fs_verify_password(password, user.password):
+            g.user = user
+            return True
+
+    except:
+        pass
+
+    return False
 
 
 method_resource_fields = {
@@ -162,6 +185,7 @@ class TaskResource(Resource):
                 .options(joinedload("structure"))
                 .get_or_404(id))
 
+    @auth.login_required
     @marshal_with(task_resource_fields)
     def patch(self, id):
         parser = reqparse.RequestParser()
@@ -226,6 +250,7 @@ class TaskList(Resource):
 
         return [marshal(t, task_list_fields) for t in q]
 
+    @auth.login_required
     def post(self):
         ret = []
         parser = reqparse.RequestParser()
@@ -267,6 +292,7 @@ class ResultResource(Resource):
     def get(self, id):
         return Result.query.get_or_404(id)
 
+    @auth.login_required
     @marshal_with(result_resource_fields)
     def patch(self, id):
         parser = reqparse.RequestParser()
@@ -287,6 +313,7 @@ class ResultResource(Resource):
 
 
 class ResultFileResource(Resource):
+    @auth.login_required
     def post(self, id):
         result = Result.query.get_or_404(id)
 
@@ -350,6 +377,7 @@ class ResultActionResource(Resource):
 
 
 class ResultActionList(Resource):
+    @auth.login_required
     def post(self, rid):
         Result.query.get_or_404(rid)
 
@@ -401,6 +429,7 @@ class ResultsActionResource(Resource):
 
 
 class ResultsActionList(Resource):
+    @auth.login_required
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('doPostprocessing', type=dict, required=False)
@@ -456,6 +485,7 @@ class ResultList(Resource):
 
         return [marshal(x, result_resource_fields) for x in q]
 
+    @auth.login_required
     @marshal_with(result_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
@@ -524,6 +554,7 @@ class MethodList(Resource):
 
         return [marshal(m, method_list_fields) for m in q]
 
+    @auth.login_required
     @marshal_with(method_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
@@ -632,6 +663,7 @@ class PseudopotentialList(Resource):
             q = q.options(defer('pseudo'))
             return [marshal(p, pseudo_list_fields) for p in q]
 
+    @auth.login_required
     @marshal_with(pseudo_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
@@ -1150,6 +1182,15 @@ class StatsResource(Resource):
 
         abort(404)
 
+
+class AuthResource(Resource):
+    """Allow a user to verify the login (and later: to obtain a JWT token)"""
+
+    @auth.login_required
+    def post(self):
+        return Response(status=200)
+
+
 # Catch common exceptions in the REST dispatcher
 errors = {
         'TaskStatusDoesNotExist': {
@@ -1199,5 +1240,6 @@ api.add_resource(TestResource, '/tests/<string:testname>')
 api.add_resource(Plot, '/plot')
 api.add_resource(StructureResource, '/structure')
 api.add_resource(StatsResource, '/stats/<string:what>')
+api.add_resource(AuthResource, '/login')
 
 #  vim: set ts=4 sw=4 tw=0 :
