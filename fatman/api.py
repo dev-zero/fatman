@@ -195,7 +195,10 @@ class TaskResource(Resource):
         args = parser.parse_args()
 
         # update the status and/or priority (mtime is updated by SQLA)
-        task = Task.query.get_or_404(id)
+        task = (Task.query
+                .options(joinedload("method"))
+                .options(joinedload("structure"))
+                .get_or_404(id))
 
         if args['status'] is not None:
             task.status = TaskStatus.query.filter_by(name=args['status']).one()
