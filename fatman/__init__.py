@@ -1,12 +1,14 @@
 
 import logging
 
-from flask import Flask
+from flask import Flask, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_uploads import UploadSet, configure_uploads
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_caching import Cache
+from flask_httpauth import HTTPBasicAuth
+from flask_security.utils import verify_password as fs_verify_password
 from celery import Celery
 
 app = Flask(__name__)
@@ -70,6 +72,27 @@ capp = setup_celery()
 from .models import User, Role
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
+
+# will be replaced by a MultiAuth using tokens later
+apiauth = HTTPBasicAuth(realm=app.name)
+
+
+@apiauth.verify_password
+def verify_password(username, password):
+    g.user = None
+    try:
+        user = (User.query
+                .filter_by(email=username)
+                .one())
+
+        if fs_verify_password(password, user.password):
+            g.user = user
+            return True
+
+    except:
+        pass
+
+    return False
 
 
 # The imports are deliberately at this place.
