@@ -468,7 +468,6 @@ class ResultList(Resource):
     @marshal_with(result_resource_fields)
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('energy', type=float, required=True)
         parser.add_argument('task', type=str)
         parser.add_argument('task_id', type=UUID)
         parser.add_argument('data', type=str)
@@ -491,7 +490,6 @@ class ResultList(Resource):
             extradata = None
 
         result = Result(task_id=task_id,
-                        energy=args['energy'],
                         data=extradata)
         db.session.add(result)
         db.session.commit()
