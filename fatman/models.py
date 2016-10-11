@@ -52,9 +52,9 @@ class Role(Base, RoleMixin):
 
 UserRole = Table('user_role', Base.metadata,
                  Column('user_id', Integer, ForeignKey('user.id'),
-                        nullable=False),
+                        primary_key=True),
                  Column('role_id', Integer, ForeignKey('role.id'),
-                        nullable=False))
+                        primary_key=True))
 
 
 class User(Base, UserMixin):
@@ -90,10 +90,10 @@ class Structure(Base):
 StructureSetStructure = Table('structure_set_structure', Base.metadata,
                               Column('structure_id', UUID(as_uuid=True),
                                      ForeignKey('structure.id'),
-                                     nullable=False),
+                                     primary_key=True),
                               Column('set_id', Integer,
                                      ForeignKey('structure_set.id'),
-                                     nullable=False))
+                                     primary_key=True))
 
 
 class StructureSet(Base):
@@ -227,9 +227,9 @@ class Method(Base):
 
 TestStructure = Table('test_structure', Base.metadata,
                       Column('test_id', Integer, ForeignKey('test.id'),
-                             nullable=False),
+                             primary_key=True),
                       Column('structure_id', UUID(as_uuid=True), ForeignKey('structure.id'),
-                             nullable=False))
+                             primary_key=True))
 
 
 class Test(Base):
