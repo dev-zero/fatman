@@ -20,6 +20,16 @@ from .models import (
     Task,
     Result,
     TestResult,
+    Calculation,
+    CalculationCollection,
+    CalculationDefaultSettings,
+    Task2,
+    TestResult2,
+    TestResult2Collection,
+    Code,
+    Machine,
+    Artifact,
+    Command,
 )
 
 
@@ -107,6 +117,7 @@ class MethodView(BaseDataView):
         'basis_set',
         'settings',
         )
+    column_filters = ('code',)
 
 
 class BasisSetView(BaseDataView):
@@ -156,6 +167,49 @@ class TestResultView(BaseDataView):
     column_list = ('id', 'test', 'method', 'ctime', 'result_data',)
 
 
+class CalculationView(BaseDataView):
+    column_list = ('id', 'collection', 'test', 'structure',
+                   'settings', 'restrictions', 'results')
+
+
+class CalculationCollectionView(BaseDataView):
+    column_list = ('id', 'name', 'desc', )
+
+
+class CalculationDefaultSettingsView(BaseDataView):
+    column_list = ('code', 'test', )
+
+
+class Task2View(BaseDataView):
+    column_list = ('id', 'calculation', 'status', 'restrictions',
+                   'machine', 'priority', 'ctime', 'mtime',)
+    column_filters = ('status',)
+
+
+class TestResult2View(BaseDataView):
+    column_list = ('id', 'test', 'calculation', 'data', )
+
+
+class TestResult2CollectionView(BaseDataView):
+    column_list = ('id', 'name', 'desc', )
+
+
+class CodeView(BaseDataView):
+    column_list = ('id', 'name', 'pseudo_format', )
+
+
+class MachineView(BaseDataView):
+    column_list = ('id', 'shortname', 'name', )
+
+
+class CommandView(BaseDataView):
+    column_list = ('code', 'machine', )
+
+
+class ArtifactView(BaseDataView):
+    column_list = ('id', 'name', 'path')
+
+
 admin = Admin(app,
               name='FATMAN', template_mode='bootstrap3',
               base_template='my_master.html')
@@ -174,6 +228,17 @@ admin.add_view(TestView(Test, db.session))
 admin.add_view(TaskView(Task, db.session))
 admin.add_view(ResultView(Result, db.session))
 admin.add_view(TestResultView(TestResult, db.session))
+
+admin.add_view(CalculationView(Calculation, db.session))
+admin.add_view(CalculationCollectionView(CalculationCollection, db.session))
+admin.add_view(CalculationDefaultSettingsView(CalculationDefaultSettings, db.session))
+admin.add_view(Task2View(Task2, db.session))
+admin.add_view(TestResult2View(TestResult2, db.session))
+admin.add_view(TestResult2CollectionView(TestResult2Collection, db.session))
+admin.add_view(CodeView(Code, db.session))
+admin.add_view(CommandView(Command, db.session))
+admin.add_view(MachineView(Machine, db.session))
+admin.add_view(ArtifactView(Artifact, db.session))
 
 
 # define a context processor for merging flask-admin's template

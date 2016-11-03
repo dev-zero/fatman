@@ -4,14 +4,22 @@
 # we specify the ORM loading directly in the model using lazy='joined'
 # and innerjoin=True
 # All other references shall be loaded when during the query and as-needed
+
+import uuid
 from datetime import datetime as dt
+from urllib.parse import urlsplit
+from os import path
 
 from flask_security import UserMixin, RoleMixin
 
 from sqlalchemy import text
 from sqlalchemy import Column, ForeignKey, UniqueConstraint
-from sqlalchemy import Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Integer, String, Boolean, DateTime, Text, Enum
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+from werkzeug.datastructures import FileStorage
+
+from . import resultfiles
 
 # Flask-SQLAlchemy wraps only a part of all the attributes from SQLAlchemy.ORM
 # and is missing the PostgreSQL-specific types. To make the model definitions
@@ -302,3 +310,274 @@ class TestResult(Base):
                        nullable=False)
     method = relationship("Method", backref=backref("results", lazy='dynamic'))
     result_data = Column(JSONB)
+
+
+class Machine(Base):
+    id = UUIDPKColumn()
+    shortname = Column(String(255), nullable=False, unique=True)
+    name = Column(String(255), nullable=False, unique=True)
+    settings = Column(JSONB)
+
+    def __repr__(self):
+        return "<Machine(id='{}', shortname='{}')>".format(self.id, self.name)
+
+    def __str__(self):
+        return self.name
+
+
+class Code(Base):
+    id = UUIDPKColumn()
+    name = Column(String(255), nullable=False, unique=True)
+    pseudo_format = Column(String(255), nullable=False)
+
+    def __repr__(self):
+        return "<Code(id='{}', name='{}')>".format(self.id, self.name)
+
+    def __str__(self):
+        return self.name
+
+
+class Command(Base):
+    """Per-machine and per-code commands to run codes.
+
+    Since we want exactly one command per machine and code
+    we use a combined PK (again) instead of introducing a new one.
+    """
+    code_id = Column(UUID(as_uuid=True),
+                     ForeignKey('code.id'),
+                     primary_key=True)
+    code = relationship("Code", backref="commands")
+    machine_id = Column(UUID(as_uuid=True),
+                        ForeignKey('machine.id'),
+                        primary_key=True)
+    machine = relationship("Machine", backref="commands")
+    environment = Column(JSONB)  # for setting env vars & loading modules
+    commands = Column(JSONB, nullable=False)  # the actual commands to run
+
+
+class Calculation(Base):
+    id = UUIDPKColumn()
+
+    collection_id = Column(UUID(as_uuid=True),
+                           ForeignKey('calculation_collection.id'),
+                           nullable=False)
+    collection = relationship("CalculationCollection", backref="calculations")
+
+    test_id = Column(Integer, ForeignKey('test.id'))
+    test = relationship("Test", backref="calculations")
+
+    structure_id = Column(UUID(as_uuid=True), ForeignKey('structure.id'),
+                          nullable=False)
+    structure = relationship("Structure", backref="calculations")
+
+    code_id = Column(UUID(as_uuid=True),
+                     ForeignKey('code.id'),
+                     nullable=False)
+    code = relationship("Code", backref="calculations")
+
+    pseudos = relationship("Pseudopotential",
+                           secondary="calculation_pseudopotential",
+                           backref="calculations")
+    basis_sets = relationship("BasisSet",
+                              secondary="calculation_basis_set",
+                              backref="calculations")
+
+    settings = Column(JSONB)
+    restrictions = Column(JSONB)
+    results = Column(JSONB)
+
+    # for later: link together already defined calculations (but full copy existing ones)
+    # parent_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id'))
+    # parent = relationship("Calculation", remote_side=[id])
+
+    def __repr__(self):
+        return "<Calculation(id='{}')>".format(self.id)
+
+
+CalculationPseudopotential = Table(
+    'calculation_pseudopotential', Base.metadata,
+    Column('calculation_id', UUID(as_uuid=True), ForeignKey('calculation.id'),
+           primary_key=True),
+    Column('pseudo_id', UUID(as_uuid=True), ForeignKey('pseudopotential.id'),
+           primary_key=True))
+
+
+class CalculationBasisSet(Base):
+    """Association table for Calculation <-> BasisSet
+
+    See http://docs.sqlalchemy.org/en/rel_1_1/orm/basic_relationships.html#association-object
+    but I left out the relationship definitions since I don't need them (?)
+    """
+
+    calculation_id = Column(UUID(as_uuid=True),
+                            ForeignKey('calculation.id'),
+                            primary_key=True)
+    basis_set_id = Column(UUID(as_uuid=True), ForeignKey('basis_set.id'),
+                          primary_key=True)
+    btype = Column(Enum("default", "aux_fit", "aux", "lri", "ri_aux",
+                        name="basis_set_type"),
+                   primary_key=True, default="default")
+
+    calculation = relationship("Calculation",
+                               backref=backref("basis_set_associations",
+                                               cascade="all, delete-orphan"))
+    basis_set = relationship("BasisSet", backref="calculation_associations")
+
+    def __repr__(self):
+        return ("<CalculationBasisSet("
+                "calculation='{}', basis_set='{}', type='{}'"
+                ")>").format(self.calculation_id,
+                             self.basis_set_id,
+                             self.btype)
+
+
+class CalculationDefaultSettings(Base):
+    """Default settings for calculations.
+
+    The settings are hard-linked to code and test. Those ID's together also
+    form the PK. Since the settings are copied to a calculation upon creation,
+    there is no point in providing this object directly to the client (e.g.
+    it will be displayed as sub-object of code or test instead)."""
+    code_id = Column(UUID(as_uuid=True),
+                     ForeignKey('code.id'),
+                     primary_key=True)
+    code = relationship("Code", backref="default_settings", uselist=False)
+    test_id = Column(Integer, ForeignKey('test.id'), primary_key=True)
+    test = relationship("Test", backref="default_settings", uselist=False)
+    settings = Column(JSONB)
+
+    def __repr__(self):
+        return ("<CalculationDefaultSettings("
+                "code='{}', test='{}'"
+                ")>").format(self.code_id, self.test_id)
+
+
+class CalculationCollection(Base):
+    id = UUIDPKColumn()
+    name = Column(String(255), nullable=False, unique=True)
+    desc = Column(Text)
+
+    def __repr__(self):
+        return "<CalculationCollection(id='{}', name='{}')>".format(self.id,
+                                                                    self.name)
+
+    def __str__(self):
+        return self.name
+
+
+class Task2(Base):
+    id = UUIDPKColumn()
+    calculation_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id'),
+                            nullable=False)
+    calculation = relationship("Calculation", backref="tasks")
+    status_id = Column(Integer, ForeignKey('task_status.id'), nullable=False)
+    status = relationship("TaskStatus", lazy='joined', innerjoin=True)
+
+    ctime = Column(DateTime, nullable=False, default=dt.now)
+    mtime = Column(DateTime, nullable=False, default=dt.now, onupdate=dt.now)
+    machine_id = Column(UUID(as_uuid=True), ForeignKey('machine.id'))
+    machine = relationship("Machine", backref="tasks")
+    priority = Column(Integer, default=0)
+    data = Column(JSONB)  # task-related data like runtime, #(MPI nodes), etc.
+    restrictions = Column(JSONB)
+    settings = Column(JSONB)
+    infiles = relationship("Artifact", secondary="task2_artifact",
+                           primaryjoin=("(Task2.id==Task2Artifact.task_id) &"
+                                        "(Task2Artifact.linktype=='input')"))
+    outfiles = relationship("Artifact", secondary="task2_artifact",
+                            primaryjoin=("(Task2.id==Task2Artifact.task_id) & "
+                                         "(Task2Artifact.linktype=='output')"))
+
+    def __repr__(self):
+        return "<Task2(id='{}', status='{}')>".format(self.id, self.status)
+
+    def __init__(self, calculation_id, priority=0):
+        self.calculation_id = calculation_id
+        self.status = TaskStatus.query.filter_by(name='new').one()
+
+
+class Task2Artifact(Base):
+    """Association table for Task2 <-> Artifact
+
+    See http://docs.sqlalchemy.org/en/rel_1_1/orm/basic_relationships.html#association-object
+    but I left out the task and artifact relationship definitions since I don't need them (?)
+    """
+
+    task_id = Column(UUID(as_uuid=True), ForeignKey('task2.id'),
+                     primary_key=True)
+    artifact_id = Column(UUID(as_uuid=True), ForeignKey('artifact.id'),
+                         primary_key=True)
+    linktype = Column(Enum("input", "output", name="artifact_link_type"),
+                      nullable=False)
+
+    artifact = relationship("Artifact")
+    task = relationship("Task2")
+
+
+class Artifact(Base):
+    id = UUIDPKColumn()
+    name = Column(String(255), nullable=False)
+    path = Column(String(255), nullable=False)
+    mdata = Column('metadata', JSONB, default={}, nullable=False)
+    # ^^ "metadata" is an SQLAlchemy reserved word
+
+    def __repr__(self):
+        return "<Artifact(id='{}', name='{}')>".format(self.id, self.name)
+
+    def __init__(self, name, path, metadata={'compressed': None}):
+        self.id = uuid.uuid4()
+        self.name = name
+        # replace {id} and {name} occurrances
+        self.path = path.format(id=self.id, name=self.name)
+        self.mdata = metadata
+
+    def save(self, buf):
+        """Save a byte-stream to the storage specified in path"""
+
+        scheme, nwloc, fullpath, _, _ = urlsplit(self.path)
+
+        if scheme == 'fkup' and nwloc == 'results':
+            folder, filename = path.split(fullpath)
+            storage = FileStorage(buf, filename=filename)
+            resultfiles.save(storage, folder=folder[1:])
+        else:
+            raise RuntimeError("unknown scheme '{}' or location '{}'".format(
+                scheme, nwloc))
+
+
+class TestResult2(Base):
+    id = UUIDPKColumn()
+    test_id = Column(Integer, ForeignKey('test.id'), nullable=False)
+    test = relationship("Test")
+    calculation_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id'),
+                            nullable=False)
+    calculation = relationship("Calculation", backref="testresults")
+    data = Column(JSONB)
+    collection = relationship('TestResult2Collection',
+                              secondary="test_result2_test_result2_collection",
+                              backref=backref('testresults', lazy='dynamic'))
+
+    def __repr__(self):
+        return "<TestResult(id='{}')>".format(self.id)
+
+
+TestResult2TestResult2Collection = Table(
+    'test_result2_test_result2_collection',
+    Base.metadata,
+    Column('test_id', UUID(as_uuid=True), ForeignKey('test_result2.id'),
+           primary_key=True),
+    Column('collection_id', UUID(as_uuid=True),
+           ForeignKey('test_result2_collection.id'), primary_key=True))
+
+
+class TestResult2Collection(Base):
+    id = UUIDPKColumn()
+    name = Column(String(255), nullable=False, unique=True)
+    desc = Column(Text)
+
+    def __repr__(self):
+        return "<TestResultCollection(id='{}', name='{}')>".format(
+            self.id, self.name)
+
+    def __str__(self):
+        return self.name
