@@ -306,6 +306,7 @@ class Task2Schema(Task2ListSchema):
     calculation = fields.Nested(CalculationListSchema)
     infiles = fields.Nested(ArtifactSchema, many=True)
     outfiles = fields.Nested(ArtifactSchema, many=True)
+    data = fields.Dict()
 
     class Meta:
         model = Task2
@@ -368,6 +369,11 @@ TASK_STATES = {
 
 
 def task_args_validate(input_dict):
+    # data can only be set when ending a task (in whatever way)
+    if ('data' in input_dict.keys() and
+            input_dict['status'] not in ['done', 'error']):
+        return False
+
     # machine can only be set when going into pending
     if ('machine' in input_dict.keys() and
             input_dict['status'] not in ['pending']):
@@ -392,9 +398,10 @@ class Task2Resource(Resource):
     @use_kwargs({
         'status': fields.Str(required=True,
                              validate=lambda k: k in TASK_STATES.keys()),
+        'data': fields.Dict(),
         'machine': fields.Str(),
         }, validate=task_args_validate)
-    def patch(self, tid, status, machine):
+    def patch(self, tid, status, data, machine):
         task = Task2.query.get_or_404(tid)
 
         if status not in TASK_STATES[task.status.name]:
@@ -570,6 +577,9 @@ class Task2Resource(Resource):
             task.settings = dict(mergedicts(
                 settings,
                 task.settings if task.settings else {}))
+
+        elif status in ['error', 'new']:
+            task.data = data
 
         task.status = TaskStatus.query.filter_by(name=status).one()
         db.session.commit()
