@@ -507,6 +507,9 @@ class Task2Resource(Resource):
                             'basis_set': [],
                             'potential': None} for s in struct.get_chemical_symbols()}
 
+                # the total number of MOs to calculate the required MOs for smearing
+                n_mos = 0
+
                 for basis_set_assoc in calc.basis_set_associations:
                     element = basis_set_assoc.basis_set.element
 
@@ -523,6 +526,16 @@ class Task2Resource(Resource):
                                    "{b.basis}\n")
                                   .format(b=basis_set)
                                   .encode('utf-8'))
+
+                    # the number of MOs depends on the basis set
+                    econfig_string = basis_set.basis.split('\n')[1]
+                    econfig = [int(n) for n in econfig_string.split()]
+                    # sum over (the number of m's per l quantum number times
+                    # the number of functions per m):
+                    n_mos += np.dot(
+                        [2*l+1 for l in range(econfig[1], econfig[2]+1)],
+                        econfig[4:])
+
                 bytebuf.seek(0)
                 inputs['basis'].save(bytebuf)
 
@@ -554,6 +567,14 @@ class Task2Resource(Resource):
                 # we _want_ to bail out here if there is no input
                 user_input = task.calculation.settings['input']
                 combined_input = dict(mergedicts(user_input, generated_input))
+
+                try:
+                    # if scf is itself a dict we get a reference here
+                    scf = combined_input['force_eval']['dft']['scf']
+                    if 'smear' in scf.keys() and 'added_mos' not in scf.keys():
+                        scf['added_mos'] = int(0.3*n_mos)
+                except KeyError:
+                    pass
 
                 inputs['calc'] = Artifact(name="calc.inp",
                                           path=basepath+"{id}")
