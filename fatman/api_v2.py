@@ -298,6 +298,7 @@ class Task2ListSchema(ma.ModelSchema):
     _links = ma.Hyperlinks({
         'self': ma.URLFor('task2resource', tid='<id>'),
         'collection': ma.URLFor('task2listresource'),
+        'uploads': ma.URLFor('task2uploadresource', tid='<id>'),
         })
 
 
@@ -577,6 +578,30 @@ class Task2Resource(Resource):
         return schema.jsonify(task)
 
 
+class Task2UploadResource(Resource):
+    upload_args = {
+        'name': fields.Str(required=True),
+        }
+    file_args = {
+        'data': fields.Field(required=True)
+        }
+
+    @use_kwargs(upload_args)
+    @use_kwargs(file_args, locations=('files', ))
+    def post(self, tid, name, data):
+        task = Task2.query.get_or_404(tid)
+
+        basepath = "fkup://results/{t.id}/".format(t=task)
+        artifact = Artifact(name=name, path=basepath+"{id}")
+        artifact.save(data)
+
+        db.session.add(Task2Artifact(artifact=artifact, task=task,
+                                     linktype="output"))
+        db.session.commit()
+        schema = ArtifactSchema()
+        return schema.jsonify(artifact)
+
+
 class StructureSchema(ma.ModelSchema):
     calculations = fields.Nested(CalculationListSchema, many=True,
                                  exclude=('structure', ))
@@ -672,6 +697,7 @@ api.add_resource(CalculationTask2ListResource,
                  '/calculations/<uuid:cid>/tasks')
 api.add_resource(Task2ListResource, '/tasks')
 api.add_resource(Task2Resource, '/tasks/<uuid:tid>')
+api.add_resource(Task2UploadResource, '/tasks/<uuid:tid>/uploads')
 api.add_resource(ArtifactListResource, '/artifacts')
 api.add_resource(ArtifactResource, '/artifacts/<uuid:aid>')
 api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/download')
