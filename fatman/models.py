@@ -7,7 +7,10 @@
 
 import uuid
 from datetime import datetime as dt
-from urllib.parse import urlsplit
+try:
+    from urllib.parse import urlsplit
+except ImportError:
+    from urlparse import urlsplit
 from os import path
 
 from flask_security import UserMixin, RoleMixin
