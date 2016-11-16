@@ -502,10 +502,12 @@ class Task2Resource(Resource):
                               .format(a=inputs['basis'], t=task)
                               .encode('utf-8'))
 
-                # for the basis sets we have to be able to lookup the entry by element
+                # for the basis sets we have to be able to
+                # lookup the entry by element
                 kind = {s: {'_': s,
                             'basis_set': [],
-                            'potential': None} for s in struct.get_chemical_symbols()}
+                            'potential': None}
+                        for s in struct.get_chemical_symbols()}
 
                 # the total number of MOs to calculate the required MOs for smearing
                 n_mos = 0
@@ -562,7 +564,8 @@ class Task2Resource(Resource):
                 inputs['pseudos'].save(bytebuf)
 
                 # in the CP2K Python dict struct the kinds are stored as list
-                generated_input['force_eval']['subsys']['kind'] = list(kind.values())
+                generated_input['force_eval']['subsys']['kind'] = list(
+                        kind.values())
 
                 # we _want_ to bail out here if there is no input
                 user_input = task.calculation.settings['input']
@@ -601,8 +604,8 @@ class Task2Resource(Resource):
 
             settings = {
                 'machine': task.machine.settings,
-                'environment': command.environment if command.environment
-                                                   else {},
+                'environment': (
+                    command.environment if command.environment else {}),
                 'commands': command.commands,
                 }
 
