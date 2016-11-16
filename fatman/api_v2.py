@@ -361,23 +361,26 @@ TASK_STATES = {
     'cancelled': [],
     'deferred': ['new', 'cancelled'],
     'running': ['done', 'error'],
+    'done': [],
     'error': [],
     }
 
 
 def task_args_validate(input_dict):
+    # machine can only be set when going into pending
+    if ('machine' in input_dict.keys() and
+            input_dict['status'] not in ['pending']):
+        return False
+
+    # when setting a task to pending we need a valid machine
+    # to generate the correct runscript
     if input_dict['status'] == 'pending':
-        print(input_dict['machine'])
-        # when setting a task to pending we need a valid machine
-        # to generate the correct runscript
         return ('machine' in input_dict.keys() and
                 (Machine.query
                  .filter_by(shortname=input_dict['machine'])
                  .one_or_none() is not None))
 
-    else:
-        # in all other cases, machine can not be changed
-        return ('machine' not in input_dict.keys())
+    return True
 
 
 class Task2Resource(Resource):
