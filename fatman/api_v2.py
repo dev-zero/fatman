@@ -608,6 +608,7 @@ class Task2Resource(Resource):
                 'environment': (
                     command.environment if command.environment else {}),
                 'commands': command.commands,
+                'output_artifacts': calc.settings['output_artifacts'],
                 }
 
             task.settings = dict(mergedicts(
