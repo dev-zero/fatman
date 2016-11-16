@@ -478,6 +478,16 @@ class Task2Resource(Resource):
                     }
                 generated_input['force_eval']['subsys']['cell'] = cell
 
+                if 'key_value_pairs' in struct.info:
+                    # it seems Python ASE is unable to handle nested dicts in
+                    # the Atoms.info attribute when writing XYZ, even though it
+                    # creates it in the first place
+                    # see https://gitlab.com/ase/ase/issues/60
+                    struct.info = dict(mergedicts(
+                        {k: v for k, v in struct.info.items()
+                         if k != 'key_value_pairs'},
+                        struct.info['key_value_pairs']))
+
                 bytebuf = BytesIO()
                 stringbuf = TextIOWrapper(bytebuf, write_through=True)
                 ase_io.write(stringbuf, struct, format='xyz')
