@@ -35,7 +35,7 @@ def dict2line_iter(nested, ilevel=0):
             yield "{}{} {}".format(' '*ilevel, key.upper(), val)
 
 
-def dict2cp2k(data, output=None):
+def dict2cp2k(data, output=None, parameters=None):
     """Convert and write a nested python dict to a CP2K input file.
 
     Some of this code is either taken from AiiDA or heavily
@@ -43,21 +43,28 @@ def dict2cp2k(data, output=None):
 
     Writes to a file if a handle or filename is given
     or returns the generated file as a string if not.
+
+    The parameters are passed to a .format() call on the final input string.
     """
 
     if output:
         if isinstance(output, str):
             with open(output, 'w') as fhandle:
-                fhandle.write("\n".join(dict2line_iter(data)))
+                fhandle.write("\n"
+                              .join(dict2line_iter(data))
+                              .format(**parameters))
         elif isinstance(output, BufferedIOBase):
             # bytes-like object, need to encode
             output.write("\n"
                          .join(dict2line_iter(data))
+                         .format(**parameters)
                          .encode('utf-8'))
         else:
             output.write("\n".join(dict2line_iter(data)))
     else:
-        return "\n".join(dict2line_iter(data))
+        return ("\n"
+                .join(dict2line_iter(data))
+                .format(**parameters))
 
 
 def mergedicts(dict1, dict2):
