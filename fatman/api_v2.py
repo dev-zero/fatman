@@ -433,8 +433,8 @@ class Task2Resource(Resource):
                         },
                     'force_eval': {
                         'dft': {
-                            'basis_set_file': "./BASIS_SETS",
-                            'potential_file': "./POTENTIALS",
+                            'basis_set_file_name': "./BASIS_SETS",
+                            'potential_file_name': "./POTENTIALS",
                             'poisson': {
                                 'periodic': None,
                                 },
@@ -448,6 +448,7 @@ class Task2Resource(Resource):
                                 },
                             'topology': {
                                 'coord_file': "./struct.xyz",
+                                'coord_file_format': 'XYZ',
                                 },
                             'kind': [],  # filled out below
                             },
