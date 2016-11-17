@@ -203,7 +203,8 @@ class MachineView(BaseDataView):
 
 
 class CommandView(BaseDataView):
-    column_list = ('code', 'machine', )
+    column_exclude_list = ('environment', 'commands', )
+
 
 
 class ArtifactView(BaseDataView):
