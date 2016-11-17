@@ -3,11 +3,14 @@
 import socket
 import logging
 import subprocess
+import shutil
 import os
 from os import path
 from time import sleep
-from urllib.parse import urlparse
 from glob import glob
+# py2/3 compat calls
+from six.moves.urllib import urlparse
+from six import raise_from
 
 import click
 import click_log
@@ -18,56 +21,70 @@ TASKS_URL = '{}/api/v2/tasks'
 logger = logging.getLogger(__name__)
 
 
-def run_with_slurm(sess, server, task, task_dir):
-    subprocess.check_call(['sbatch', task['settings']['cmd']],
-                          cwd=task_dir)
-
-
-def download_only(sess, server, task, task_dir):
+# errors which are completely on the client side
+# and are thus recoverable
+class ClientError(Exception):
     pass
 
 
-def run_direct(sess, server, task, task_dir):
-    task['data']['commands'] = {}
-    commands = task['data']['commands']
+def run_with_slurm(sess, server, task, task_dir):
+    subprocess.check_call(['sbatch', task['settings']['cmd']],
+                          cwd=task_dir)
+    return []
 
+
+def download_only(sess, server, task, task_dir):
+    return []
+
+
+def run_direct(sess, server, task, task_dir):
     # since we block below, we set the task to running right away
     req = sess.patch(server + task['_links']['self'],
                      json={'status': 'running'})
     req.raise_for_status()
 
+    outfiles = []
+
     for entry in task['settings']['commands']:
         name = entry['name']
         stdout_fn = path.join(task_dir, "{}.out".format(name))
         stderr_fn = path.join(task_dir, "{}.err".format(name))
+        outfiles += [stdout_fn, stderr_fn]
 
-        commands[name] = {'return': -1}
+        d_resp = {
+            'tag': 'commands',
+            'entry': name,
+            }
 
         logger.info("task %s: running command %s", task['id'], name)
 
         try:
             with open(stdout_fn, 'w') as stdout, \
                  open(stderr_fn, 'w') as stderr:
-                cproc = subprocess.run(
+                subprocess.check_call(
                     [entry['cmd']] + entry['args'],
                     stdout=stdout, stderr=stderr,
                     cwd=task_dir)
 
-                commands[name]['return'] = cproc.returncode
+        except EnvironmentError as exc:
+            raise_from(ClientError("error when opening stdout/err files"), exc)
 
-                if not entry.get('ignore_failure', False):
-                    cproc.check_returncode()
+        except subprocess.CalledProcessError as exc:
+            d_resp['msg'] = "command terminated with non-zero exit status"
+            d_resp['returncode'] = exc.returncode
 
-        except EnvironmentError as error:
-            commands[name]['error'] = (
-                "error when opening stdout/stderr files: {}"
-                .format(error))
+            if entry.get('ignore_returncode', False):
+                task['data']['warnings'].append(d_resp)
+            else:
+                task['data']['errors'].append(d_resp)
+                raise
+
+        except subprocess.SubprocessError as exc:
+            d_resp['msg'] = "error occurred while running: {}".format(exc)
+            task['data']['errors'].append(d_resp)
             raise
-        except subprocess.SubprocessError as error:
-            commands[name]['error'] = (
-                "error when running: {}"
-                .format(error))
-            raise
+
+    return outfiles
 
 
 RUNNERS = {
@@ -121,6 +138,11 @@ def main(url, hostname, nap_time, data_dir):
         logger.info("aquired new task %s", task['id'])
 
         task_dir = path.join(data_dir, task['id'])
+
+        if path.exists(task_dir):
+            logger.info("removing already existing task dir '%s'", task_dir)
+            shutil.rmtree(task_dir)
+
         os.mkdir(task_dir)
 
         # download each input file by streaming
@@ -137,43 +159,63 @@ def main(url, hostname, nap_time, data_dir):
             raise NotImplementedError(
                 "runner {} is not (yet) implemented".format(runner))
 
+        # create some structure in task.data if not already present:
+
         if not task['data']:
             task['data'] = {}
 
+        task['data']['warnings'] = task['data'].get('warnings', [])
+        task['data']['errors'] = task['data'].get('errors', [])
+
         try:
-            runner(sess, server, task, task_dir)
+            # TODO: the following works only for a blocking runner
+            outfiles = runner(sess, server, task, task_dir)
 
+            filepaths = []
+
+            # collect files to upload as declared by the server
             for a_name in task['settings']['output_artifacts']:
-                full_name = path.join(task_dir, a_name)
+                add_filepaths = glob(path.join(task_dir, a_name))
 
-                filepaths = glob(full_name)
-
-                if not filepaths:
+                if not add_filepaths:
+                    task['data']['warnings'].append({
+                        'tag': "output_artifacts",
+                        'entry': a_name,
+                        'msg': "no files found",
+                        })
                     logger.warning("task %s: glob for '%s' returned 0 files",
                                    task['id'], a_name)
-                    # TODO: record this failure in the task
                     continue
 
-                for filepath in filepaths:
-                    data = {
-                        'name': path.relpath(filepath, task_dir),
-                        }
-                    with open(filepath, 'rb') as data_fh:
-                        req = sess.post(server + task['_links']['uploads'],
-                                        data=data, files={'data': data_fh})
-                        req.raise_for_status()
+                else:
+                    filepaths += add_filepaths
+
+            # also upload additional non-empty output files from all commands
+            filepaths += [f for f in outfiles if path.getsize(f)]
+
+            for filepath in filepaths:
+                data = {
+                    'name': path.relpath(filepath, task_dir),
+                    }
+                with open(filepath, 'rb') as data_fh:
+                    req = sess.post(server + task['_links']['uploads'],
+                                    data=data, files={'data': data_fh})
+                    req.raise_for_status()
 
             req = sess.patch(server + task['_links']['self'],
                              json={'status': 'done', 'data': task['data']})
             req.raise_for_status()
 
         except requests.exceptions.HTTPError as error:
-            logger.error("task %s: HTTP error occurred: %s\n%s",
-                         task['id'], error, error.response.text)
+            logger.exception("task %s: HTTP error occurred: %s\n%s",
+                             task['id'], error, error.response.text)
+            raise
 
-        except Exception as error:
-            logger.error("task %s: error occurred during run: %s",
-                         task['id'], error)
+        except ClientError:
+            logger.exception("client error occurred, keep the task running")
+
+        except Exception:
+            logger.exception("task %s: error occurred during run", task['id'])
             req = sess.patch(server + task['_links']['self'],
                              json={'status': 'error', 'data': task['data']})
             req.raise_for_status()
