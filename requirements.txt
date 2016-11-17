@@ -18,7 +18,5 @@ numpy>=1.10.4
 matplotlib>=1.5.1
 ase>=3.11.0
 click>=6.6
-click-log>=0.1.4
 celery>=3.1.23
 redis>=2.10.5
-six>=1.10.0
