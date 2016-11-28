@@ -317,20 +317,29 @@ class Task2ListResource(Resource):
     # calculation is set when called as subcollection of a calculation
     @use_kwargs({
         'limit': fields.Int(missing=None),
-        'status': fields.Str(validate=must_exist_in_db(TaskStatus, 'name'),
-                             missing=None)
+        'machine': fields.Str(missing=None),
+        'status': fields.DelimitedList(
+            fields.Str(validate=must_exist_in_db(TaskStatus, 'name'),
+                       missing=None)),
         })
-    def get(self, limit, status, calculation=None):
+    def get(self, limit, machine, status, calculation=None):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
                  .join(TaskStatus)
-                 .options(contains_eager('status')))
+                 .join(Machine)
+                 .options(
+                     contains_eager('status'),
+                     contains_eager('machine')
+                     ))
 
         if calculation is not None:
             query = query.filter(Task2.calculation == calculation)
 
-        if status is not None:
-            query = query.filter(TaskStatus.name == status)
+        if status:
+            query = query.filter(TaskStatus.name.in_(status))
+
+        if machine is not None:
+            query = query.filter(Machine.shortname == machine)
 
         if limit is not None:
             query = query.limit(limit)
