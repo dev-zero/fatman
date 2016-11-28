@@ -611,8 +611,9 @@ class Task2Resource(Resource):
             # intentionally merge the task settings over the other settings
             # to give the user the possibility to specify settings at task
             # creation which take precedence over any other settings
-
             settings = {
+                # define a task name usable on most OS and with chars directly usable in URLs
+                'name': 'fatman.{}'.format(task.id),
                 'machine': task.machine.settings,
                 'environment': (
                     command.environment if command.environment else {}),
