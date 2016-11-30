@@ -41,6 +41,7 @@ from .models import (
     )
 from .tools import Json2Atoms, Atoms2Json
 from .tools.cp2k import dict2cp2k, mergedicts
+from .tools.slurm import generate_slurm_batch_script
 
 ma = Marshmallow(app)
 
@@ -602,9 +603,41 @@ class Task2Resource(Resource):
                 app.logger.error("code {} not (yet) supported", calc.code.name)
                 abort(500)
 
-            for artifact in inputs.values():
-                db.session.add(Task2Artifact(artifact=artifact, task=task,
-                                             linktype="input"))
+            runner = task.machine.settings['runner']
+
+            commands = command.commands.copy()
+            machine_settings = task.machine.settings.copy()
+
+            # if the command defines arguments for this runner, merge them over the machine settings
+            # The machine has only one set of runner_args, namely for the runner it is supposed to run
+            if runner in calc.settings.get('runner_args', {}).keys():
+                machine_settings = dict(mergedicts(
+                    machine_settings,
+                    {'runner_args': calc.settings['runner_args'][runner]}
+                    ))
+
+            # merge command_args manually since they are not a dict (to preserve order)
+            for name, args in calc.settings.get('command_args', {}).items():
+                for cmd in commands:
+                    if cmd['name'] == name:
+                        cmd['args'] += args
+                        break
+
+            # If the command defines arguments (currently only runner_args) for this machine,
+            # merge them over the runner-specific settings.
+            # This makes it possible to set an estimated runtime from the calculation object.
+            if machine in calc.settings.get('machine_settings', {}).keys():
+                machine_settings = dict(mergedicts(
+                    machine_settings,
+                    {k: v for k, v in calc.settings['machine_settings'][machine].items() if k != 'command_args'}
+                    ))
+
+                # merge command_args manually since they are not a dict (to preserve order)
+                for name, args in calc.settings['machine_settings'][machine].get('command_args', {}).items():
+                    for cmd in commands:
+                        if cmd['name'] == name:
+                            cmd['args'] += args
+                            break
 
             # intentionally merge the task settings over the other settings
             # to give the user the possibility to specify settings at task
@@ -612,16 +645,48 @@ class Task2Resource(Resource):
             settings = {
                 # define a task name usable on most OS and with chars directly usable in URLs
                 'name': 'fatman.{}'.format(task.id),
-                'machine': task.machine.settings,
+                'machine': machine_settings,
+                # we always export environment and commands for easier introspection, even
+                # though certain runners already contain them in their batch script
                 'environment': (
                     command.environment if command.environment else {}),
-                'commands': command.commands,
+                'commands': commands,
                 'output_artifacts': calc.settings['output_artifacts'],
                 }
 
             task.settings = dict(mergedicts(
                 settings,
                 task.settings if task.settings else {}))
+
+            # This is after the settings merging by intention and uses directly merged task values
+            # A client could in principal generate this file instead based on the exported data,
+            # but we decided to do it on the server for archival purposes.
+            if runner == "slurm":
+                inputs['runner'] = Artifact(name="run.sh",
+                                            path=basepath+"{id}")
+
+                bytebuf = BytesIO()
+                generate_slurm_batch_script(
+                    name=task.settings['name'],
+                    commands=task.settings['commands'],
+                    environment=task.settings['environment'],
+                    sbatch_args=task.settings['machine'].get('runner_args', {}).get('sbatch'),
+                    srun_args=task.settings['machine'].get('runner_args', {}).get('srun'),
+                    output=bytebuf)
+                bytebuf.seek(0)
+                inputs['runner'].save(bytebuf)
+
+            elif task.settings['machine']['runner'] == "direct":
+                # a direct runner uses the commands provided and runs them directly (hence the name)
+                pass
+            else:
+                app.logger.error("runner {} not (yet) supported", task.settings['machine']['runner'])
+                abort(500)
+
+            # now that we have all artifacts in place, add them to the task
+            for artifact in inputs.values():
+                db.session.add(Task2Artifact(artifact=artifact, task=task,
+                                             linktype="input"))
 
         elif status in ['error', 'new']:
             task.data = data
