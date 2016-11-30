@@ -432,7 +432,7 @@ class Task2Resource(Resource):
             # to avoid hitting a max-file-per-dir limit
             basepath = "fkup://results/{t.id}/".format(t=task)
 
-            if calc.code.name == 'cp2k':
+            if calc.code.name == 'CP2K':
 
                 generated_input = {
                     'global': {
