@@ -326,10 +326,8 @@ class Task2ListResource(Resource):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
                  .join(TaskStatus)
-                 .join(Machine)
                  .options(
                      contains_eager('status'),
-                     contains_eager('machine')
                      ))
 
         if calculation is not None:
@@ -339,7 +337,7 @@ class Task2ListResource(Resource):
             query = query.filter(TaskStatus.name.in_(status))
 
         if machine is not None:
-            query = query.filter(Machine.shortname == machine)
+            query = query.filter(Task2.machine.has(shortname=machine))
 
         if limit is not None:
             query = query.limit(limit)
