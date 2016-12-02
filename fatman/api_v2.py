@@ -679,6 +679,9 @@ class Task2Resource(Resource):
             elif task.settings['machine']['runner'] == "direct":
                 # a direct runner uses the commands provided and runs them directly (hence the name)
                 pass
+            elif task.settings['machine']['runner'] == "mpirun":
+                # a mpi runner uses the commands provided and wraps them in mpirun
+                pass
             else:
                 app.logger.error("runner {} not (yet) supported", task.settings['machine']['runner'])
                 abort(500)
