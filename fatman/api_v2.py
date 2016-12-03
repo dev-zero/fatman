@@ -626,6 +626,11 @@ class Task2Resource(Resource):
                         cmd['args'] += args
                         break
 
+            # if the user specifies a new modules list, the one from command will get overridden
+            environment = dict(mergedicts(
+                environment,
+                calc.settings.get('command_environment', {})))
+
             # If the command defines arguments (currently only runner_args) for this machine,
             # merge them over the runner-specific settings.
             # This makes it possible to set an estimated runtime from the calculation object.
@@ -651,8 +656,7 @@ class Task2Resource(Resource):
                 'machine': machine_settings,
                 # we always export environment and commands for easier introspection, even
                 # though certain runners already contain them in their batch script
-                'environment': (
-                    command.environment if command.environment else {}),
+                'environment': environment,
                 'commands': commands,
                 'output_artifacts': calc.settings['output_artifacts'],
                 }
