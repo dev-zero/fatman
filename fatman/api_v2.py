@@ -3,6 +3,7 @@ import bz2
 from urllib.parse import urlsplit
 from os.path import basename
 from io import TextIOWrapper, BytesIO
+import copy
 
 from flask import make_response
 from flask_marshmallow import Marshmallow
@@ -605,8 +606,10 @@ class Task2Resource(Resource):
 
             runner = task.machine.settings['runner']
 
-            commands = command.commands.copy()
-            machine_settings = task.machine.settings.copy()
+            # ensure that we don't accidentally modify ORM objects
+            commands = copy.deepcopy(command.commands)
+            environment = copy.deepcopy(command.environment) if command.environment else {}
+            machine_settings = copy.deepcopy(task.machine.settings)
 
             # if the command defines arguments for this runner, merge them over the machine settings
             # The machine has only one set of runner_args, namely for the runner it is supposed to run
