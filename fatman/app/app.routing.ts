@@ -12,6 +12,7 @@ import { Details }                   from './details/details-list.component';
 import { MethodList }                from './methods/methods-list.component';
 import { PseudoFamilyList }          from './pseudos/pseudofamily-list.component';
 import { DeltatestResultsComponent } from './deltatest/results.component';
+import { CalculationListComponent }  from './calculation/list.component';
 
 const appRoutes: Routes = [
   { path: '',                                      redirectTo: '/home', pathMatch: 'full' },
@@ -29,6 +30,7 @@ const appRoutes: Routes = [
   { path: 'pseudos',                               component : PseudoFamilyList },
   { path: 'pseudos/:family',                       component : PseudoFamilyList },
   { path: 'deltatest/results',                     component : DeltatestResultsComponent },
+  { path: 'calculations',                          component : CalculationListComponent },
 ];
 
 export const routing = RouterModule.forRoot(appRoutes);

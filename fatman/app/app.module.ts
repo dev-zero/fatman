@@ -23,11 +23,13 @@ import { MethoddetailsComponent }    from './details/methoddetails.component';
 import { TestdetailsComponent }      from './details/testdetails.component';
 import { ComparematrixComponent }    from './details/comparematrix.component';
 import { DeltatestResultsComponent } from './deltatest/results.component';
+import { CalculationListComponent }  from './calculation/list.component';
 
 import { ReportService }           from './reports/reports.service';
 import { TaskService }             from './tasks/tasks.service';
 import { PseudoService }           from './pseudos/pseudo.service';
 import { DeltatestResultsService } from './deltatest/results.service';
+import { CalculationsService }     from './calculation/calculations.service';
 
 import { TruncatePipe }                           from './details/testdetails.component';
 import { DeltavaluePipe }                         from './periodictable/periodictable-list.component';
@@ -59,6 +61,7 @@ import { IterablePipe, SettingsPipe, ConcatPipe } from './common/pipes';
     PseudoTable,
     PseudoTableElement,
     DeltatestResultsComponent,
+    CalculationListComponent,
     TruncatePipe,
     IterablePipe,
     SettingsPipe,
@@ -70,6 +73,7 @@ import { IterablePipe, SettingsPipe, ConcatPipe } from './common/pipes';
     TaskService,
     PseudoService,
     DeltatestResultsService,
+    CalculationsService
   ],
   bootstrap: [ AppComponent ]
 })

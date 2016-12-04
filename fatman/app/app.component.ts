@@ -21,6 +21,7 @@ import './rxjs-operators';
         <div id="main-navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li><a routerLink="/home" routerLinkActive="active">Home</a></li>
+            <li><a routerLink="/calculations" routerLinkActive="active">Calculations</a></li>
             <li><a routerLink="/tasks" routerLinkActive="active">Tasks</a></li>
             <li><a routerLink="/machinestatus" routerLinkActive="active">Machine Status</a></li>
             <li><a routerLink="/methodlist" routerLinkActive="active">Method Overview</a></li>
