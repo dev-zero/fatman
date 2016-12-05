@@ -65,7 +65,7 @@ var defaultConfig = {
   module: {
     preLoaders: [{
       test: /\.js$/,
-      loader: 'source-map-loader',
+      loader: 'source-maps-loader',
       exclude: [
         // these packages have problems with their sourcemaps
         path.join(__dirname, 'node_modules', 'rxjs'),
