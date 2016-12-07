@@ -116,6 +116,58 @@ class ArtifactDownloadResource(Resource):
         abort(500)
 
 
+class BasisSetSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'self': ma.URLFor('basissetresource', bid='<id>'),
+        'collection': ma.URLFor('basissetlistresource'),
+        })
+
+    family = fields.Str(attribute='family.name')
+
+    class Meta:
+        model = BasisSet
+        exclude = ('calculations', 'calculation_associations', )
+
+
+class BasisSetListResource(Resource):
+    def get(self):
+        schema = BasisSetSchema(exclude=('basis', ), many=True)
+        return schema.jsonify(BasisSet.query.all())
+
+    basisset_args = {
+        'element': fields.String(required=True),
+        'family': fields.Str(
+            required=True,
+            validate=must_exist_in_db(BasisSetFamily, 'name')),
+        }
+    file_args = {
+        'basis': fields.Field(required=True)
+        }
+
+    @use_kwargs(basisset_args)
+    @use_kwargs(file_args, locations=('files', ))
+    def post(self, element, family, basis):
+        family = (BasisSetFamily.query
+                  .filter_by(name=family)
+                  .one())
+
+        basisset = BasisSet(
+            element=element,
+            family=family,
+            basis=TextIOWrapper(basis, encoding='utf-8').read())
+
+        db.session.add(basisset)
+        db.session.commit()
+        schema = BasisSetSchema()
+        return schema.jsonify(basisset)
+
+
+class BasisSetResource(Resource):
+    def get(self, bid):
+        schema = BasisSetSchema()
+        return schema.jsonify((BasisSet.query.get_or_404(bid)))
+
+
 class CalculationCollectionSchema(ma.ModelSchema):
     _links = ma.Hyperlinks({
         'self': ma.URLFor('calculationcollectionresource', ccid='<id>'),
@@ -153,16 +205,9 @@ class CalculationListSchema(ma.ModelSchema):
         })
 
 
-class BasisSetSchema(ma.ModelSchema):
-    family = fields.Str(attribute='family.name')
-
-    class Meta:
-        model = BasisSet
-
-
 class CalculationBasisSetAssociationSchema(ma.ModelSchema):
     basis_set = fields.Nested(
-        BasisSetSchema(only=('id', 'family', 'element', ))
+        BasisSetSchema(exclude=('basis', ))
         )
     type = fields.Str(attribute='btype')
 
@@ -833,3 +878,5 @@ api.add_resource(ArtifactResource, '/artifacts/<uuid:aid>')
 api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/download')
 api.add_resource(StructureListResource_v2, '/structures')
 api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')
+api.add_resource(BasisSetListResource, '/basissets')
+api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
