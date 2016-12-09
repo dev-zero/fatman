@@ -58,9 +58,9 @@ def must_exist_in_db(model, field='id'):
 
 class ArtifactSchema(ma.Schema):
     _links = ma.Hyperlinks({
-        'self': ma.URLFor('artifactresource', aid='<id>'),
-        'collection': ma.URLFor('artifactlistresource'),
-        'download': ma.URLFor('artifactdownloadresource', aid='<id>'),
+        'self': ma.AbsoluteURLFor('artifactresource', aid='<id>'),
+        'collection': ma.AbsoluteURLFor('artifactlistresource'),
+        'download': ma.AbsoluteURLFor('artifactdownloadresource', aid='<id>'),
         })
 
     class Meta:
@@ -118,8 +118,8 @@ class ArtifactDownloadResource(Resource):
 
 class BasisSetSchema(ma.ModelSchema):
     _links = ma.Hyperlinks({
-        'self': ma.URLFor('basissetresource', bid='<id>'),
-        'collection': ma.URLFor('basissetlistresource'),
+        'self': ma.AbsoluteURLFor('basissetresource', bid='<id>'),
+        'collection': ma.AbsoluteURLFor('basissetlistresource'),
         })
 
     family = fields.Str(attribute='family.name')
@@ -170,8 +170,8 @@ class BasisSetResource(Resource):
 
 class CalculationCollectionSchema(ma.ModelSchema):
     _links = ma.Hyperlinks({
-        'self': ma.URLFor('calculationcollectionresource', ccid='<id>'),
-        'collection': ma.URLFor('calculationcollectionlistresource'),
+        'self': ma.AbsoluteURLFor('calculationcollectionresource', ccid='<id>'),
+        'collection': ma.AbsoluteURLFor('calculationcollectionlistresource'),
         })
 
     class Meta:
@@ -199,9 +199,9 @@ class CalculationListSchema(ma.ModelSchema):
     structure = fields.Str(attribute='structure.name')
     test = fields.Str(attribute='test.name')
     _links = ma.Hyperlinks({
-        'self': ma.URLFor('calculationresource', cid='<id>'),
-        'collection': ma.URLFor('calculationlistresource'),
-        'tasks': ma.URLFor('calculationtask2listresource', cid='<id>'),
+        'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
+        'collection': ma.AbsoluteURLFor('calculationlistresource'),
+        'tasks': ma.AbsoluteURLFor('calculationtask2listresource', cid='<id>'),
         })
 
 
@@ -343,9 +343,9 @@ class Task2ListSchema(ma.ModelSchema):
     priority = fields.Int()
 
     _links = ma.Hyperlinks({
-        'self': ma.URLFor('task2resource', tid='<id>'),
-        'collection': ma.URLFor('task2listresource'),
-        'uploads': ma.URLFor('task2uploadresource', tid='<id>'),
+        'self': ma.AbsoluteURLFor('task2resource', tid='<id>'),
+        'collection': ma.AbsoluteURLFor('task2listresource'),
+        'uploads': ma.AbsoluteURLFor('task2uploadresource', tid='<id>'),
         })
 
 
@@ -783,8 +783,8 @@ class StructureSchema(ma.ModelSchema):
 
     sets = fields.DelimitedList(fields.Str())
     _links = ma.Hyperlinks({
-        'self': ma.URLFor('structureresource_v2', sid='<id>'),
-        'collection': ma.URLFor('structurelistresource_v2'),
+        'self': ma.AbsoluteURLFor('structureresource_v2', sid='<id>'),
+        'collection': ma.AbsoluteURLFor('structurelistresource_v2'),
         })
 
     class Meta:
