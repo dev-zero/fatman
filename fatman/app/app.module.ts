@@ -6,24 +6,25 @@ import { HttpModule }     from '@angular/http';
 import { AppComponent }   from './app.component';
 import { routing }        from './app.routing';
 
-import { Home }                      from './home/home';
-import { TasksStats }                from './tasks/tasks-stats.component';
-import { TasksList }                 from './tasks/tasks-list.component';
-import { MachineStatus }             from './machinestatus/machinestatus-list.component';
-import { Reports }                   from './reports/reports-list.component';
-import { ReportsComparison }         from './reports/reports-comparison.component';
-import { ReportsElementComparison }  from './reports/reports-elementcomparison.component';
-import { Periodictable }             from './periodictable/periodictable-list.component';
-import { MethodList }                from './methods/methods-list.component';
-import { PseudoFamilyList }          from './pseudos/pseudofamily-list.component';
-import { PseudoTable }               from './pseudos/pseudo-table.component';
-import { PseudoTableElement }        from './pseudos/pseudo-table-element.component';
-import { Details }                   from './details/details-list.component';
-import { MethoddetailsComponent }    from './details/methoddetails.component';
-import { TestdetailsComponent }      from './details/testdetails.component';
-import { ComparematrixComponent }    from './details/comparematrix.component';
-import { DeltatestResultsComponent } from './deltatest/results.component';
-import { CalculationListComponent }  from './calculation/list.component';
+import { Home }                       from './home/home';
+import { TasksStats }                 from './tasks/tasks-stats.component';
+import { TasksList }                  from './tasks/tasks-list.component';
+import { MachineStatus }              from './machinestatus/machinestatus-list.component';
+import { Reports }                    from './reports/reports-list.component';
+import { ReportsComparison }          from './reports/reports-comparison.component';
+import { ReportsElementComparison }   from './reports/reports-elementcomparison.component';
+import { Periodictable }              from './periodictable/periodictable-list.component';
+import { MethodList }                 from './methods/methods-list.component';
+import { PseudoFamilyList }           from './pseudos/pseudofamily-list.component';
+import { PseudoTable }                from './pseudos/pseudo-table.component';
+import { PseudoTableElement }         from './pseudos/pseudo-table-element.component';
+import { Details }                    from './details/details-list.component';
+import { MethoddetailsComponent }     from './details/methoddetails.component';
+import { TestdetailsComponent }       from './details/testdetails.component';
+import { ComparematrixComponent }     from './details/comparematrix.component';
+import { DeltatestResultsComponent }  from './deltatest/results.component';
+import { CalculationListComponent }   from './calculation/list.component';
+import { CalculationDetailComponent } from './calculation/detail.component';
 
 import { ReportService }           from './reports/reports.service';
 import { TaskService }             from './tasks/tasks.service';
@@ -62,6 +63,7 @@ import { IterablePipe, SettingsPipe, ConcatPipe } from './common/pipes';
     PseudoTableElement,
     DeltatestResultsComponent,
     CalculationListComponent,
+    CalculationDetailComponent,
     TruncatePipe,
     IterablePipe,
     SettingsPipe,

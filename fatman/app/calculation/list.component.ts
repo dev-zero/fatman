@@ -1,4 +1,6 @@
+
 import { Component, OnInit } from '@angular/core';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 
 import { CalculationsService } from './calculations.service';
 import { Calculation } from './calculation';
@@ -18,7 +20,8 @@ import { Calculation } from './calculation';
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let calculation of calculations">
+          <tr *ngFor="let calculation of calculations"
+            (click)="onSelect(calculation)">
             <td>{{ calculation.id }}</td>
             <td>{{ calculation.test }}</td>
             <td>{{ calculation.structure }}</td>
@@ -36,7 +39,13 @@ export class CalculationListComponent implements OnInit {
   errorMessage: string;
   calculations: Calculation[] = [];
 
-  constructor(private _calculationsService: CalculationsService) { }
+  private _selectedId: string;
+
+  constructor(
+    private _calculationsService: CalculationsService,
+    private _route: ActivatedRoute,
+    private _router: Router
+  ) {}
 
   ngOnInit() {
     this.getCalculations();
@@ -49,9 +58,7 @@ export class CalculationListComponent implements OnInit {
     );
   }
 
-  onSelect() {
-    this.calculations = [];
-    this.getCalculations();
+  onSelect(calculation: Calculation) {
+    this._router.navigate(['/calculations', calculation.id]);
   }
 }
-//  vim: set ts=2 sw=2 tw=0 :

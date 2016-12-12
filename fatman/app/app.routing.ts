@@ -1,18 +1,19 @@
 
 import { Routes, RouterModule } from '@angular/router';
 
-import { Home }                      from './home/home';
-import { TasksStats }                from './tasks/tasks-stats.component';
-import { MachineStatus }             from './machinestatus/machinestatus-list.component';
-import { Reports }                   from './reports/reports-list.component';
-import { ReportsComparison }         from './reports/reports-comparison.component';
-import { ReportsElementComparison }  from './reports/reports-elementcomparison.component';
-import { Periodictable }             from './periodictable/periodictable-list.component';
-import { Details }                   from './details/details-list.component';
-import { MethodList }                from './methods/methods-list.component';
-import { PseudoFamilyList }          from './pseudos/pseudofamily-list.component';
-import { DeltatestResultsComponent } from './deltatest/results.component';
-import { CalculationListComponent }  from './calculation/list.component';
+import { Home }                       from './home/home';
+import { TasksStats }                 from './tasks/tasks-stats.component';
+import { MachineStatus }              from './machinestatus/machinestatus-list.component';
+import { Reports }                    from './reports/reports-list.component';
+import { ReportsComparison }          from './reports/reports-comparison.component';
+import { ReportsElementComparison }   from './reports/reports-elementcomparison.component';
+import { Periodictable }              from './periodictable/periodictable-list.component';
+import { Details }                    from './details/details-list.component';
+import { MethodList }                 from './methods/methods-list.component';
+import { PseudoFamilyList }           from './pseudos/pseudofamily-list.component';
+import { DeltatestResultsComponent }  from './deltatest/results.component';
+import { CalculationListComponent }   from './calculation/list.component';
+import { CalculationDetailComponent } from './calculation/detail.component';
 
 const appRoutes: Routes = [
   { path: '',                                      redirectTo: '/home', pathMatch: 'full' },
@@ -31,6 +32,7 @@ const appRoutes: Routes = [
   { path: 'pseudos/:family',                       component : PseudoFamilyList },
   { path: 'deltatest/results',                     component : DeltatestResultsComponent },
   { path: 'calculations',                          component : CalculationListComponent },
+  { path: 'calculations/:id',                      component : CalculationDetailComponent },
 ];
 
 export const routing = RouterModule.forRoot(appRoutes);
