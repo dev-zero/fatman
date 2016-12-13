@@ -253,10 +253,9 @@ class CalculationListResource(Resource):
         'restrictions': fields.Dict(missing=None),
         }
 
-    @apiauth.login_required
-    @use_kwargs(calculation_args)
-    def post(self, collection, test, structure, code,
-             pseudo_family, basis_set_family, restrictions):
+    @staticmethod
+    def new_calculation(collection, test, structure, code,
+            pseudo_family, basis_set_family, restrictions):
 
         # replace IDs by ORM objects where necessary:
 
@@ -324,6 +323,13 @@ class CalculationListResource(Resource):
                 assoc = CalculationBasisSet(btype=btype, basis_set=basis_set)
                 calculation.basis_set_associations.append(assoc)
 
+        return calculation
+
+
+    @apiauth.login_required
+    @use_kwargs(calculation_args)
+    def post(self, **kwargs):
+        calculation = self.new_calculation(**kwargs)
         db.session.add(calculation)
         db.session.commit()
         schema = CalculationSchema()
@@ -859,6 +865,60 @@ class StructureResource_v2(Resource):
         return schema.jsonify((Structure.query.get_or_404(sid)))
 
 
+class StructureSetSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'self': ma.AbsoluteURLFor('structuresetresource', name='<name>'),
+        'collection': ma.AbsoluteURLFor('structuresetlistresource'),
+        'calculations': ma.AbsoluteURLFor('structuresetcalculationslistresource', name='<name>'),
+        })
+
+    class Meta:
+        model = StructureSet
+        exclude = ('id', 'structures', )
+
+
+class StructureSetListResource(Resource):
+    def get(self):
+        schema = StructureSetSchema(many=True)
+        return schema.jsonify(StructureSet.query.all())
+
+
+class StructureSetCalculationsListResource(Resource):
+    def get(self, name):
+        # validate the name
+        StructureSet.query.filter_by(name=name).one()
+
+        schema = CalculationListSchema(many=True)
+        return schema.jsonify(Calculation.query
+                              .join(Structure)
+                              .join(StructureSet, Structure.sets)
+                              .filter(StructureSet.name == name)
+                              .all())
+
+    @apiauth.login_required
+    @use_kwargs({k:v for k, v in CalculationListResource.calculation_args.items() if k != 'structure'})
+    def post(self, name, **kwargs):
+        # validate the name
+        StructureSet.query.filter_by(name=name).one()
+
+        structures = (db.session.query(Structure.name)
+                      .join(StructureSet, Structure.sets)
+                      .filter(StructureSet.name == name)
+                      .all())
+
+        calculations = [CalculationListResource.new_calculation(structure=s, **kwargs) for s in structures]
+        db.session.bulk_save_objects(calculations)
+        db.session.commit()
+        schema = CalculationSchema(many=True)
+        return schema.jsonify(calculations)
+
+
+class StructureSetResource(Resource):
+    def get(self, name):
+        schema = StructureSetSchema()
+        return schema.jsonify(StructureSet.query.filter_by(name=name).one())
+
+
 # This error handler is necessary for usage with Flask-RESTful
 @parser.error_handler
 def handle_request_parsing_error(err):
@@ -883,6 +943,9 @@ api.add_resource(Task2UploadResource, '/tasks/<uuid:tid>/uploads')
 api.add_resource(ArtifactListResource, '/artifacts')
 api.add_resource(ArtifactResource, '/artifacts/<uuid:aid>')
 api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/download')
+api.add_resource(StructureSetListResource, '/structuresets')
+api.add_resource(StructureSetResource, '/structuresets/<string:name>')
+api.add_resource(StructureSetCalculationsListResource, '/structuresets/<string:name>/calculations')
 api.add_resource(StructureListResource_v2, '/structures')
 api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')
 api.add_resource(BasisSetListResource, '/basissets')
