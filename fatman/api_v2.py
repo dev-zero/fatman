@@ -19,7 +19,7 @@ from sqlalchemy.orm import contains_eager
 from ase import io as ase_io
 import numpy as np
 
-from . import app, db, resultfiles
+from . import app, db, resultfiles, apiauth
 from .models import (
     Calculation,
     CalculationCollection,
@@ -144,6 +144,7 @@ class BasisSetListResource(Resource):
         'basis': fields.Field(required=True)
         }
 
+    @apiauth.login_required
     @use_kwargs(basisset_args)
     @use_kwargs(file_args, locations=('files', ))
     def post(self, element, family, basis):
@@ -252,6 +253,7 @@ class CalculationListResource(Resource):
         'restrictions': fields.Dict(missing=None),
         }
 
+    @apiauth.login_required
     @use_kwargs(calculation_args)
     def post(self, collection, test, structure, code,
              pseudo_family, basis_set_family, restrictions):
@@ -391,6 +393,7 @@ class Task2ListResource(Resource):
 
         return schema.jsonify(query.all())
 
+    @apiauth.login_required
     @use_kwargs({
         'calculation': fields.UUID(required=True,
                                    validate=must_exist_in_db(Calculation)),
@@ -403,6 +406,7 @@ class Task2ListResource(Resource):
 
 
 class CalculationTask2ListResource(Task2ListResource):
+    @apiauth.login_required
     def post(self, cid):
         task = Task2(cid)
         db.session.add(task)
@@ -449,6 +453,7 @@ class Task2Resource(Resource):
         schema = Task2Schema()
         return schema.jsonify((Task2.query.get_or_404(tid)))
 
+    @apiauth.login_required
     @use_kwargs({
         'status': fields.Str(required=True,
                              validate=lambda k: k in TASK_STATES.keys()),
@@ -761,6 +766,7 @@ class Task2UploadResource(Resource):
         'data': fields.Field(required=True)
         }
 
+    @apiauth.login_required
     @use_kwargs(upload_args)
     @use_kwargs(file_args, locations=('files', ))
     def post(self, tid, name, data):
@@ -811,6 +817,7 @@ class StructureListResource_v2(Resource):
         'geometry': fields.Field(required=True)
         }
 
+    @apiauth.login_required
     @use_kwargs(structure_args)
     @use_kwargs(file_args, locations=('files', ))
     def post(self, name, sets, pbc, gformat, geometry):
