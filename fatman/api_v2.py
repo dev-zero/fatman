@@ -257,7 +257,7 @@ class CalculationListResource(Resource):
 
     @staticmethod
     def new_calculation(collection, test, structure, code,
-            pseudo_family, basis_set_family, restrictions):
+                        pseudo_family, basis_set_family, restrictions):
 
         # replace IDs by ORM objects where necessary:
 
@@ -326,7 +326,6 @@ class CalculationListResource(Resource):
                 calculation.basis_set_associations.append(assoc)
 
         return calculation
-
 
     @apiauth.login_required
     @use_kwargs(calculation_args)
@@ -921,9 +920,9 @@ class StructureSetCalculationsListResource(Resource):
             try:
                 flask.abort(422)
             except HTTPException as exc:
-                exc.data = {'errors':
-                    {'basis_set_family':
-                        ['structure {}: {}'.format(s, e) for s, e in errors.items()],
+                exc.data = {
+                    'errors': {
+                        'basis_set_family': ['structure {}: {}'.format(s, e) for s, e in errors.items()],
                         },
                     }
                 raise exc
