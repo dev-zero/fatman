@@ -5,6 +5,7 @@ from os.path import basename
 from io import TextIOWrapper, BytesIO
 import copy
 
+import flask
 from flask import make_response
 from flask_marshmallow import Marshmallow
 from flask_restful import Api, Resource
@@ -14,6 +15,7 @@ from webargs.flaskparser import (
     parser,
     abort,
     )
+from werkzeug.exceptions import HTTPException
 from sqlalchemy.orm import contains_eager
 
 from ase import io as ase_io
@@ -896,7 +898,7 @@ class StructureSetCalculationsListResource(Resource):
                               .all())
 
     @apiauth.login_required
-    @use_kwargs({k:v for k, v in CalculationListResource.calculation_args.items() if k != 'structure'})
+    @use_kwargs({k: v for k, v in CalculationListResource.calculation_args.items() if k != 'structure'})
     def post(self, name, **kwargs):
         # validate the name
         StructureSet.query.filter_by(name=name).one()
@@ -906,7 +908,26 @@ class StructureSetCalculationsListResource(Resource):
                       .filter(StructureSet.name == name)
                       .all())
 
-        calculations = [CalculationListResource.new_calculation(structure=s, **kwargs) for s in structures]
+        calculations = []
+        errors = {}
+        for structure in structures:
+            try:
+                calculations.append(CalculationListResource.new_calculation(structure=structure.name, **kwargs))
+            except ValidationError as exc:
+                errors[structure.name] = exc
+
+        if errors:
+            # get an original Flask exception and augment it with data
+            try:
+                flask.abort(422)
+            except HTTPException as exc:
+                exc.data = {'errors':
+                    {'basis_set_family':
+                        ['structure {}: {}'.format(s, e) for s, e in errors.items()],
+                        },
+                    }
+                raise exc
+
         db.session.bulk_save_objects(calculations)
         db.session.commit()
         schema = CalculationSchema(many=True)
