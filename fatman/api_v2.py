@@ -757,7 +757,10 @@ class Task2Resource(Resource):
 
         elif status in ['error', 'new', 'cancelled', 'running', 'deferred']:
             if data:
-                task.data = mergedicts(task.data, data, True)
+                if task.data:
+                    task.data = mergedicts(task.data, data, True)
+                else:
+                    task.data = data
 
         task.status = TaskStatus.query.filter_by(name=status).one()
         db.session.commit()
