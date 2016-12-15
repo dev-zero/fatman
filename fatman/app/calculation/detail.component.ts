@@ -9,35 +9,33 @@ import { CalculationsService } from './calculations.service';
 
 @Component({
   template: `
-  <div *ngIf="calculation">
-    <h3>Calculation {{ calculation.id }}</h3>
-    <div>
-      <label>Id: </label>{{ calculation.id }}
-	</div>
-    <p>
-      <button (click)="gotoCalculations()">Back</button>
-    </p>
+  <div class="row">
+    <div class="col-md-12" *ngIf="calculation">
+      <h3>Calculation {{ calculation.id }}</h3>
+      <p>
+        <button (click)="gotoCalculations()">Back</button>
+      </p>
 
-    <div class="panel panel-default">
-      <div class="panel-heading">Tasks</div>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Created</th>
-            <th>Last update</th>
-            <th>Machine</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let task of calculation.tasks">
-            <td>{{ task.ctime }}</td>
-            <td>{{ task.mtime }}</td>
-            <td>{{ task.machine }}</td>
-            <td>{{ task.status }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <h4>Tasks</h4>
+
+      <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default"
+          *ngFor="let task of calculation.tasks"
+          [ngClass]="{'panel-danger': task.status == 'error'}"
+          [ngClass]="{'panel-warning': task.status == 'running'}"
+          [ngClass]="{'panel-success': task.status == 'done'}">
+          <div class="panel-heading">
+            Task {{ task.id }} <strong class="pull-right">{{ task.status | uppercase }}</strong>
+          </div>
+          <div class="panel-body">
+            <dl class="dl-horizontal">
+              <dt>Last Update</dt><dd>{{ task.mtime }}</dd>
+              <dt>Created</dt><dd>{{ task.ctime }}</dd>
+              <dt>Machine</dt><dd>{{ task.machine }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   `,
