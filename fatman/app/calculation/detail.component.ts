@@ -21,9 +21,11 @@ import { CalculationsService } from './calculations.service';
       <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default"
           *ngFor="let task of calculation.tasks"
-          [ngClass]="{'panel-danger': task.status == 'error'}"
-          [ngClass]="{'panel-warning': task.status == 'running'}"
-          [ngClass]="{'panel-success': task.status == 'done'}">
+          [ngClass]="{
+            'panel-danger': task.status == 'error',
+            'panel-warning': task.status == 'running',
+            'panel-success': task.status == 'done'
+            }">
           <div class="panel-heading">
             Task {{ task.id }} <strong class="pull-right">{{ task.status | uppercase }}</strong>
           </div>
