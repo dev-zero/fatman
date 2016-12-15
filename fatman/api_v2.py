@@ -768,7 +768,7 @@ class Task2Resource(Resource):
                 db.session.add(Task2Artifact(artifact=artifact, task=task,
                                              linktype="input"))
 
-        elif status in ['error', 'new', 'cancelled', 'running', 'deferred']:
+        elif status in ['error', 'new', 'cancelled', 'running', 'deferred', 'done']:
             if data:
                 if task.data:
                     task.data = mergedicts(task.data, data, True)
