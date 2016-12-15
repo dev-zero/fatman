@@ -5,14 +5,7 @@ export interface Calculation {
   collection: string;
   test: string;
   structure: string;
-}
-
-export function toCalculation(r: any) : Calculation {
-  return <Calculation>({
-    id: r.id,
-    code: r.code,
-    collection: r.collection,
-    test: r.test,
-    structure: r.structure
-  });
+  _links: { [name: string]: string };
+  settings?: any;
+  tasks?: any;
 }

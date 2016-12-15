@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
 
-import { Calculation, toCalculation } from './calculation';
+import { Calculation } from './calculation';
 
 @Injectable()
 export class CalculationsService {
@@ -32,13 +32,24 @@ export class CalculationsService {
   }
 
   public getCalculation(id: string) : Observable<Calculation> {
-    return Observable.of(this._calculations.find(calc => calc.id == id));
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    return this._http.get(this._calculationsUrl + '/' + id, {headers: headers})
+      .map(response => this._mapCalculation(response))
+      .catch(this.handleError);
   }
 
   private _mapCalculations(response: Response) : Calculation[] {
     this._observable = null;
-    this._calculations = response.json().map(toCalculation);
+    this._calculations = response.json().map(calc => calc as Calculation);
     return this._calculations;
+  }
+
+  private _mapCalculation(response: Response) : Calculation {
+    let calculation = response.json() as Calculation;
+    // sort by inverse mtime:
+    calculation.tasks = calculation.tasks.sort((t1,t2) => Date.parse(t2['mtime']) - Date.parse(t1['mtime']));
+    return calculation;
   }
 
   private handleError(error: any) {
