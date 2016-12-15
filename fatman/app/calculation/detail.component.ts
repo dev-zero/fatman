@@ -31,7 +31,8 @@ import { CalculationsService } from './calculations.service';
             <h4 class="panel-title">
               <a role="button" data-toggle="collapse" data-parent="#taskAccordion"
                 [href]="'#collapse_' + task.id"
-                [attr.aria-controls]="'collapse_' + task.id">
+                [attr.aria-controls]="'collapse_' + task.id"
+                [attr.aria-expanded]="isFirst">
                 Task {{ task.id }} <span class="pull-right">{{ task.status | uppercase }}</span>
               </a>
             </h4>
