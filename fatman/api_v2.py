@@ -16,7 +16,7 @@ from webargs.flaskparser import (
     abort,
     )
 from werkzeug.exceptions import HTTPException
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import contains_eager, joinedload
 
 from ase import io as ase_io
 import numpy as np
@@ -221,6 +221,8 @@ class CalculationSchema(CalculationListSchema):
         attribute='basis_set_associations',
         many=True)
 
+    tasks = fields.Nested('Task2ListSchema', many=True)
+
     class Meta:
         model = Calculation
         exclude = ('basis_set_associations', )
@@ -339,8 +341,19 @@ class CalculationListResource(Resource):
 
 class CalculationResource(Resource):
     def get(self, cid):
+        calculation = (Calculation.query
+                       .options(joinedload('tasks').joinedload('machine'))
+                       .options(joinedload('basis_sets').load_only("id", "element"))
+                       .options(joinedload('basis_set_associations'))
+                       .options(joinedload('pseudos').load_only("id", "element"))
+                       .options(joinedload('collection'))
+                       .options(joinedload('code'))
+                       .options(joinedload('structure').load_only("id", "name"))
+                       .options(joinedload('test'))
+                       .options(joinedload('testresults'))
+                       .get_or_404(cid))
         schema = CalculationSchema()
-        return schema.jsonify((Calculation.query.get_or_404(cid)))
+        return schema.jsonify(calculation)
 
 
 class Task2ListSchema(ma.ModelSchema):

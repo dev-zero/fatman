@@ -364,7 +364,9 @@ class Calculation(Base):
     collection_id = Column(UUID(as_uuid=True),
                            ForeignKey('calculation_collection.id'),
                            nullable=False)
-    collection = relationship("CalculationCollection", backref="calculations")
+    collection = relationship("CalculationCollection",
+                              lazy='joined', innerjoin=True,
+                              backref=backref("calculations", lazy='dynamic'))
 
     test_id = Column(Integer, ForeignKey('test.id'))
     test = relationship("Test", backref="calculations")
