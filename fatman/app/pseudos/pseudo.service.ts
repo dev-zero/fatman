@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
 
-import { Pseudo, toPseudo, PseudoFamily, toPseudoFamily } from './pseudo.ts';
+import { Pseudo, toPseudo, PseudoFamily, toPseudoFamily } from './pseudo';
 
 @Injectable()
 export class PseudoService {
