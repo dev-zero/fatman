@@ -254,12 +254,20 @@ class CalculationListResource(Resource):
             'ri_aux': fields.Str(validate=must_exist_in_db(BasisSetFamily,
                                                            'name')),
             }),
+        'basis_set_family_fallback': fields.Nested({
+            'default': fields.Str(validate=must_exist_in_db(BasisSetFamily,
+                                                            'name')),
+            'ri_aux': fields.Str(validate=must_exist_in_db(BasisSetFamily,
+                                                           'name')),
+            },
+            required=False),
         'restrictions': fields.Dict(missing=None),
         }
 
     @staticmethod
     def new_calculation(collection, test, structure, code,
-                        pseudo_family, basis_set_family, restrictions):
+                        pseudo_family, basis_set_family, basis_set_family_fallback,
+                        restrictions):
 
         # replace IDs by ORM objects where necessary:
 
@@ -299,9 +307,33 @@ class CalculationListResource(Resource):
 
             # check that we got a basis set for each kind
             if len(all_basis_sets[btype]) != len(kinds):
-                raise ValidationError(("Basis Set Family {}"
-                                       " does not cover all kinds required"
-                                       ).format(family_name))
+                contained_kinds = set(b.element for b in all_basis_sets[btype])
+                missing_kinds = kinds - contained_kinds
+
+                # if there is no fallback at all
+                # or no fallback for the same kind of basis set types (ORB, RI, etc.)
+                # we are done here:
+                if not basis_set_family_fallback or btype not in basis_set_family_fallback.keys():
+                    raise ValidationError(("Basis Set Family {} does not contain basis sets for {}"
+                                           ).format(family_name, ', '.join(missing_kinds)))
+
+                fallback_basis_sets = (BasisSetFamily.query
+                                       .filter_by(name=basis_set_family_fallback[btype])
+                                       .one().basissets
+                                       .filter(BasisSet.element.in_(missing_kinds))
+                                       .all())
+
+                if len(fallback_basis_sets) != len(missing_kinds):
+                    missing_kinds = missing_kinds - set(b.element for b in fallback_basis_sets)
+
+                    raise ValidationError(("Neither Basis Set Family {} nor {} contain basis sets for {}"
+                                           ).format(family_name,
+                                                    basis_set_family_fallback[btype],
+                                                    ', '.join(missing_kinds)))
+
+                # if we found the missing basis sets in the fallback family, add them to the list
+                all_basis_sets[btype] += fallback_basis_sets
+
 
         default_settings = None
 
