@@ -277,7 +277,8 @@ class CalculationListResource(Resource):
             test = Test.query.filter_by(name=test).one()
 
         collection = (CalculationCollection.query
-                      .filter_by(name=collection).one())
+                      .filter_by(name=collection)
+                      .one())
 
         structure = (Structure.query
                      .filter_by(name=structure).one())
@@ -332,12 +333,15 @@ class CalculationListResource(Resource):
                                                     ', '.join(missing_kinds)))
 
                 # if we found the missing basis sets in the fallback family, add them to the list
+                app.logger.info(
+                    "found basis sets for %s for structure %s in fallback family", ', '.join(missing_kinds),
+                    structure.name)
                 all_basis_sets[btype] += fallback_basis_sets
 
 
         default_settings = None
 
-        if test and collection:
+        if test and code:
             default_settings = (db.session
                                 .query(CalculationDefaultSettings.settings)
                                 .filter_by(code=code, test=test)
@@ -961,7 +965,9 @@ class StructureSetCalculationsListResource(Resource):
         for structure in structures:
             try:
                 calculations.append(CalculationListResource.new_calculation(structure=structure.name, **kwargs))
+                db.session.add(calculations[-1])
             except ValidationError as exc:
+                app.logger.exception("Creating calculation for structure %s failed", structure.name)
                 errors[structure.name] = exc
 
         if errors:
@@ -976,7 +982,6 @@ class StructureSetCalculationsListResource(Resource):
                     }
                 raise exc
 
-        db.session.bulk_save_objects(calculations)
         db.session.commit()
         schema = CalculationSchema(many=True)
         return schema.jsonify(calculations)
