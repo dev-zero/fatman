@@ -20,7 +20,7 @@ import { CalculationsService } from './calculations.service';
 
       <div class="panel-group" id="taskAccordion" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default"
-          *ngFor="let task of calculation.tasks"
+          *ngFor="let task of calculation.tasks; let isFirst = first"
           [ngClass]="{
             'panel-danger': task.status == 'error',
             'panel-warning': task.status == 'running',
@@ -37,8 +37,10 @@ import { CalculationsService } from './calculations.service';
               </a>
             </h4>
           </div>
-          <div class="panel-collapse collapse in" role="tabpanel" 
-              [id]="'collapse_' + task.id" [attr.aria-labelledby]="'heading_' + task.id">
+          <div class="panel-collapse collapse" role="tabpanel" 
+              [class.in]="isFirst"
+              [id]="'collapse_' + task.id"
+              [attr.aria-labelledby]="'heading_' + task.id">
             <div class="panel-body">
               <dl class="dl-horizontal">
                 <dt>Last Update</dt><dd>{{ task.mtime }}</dd>
