@@ -1,16 +1,31 @@
 
 import bz2
 from collections import OrderedDict
+from urllib.parse import urlsplit
+
+from ase.units import kcal, mol
 
 from celery.utils.log import get_task_logger
 from celery import group
 
-from ase.units import kcal, mol
-
 from sqlalchemy.orm import joinedload, contains_eager
 
 from . import capp, resultfiles, tools, db, cache
-from .models import Result, Task, Method, Test, TestResult
+from .models import (
+    Result,
+    Task,
+    Method,
+    Test,
+    TestResult,
+    Task2,
+    Calculation,
+    Artifact,
+    TaskStatus,
+    TestResult2,
+    TestResult2Collection,
+    Pseudopotential,
+    )
+
 from .tools import Json2Atoms, deltatest_ev_curve, gmtkn_coefficients
 
 logger = get_task_logger(__name__)
@@ -291,5 +306,213 @@ def postprocess_result(rid, update=False):
         logger.error("No TestResult process function found for Test %s",
                      test.name)
         return False
+
+
+@capp.task
+def generate_calculation_results(calc_id, update=False):
+    """
+    Parse the outputs attached to the first succeeded task for the given calculation,
+    if the calculation does not have any results yet.
+
+    Args:
+        update: update the results if they already exist, careful: test results
+                based on this calculation are not automatically updated!
+    """
+    calc = (Calculation.query
+            .options(joinedload('code'))
+            .get(calc_id))
+
+    if calc is None:
+        logger.error("calculation %s: not found")
+        return False
+
+    if calc.results and not update:
+        logger.info("calculation %s: has already a result and update=False, skipping", calc.id)
+        return False
+
+    task = (calc.tasks_query
+            .filter(TaskStatus.name == 'done')
+            .order_by(Task2.mtime.desc())
+            .first())
+
+    if task is None:
+        logger.info("calculation %s: no successfully finished task found, skipping", calc.id)
+        return False
+
+    logger.info("calculation %s: taking results from task %s", calc.id, task.id)
+
+    if calc.code.name == 'CP2K':
+        resultfile_name = 'calc.out'
+    else:
+        logger.error("calculation %s: no parser available (yet) for code %s",
+                     calc.id, task.calculation.code.name)
+        return False
+
+    artifact = (task.outfiles
+                .filter(Artifact.name == resultfile_name)
+                .one_or_none())
+
+    if artifact is None:
+        logger.info("calculation %s: no artifact with name '%s' linked to task %s",
+                    calc.id, resultfile_name, task.id)
+        return False
+
+    scheme, nwloc, path, _, _ = urlsplit(artifact.path)
+
+    results = None
+
+    if scheme == 'fkup' and nwloc == 'results':
+        filepath = resultfiles.path(path[1:])
+
+        # Artifact.name contains a full path, including possible subdirs
+        compressed = artifact.mdata.get('compressed', None)
+
+        if compressed is None:
+            with open(filepath, 'r') as fhandle:
+                results = tools.get_data_from_output(fhandle, calc.code.name)
+        elif compressed == 'bz2':
+            with bz2.open(filepath, mode='rt') as fhandle:
+                results = tools.get_data_from_output(fhandle, calc.code.name)
+        else:
+            logger.error("unsupported compression scheme found: %s", compressed)
+            return False
+
+    else:
+        logger.error("unsupported storage scheme found: %s", scheme)
+        return False
+
+    if not results:
+        logger.error("calculation %s: no parseable data found in artifact %s",
+                     calc.id, artifact.id)
+        return False
+
+    task.calculation.results = results
+    db.session.commit()
+
+    return True
+
+
+@capp.task(bind=True)
+def generate_test_result_deltatest(self, calc_id, update=False, force_new=False):
+    """
+    Calculate the Δ-test value using a given calculation id if one does not exist already (see arguments).
+    Creates a new Test Result in a Test Result Collection named
+    after the Calculation Collection of the given calculation.
+
+    Args:
+        calc_id: the UUID of the calculation to be included in the generated test result
+        update: whether or not to update an already existing test result for the same collection and test
+        force_new: always create a new test result, irrespective of already existing ones
+    """
+
+    calc = (Calculation.query
+            .options(joinedload('test'))
+            .options(joinedload('collection'))
+            .get(calc_id))
+
+    tresult = (calc.testresults_query
+               .filter(TestResult2.test == calc.test)
+               .join(TestResult2.collections)
+               .filter(TestResult2Collection.name == calc.collection.name)
+               .first())
+
+    if tresult is not None and not (force_new or update):
+        logger.info("calculation %s: a test result for this test and collection already exists, skipping", calc.id)
+        return False
+
+    if force_new:
+        tresult = None
+
+    # getting the element from the first (and only) pseudo
+    element = calc.pseudos[0].element
+
+    result_data = {'element': element}
+
+    # from the same calculation collection as the given calculation,
+    # get the calculations for the same elements (selected via pseudos)
+    calcs = (Calculation.query
+             .filter_by(collection=calc.collection)
+             .options(joinedload('structure'))
+             .join(Calculation.pseudos)
+             .filter(Pseudopotential.element == element)
+             .limit(6)  # limit to one more than we can actually use, to catch errors
+             .all())
+
+    if len(calcs) < 5:
+        logger.info("Not enough datapoints to calculate deltatest value using calculation %s", calc.id)
+        return False
+
+    if len(calcs) > 5:
+        logger.critical("More than 5 elements found to calculate deltatest value using calculation %s", calc.id)
+        return False
+
+    for calc in calcs:
+        if not calc.results or 'total_energy' not in calc.results.keys():
+            logger.error("total_energy missing for calculation %s to calculate deltatest value", calc.id)
+            return False
+
+    lock_id = '{}-lock-{}-collection-{}'.format(self.name, calc.test.name, calc.collection.id)
+    if not cache.cache.add(lock_id, True, 60*60):
+        # another task is already calculating the deltavalue for this result
+        logger.info("Skipping deltatest calculation for %s, another calculation task is already running", calc.id)
+        return False
+
+    try:
+        energies = []
+        volumes = []
+        natom = 0
+
+        for calc in calcs:
+            struct = Json2Atoms(calc.structure.ase_structure)
+            natom = len(struct.get_atomic_numbers())
+
+            energies.append(calc.results['total_energy']/natom)
+            volumes.append(struct.get_volume()/natom)
+
+        result_data.update({
+            'energies': energies,
+            'volumes': volumes,
+            })
+
+        coeffs = deltatest_ev_curve(volumes, energies)
+
+        if isinstance(coeffs[0], complex) or (coeffs[0] == "fail"):
+            result_data['status'] = "unfittable"
+        else:
+            result_data.update({
+                'status': "fitted",
+                'coefficients': dict(zip(('v', 'e', 'B0', 'B1', 'R'), coeffs)),
+                })
+
+        if not tresult:
+            # get or create a new test result collection with the same name as the calc collection
+            trcollection = (TestResult2Collection.query
+                            .filter_by(name=calc.collection.name)
+                            .first())
+
+            if not trcollection:
+                trcollection = TestResult2Collection(name=calc.collection.name)
+
+            tresult = TestResult2(test=calc.test, data=result_data)
+            tresult.collections.append(trcollection)
+            tresult.calculations.extend(calcs)
+
+            db.session.add(tresult)
+
+        else:
+            tresult.data = result_data
+            tresult.calculations.clear()
+            tresult.calculations.extend(calcs)
+
+        db.session.commit()
+
+        logger.info("Calculated deltatest value for element %s in collection %s",
+                    element, calc.collection.id)
+
+    finally:
+        cache.cache.delete(lock_id)
+
+    # only if no exception was thrown somewhere above
+    return True
 
 #  vim: set ts=4 sw=4 tw=0 :
