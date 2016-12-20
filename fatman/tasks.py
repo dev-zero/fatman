@@ -393,35 +393,21 @@ def generate_calculation_results(calc_id, update=False):
 
 
 @capp.task(bind=True)
-def generate_test_result_deltatest(self, calc_id, update=False, force_new=False):
+def generate_test_result_deltatest(self, calc_id, tr_id=None):
     """
-    Calculate the Δ-test value using a given calculation id if one does not exist already (see arguments).
+    Calculate the Δ-test value using a given calculation id.
     Creates a new Test Result in a Test Result Collection named
     after the Calculation Collection of the given calculation.
 
     Args:
         calc_id: the UUID of the calculation to be included in the generated test result
-        update: whether or not to update an already existing test result for the same collection and test
-        force_new: always create a new test result, irrespective of already existing ones
+        tr_id: ID of a test result to update, rather than creating a new one
     """
 
     calc = (Calculation.query
             .options(joinedload('test'))
             .options(joinedload('collection'))
             .get(calc_id))
-
-    tresult = (calc.testresults_query
-               .filter(TestResult2.test == calc.test)
-               .join(TestResult2.collections)
-               .filter(TestResult2Collection.name == calc.collection.name)
-               .first())
-
-    if tresult is not None and not (force_new or update):
-        logger.info("calculation %s: a test result for this test and collection already exists, skipping", calc.id)
-        return False
-
-    if force_new:
-        tresult = None
 
     # getting the element from the first (and only) pseudo
     element = calc.pseudos[0].element
@@ -484,7 +470,13 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
                 'coefficients': dict(zip(('v', 'e', 'B0', 'B1', 'R'), coeffs)),
                 })
 
-        if not tresult:
+        if tr_id:
+            tresult = TestResult2.query.get(tr_id)
+            tresult.data = result_data
+            tresult.calculations.clear()
+            tresult.calculations.extend(calcs)
+
+        else:
             # get or create a new test result collection with the same name as the calc collection
             trcollection = (TestResult2Collection.query
                             .filter_by(name=calc.collection.name)
@@ -499,11 +491,6 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
 
             db.session.add(tresult)
 
-        else:
-            tresult.data = result_data
-            tresult.calculations.clear()
-            tresult.calculations.extend(calcs)
-
         db.session.commit()
 
         logger.info("Calculated deltatest value for element %s in collection %s",
@@ -514,5 +501,41 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
 
     # only if no exception was thrown somewhere above
     return True
+
+
+@capp.task
+def generate_test_result(calc_id, update=False, force_new=False):
+    """
+    Generate test result using the given calculation id
+    """
+
+    calc = (Calculation.query
+            .options(joinedload('test'))
+            .options(joinedload('collection'))
+            .get(calc_id))
+
+    tr_id = (db.session.query(TestResult2.id)
+             .filter(TestResult2.test == calc.test)
+             .join(TestResult2.collections)
+             .filter(TestResult2Collection.name == calc.collection.name)
+             .limit(1)
+             .scalar())
+
+    if tr_id is not None:
+        logger.info("calculation %s: a test result %s for this test and collection already exists", tr_id, calc.id)
+
+        if force_new:
+            tr_id = None
+            logger.info("calculation %s: force_new=True specified, creating a new test result", calc.id)
+        elif update:
+            logger.info("calculation %s: update=True specified, updating the existing test result", calc.id)
+        else:
+            return False
+
+    if calc.test.name == 'deltatest':
+        return generate_test_result_deltatest(calc.id, tr_id)
+
+    logger.error("No test result process function found for test %s", calc.test.name)
+    return False
 
 #  vim: set ts=4 sw=4 tw=0 :
