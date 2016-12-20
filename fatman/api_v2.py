@@ -45,6 +45,10 @@ from .models import (
 from .tools import Json2Atoms, Atoms2Json
 from .tools.cp2k import dict2cp2k, mergedicts
 from .tools.slurm import generate_slurm_batch_script
+from .tasks import (
+    generate_calculation_results,
+    generate_test_result,
+    )
 
 ma = Marshmallow(app)
 
@@ -337,7 +341,6 @@ class CalculationListResource(Resource):
                     "found basis sets for %s for structure %s in fallback family", ', '.join(missing_kinds),
                     structure.name)
                 all_basis_sets[btype] += fallback_basis_sets
-
 
         default_settings = None
 
@@ -830,7 +833,9 @@ class Task2UploadResource(Resource):
     @use_kwargs(upload_args)
     @use_kwargs(file_args, locations=('files', ))
     def post(self, tid, name, data):
-        task = Task2.query.get_or_404(tid)
+        task = (Task2.query
+                .options(joinedload('calculation'))
+                .get_or_404(tid))
 
         basepath = "fkup://results/{t.id}/".format(t=task)
         artifact = Artifact(name=name, path=basepath+"{id}")
@@ -839,6 +844,12 @@ class Task2UploadResource(Resource):
         db.session.add(Task2Artifact(artifact=artifact, task=task,
                                      linktype="output"))
         db.session.commit()
+
+        # start generating results and test results if succeeded
+        generate_calculation_results.apply_async(
+            (task.calculation.id,),
+            link=generate_test_result.si(task.calculation.id))
+
         schema = ArtifactSchema()
         return schema.jsonify(artifact)
 
