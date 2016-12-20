@@ -225,7 +225,7 @@ class CalculationSchema(CalculationListSchema):
 
     class Meta:
         model = Calculation
-        exclude = ('basis_set_associations', )
+        exclude = ('basis_set_associations', 'tasks_query', 'testresults_query', )
 
 
 class CalculationListResource(Resource):
