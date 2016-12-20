@@ -170,6 +170,7 @@ class TestResultView(BaseDataView):
 class CalculationView(BaseDataView):
     column_list = ('id', 'collection', 'test', 'structure',
                    'settings', 'restrictions', 'results')
+    column_filters = ('test', 'collection', 'structure.name', )
 
 
 class CalculationCollectionView(BaseDataView):
