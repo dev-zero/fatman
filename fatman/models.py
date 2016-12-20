@@ -386,6 +386,8 @@ class Calculation(Base):
     basis_sets = relationship("BasisSet",
                               secondary="calculation_basis_set",
                               backref="calculations")
+    testresults_query = relationship("TestResult2", secondary="test_result2_calculation", lazy='dynamic')
+    tasks_query = relationship("Task2", lazy='dynamic')
 
     settings = Column(JSONB)
     restrictions = Column(JSONB)
@@ -487,9 +489,11 @@ class Task2(Base):
     restrictions = Column(JSONB)
     settings = Column(JSONB)
     infiles = relationship("Artifact", secondary="task2_artifact",
+                           lazy='dynamic',
                            primaryjoin=("(Task2.id==Task2Artifact.task_id) &"
                                         "(Task2Artifact.linktype=='input')"))
     outfiles = relationship("Artifact", secondary="task2_artifact",
+                            lazy='dynamic',
                             primaryjoin=("(Task2.id==Task2Artifact.task_id) & "
                                          "(Task2Artifact.linktype=='output')"))
 
@@ -554,16 +558,24 @@ class TestResult2(Base):
     id = UUIDPKColumn()
     test_id = Column(Integer, ForeignKey('test.id'), nullable=False)
     test = relationship("Test")
-    calculation_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id'),
-                            nullable=False)
-    calculation = relationship("Calculation", backref="testresults")
+    calculations = relationship("Calculation", secondary="test_result2_calculation",
+                                backref='testresults')
     data = Column(JSONB)
-    collection = relationship('TestResult2Collection',
+    collections = relationship('TestResult2Collection',
                               secondary="test_result2_test_result2_collection",
-                              backref=backref('testresults', lazy='dynamic'))
+                              backref='testresults')
 
     def __repr__(self):
         return "<TestResult(id='{}')>".format(self.id)
+
+
+TestResult2Calculation = Table(
+    'test_result2_calculation',
+    Base.metadata,
+    Column('test_id', UUID(as_uuid=True), ForeignKey('test_result2.id'),
+           primary_key=True),
+    Column('calculation_id', UUID(as_uuid=True),
+           ForeignKey('calculation.id'), primary_key=True))
 
 
 TestResult2TestResult2Collection = Table(
