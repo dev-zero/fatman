@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import re
+
 import numpy as np
 from ase.utils.eos import EquationOfState
 from ase.units import kJ
@@ -1037,24 +1039,40 @@ class OutputParseError(Exception):
 
 
 def get_data_from_output(fhandle, code):
-    data = {}
+    if code == 'CP2K':
+        content = fhandle.read()
 
-    if code == 'cp2k':
-        for line in fhandle:
-            if 'source code revision number' in line:
-                data['version'] = line.split()[-1]
-            if 'Total number of message passing processes' in line:
-                data['mpiranks'] = int(line.split()[-1])
-            if 'Number of threads for this process' in line:
-                data['threads'] = int(line.split()[-1])
-            if 'PROGRAM STARTED BY' in line:
-                data['username'] = line.split()[-1]
-            if 'List of Kpoints' in line:
-                data['nkpoints'] = int(line.split()[-1])
-            if 'qs_forces' in line:
-                data['runtime'] = float(line.split()[-1])
+        def key_value_match(key, value_type=str):
+            if value_type == float:
+                value = '[\+\-]?((\d*[\.]\d+)|(\d+[\.]?\d*))([Ee][\+\-]?\d+)?'
+            elif value_type == int:
+                value = '[\+\-]?\d+'
+            else:
+                value = '.+'
+
+            match = re.search(r'^[ \t]*{key}[ \t]+(?P<value>{value})$'.format(
+                key=re.escape(key),
+                value=value  # match any number
+                ), content, re.MULTILINE)
+
+            if not match:
+                return None
+
+            return value_type(match.group('value'))
+
+        return {
+            'version': key_value_match('CP2K| source code revision number:'),
+            'mpiranks': key_value_match('GLOBAL| Total number of message passing processes', int),
+            'threads': key_value_match('GLOBAL| Number of threads for this process', int),
+            'username': key_value_match('**    ****   ******    PROGRAM STARTED BY'),
+            'nkpoints': key_value_match('BRILLOUIN| List of Kpoints [2 Pi/Bohr]', int),
+            'total_energy': key_value_match('ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):', float),
+            }
+
 
     elif code == 'espresso':
+        data = {}
+
         for line in fhandle:
             if 'Program PWSCF v' in line:
                 data['version'] = line.split()[2]
@@ -1070,10 +1088,9 @@ def get_data_from_output(fhandle, code):
                 # extract the total energy and convert from Ry to eV
                 data['total_energy'] = float(line.split()[-2])*13.605697827758654
 
-    else:
-        raise OutputParseError("Unknown code: %s".format(code))
+        return data
 
-    return data
+    raise OutputParseError("Unknown code: %s".format(code))
 
 
 class FullEquationOfState(EquationOfState):
