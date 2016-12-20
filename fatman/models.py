@@ -382,12 +382,13 @@ class Calculation(Base):
 
     pseudos = relationship("Pseudopotential",
                            secondary="calculation_pseudopotential",
-                           backref="calculations")
+                           backref="calculations",
+                           cascade="all", passive_deletes=True)
     basis_sets = relationship("BasisSet",
                               secondary="calculation_basis_set",
                               backref="calculations")
     testresults_query = relationship("TestResult2", secondary="test_result2_calculation", lazy='dynamic')
-    tasks_query = relationship("Task2", lazy='dynamic')
+    tasks_query = relationship("Task2", lazy='dynamic', cascade="all", passive_deletes=True)
 
     settings = Column(JSONB)
     restrictions = Column(JSONB)
@@ -403,7 +404,7 @@ class Calculation(Base):
 
 CalculationPseudopotential = Table(
     'calculation_pseudopotential', Base.metadata,
-    Column('calculation_id', UUID(as_uuid=True), ForeignKey('calculation.id'),
+    Column('calculation_id', UUID(as_uuid=True), ForeignKey('calculation.id', ondelete='CASCADE'),
            primary_key=True),
     Column('pseudo_id', UUID(as_uuid=True), ForeignKey('pseudopotential.id'),
            primary_key=True))
@@ -417,7 +418,7 @@ class CalculationBasisSet(Base):
     """
 
     calculation_id = Column(UUID(as_uuid=True),
-                            ForeignKey('calculation.id'),
+                            ForeignKey('calculation.id', ondelete='CASCADE'),
                             primary_key=True)
     basis_set_id = Column(UUID(as_uuid=True), ForeignKey('basis_set.id'),
                           primary_key=True)
@@ -427,7 +428,7 @@ class CalculationBasisSet(Base):
 
     calculation = relationship("Calculation",
                                backref=backref("basis_set_associations",
-                                               cascade="all, delete-orphan"))
+                                               cascade="all", passive_deletes=True))
     basis_set = relationship("BasisSet", backref="calculation_associations")
 
     def __repr__(self):
@@ -474,9 +475,10 @@ class CalculationCollection(Base):
 
 class Task2(Base):
     id = UUIDPKColumn()
-    calculation_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id'),
+    calculation_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id', ondelete='CASCADE'),
                             nullable=False)
-    calculation = relationship("Calculation", backref="tasks")
+    calculation = relationship("Calculation",
+                               backref=backref("tasks", cascade="all", passive_deletes=True))
     status_id = Column(Integer, ForeignKey('task_status.id'), nullable=False)
     status = relationship("TaskStatus", lazy='joined', innerjoin=True)
 
@@ -489,11 +491,11 @@ class Task2(Base):
     restrictions = Column(JSONB)
     settings = Column(JSONB)
     infiles = relationship("Artifact", secondary="task2_artifact",
-                           lazy='dynamic',
+                           lazy='dynamic', cascade="all", passive_deletes=True,
                            primaryjoin=("(Task2.id==Task2Artifact.task_id) &"
                                         "(Task2Artifact.linktype=='input')"))
     outfiles = relationship("Artifact", secondary="task2_artifact",
-                            lazy='dynamic',
+                            lazy='dynamic', cascade="all", passive_deletes=True,
                             primaryjoin=("(Task2.id==Task2Artifact.task_id) & "
                                          "(Task2Artifact.linktype=='output')"))
 
@@ -512,7 +514,7 @@ class Task2Artifact(Base):
     but I left out the task and artifact relationship definitions since I don't need them (?)
     """
 
-    task_id = Column(UUID(as_uuid=True), ForeignKey('task2.id'),
+    task_id = Column(UUID(as_uuid=True), ForeignKey('task2.id', ondelete='CASCADE'),
                      primary_key=True)
     artifact_id = Column(UUID(as_uuid=True), ForeignKey('artifact.id'),
                          primary_key=True)
