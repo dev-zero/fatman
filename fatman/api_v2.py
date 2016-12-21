@@ -207,12 +207,14 @@ class CalculationBasisSetAssociationSchema(ma.ModelSchema):
     type = fields.Str(attribute='btype')
 
 
-class CalculationBaseSchema(ma.ModelSchema):
+class CalculationListSchema(ma.ModelSchema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
     code = fields.Str(attribute='code.name')
     structure = fields.Str(attribute='structure.name')
     test = fields.Str(attribute='test.name')
+    results_available = fields.Bool()
+    current_task = fields.Nested('Task2ListSchema')
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
         'collection': ma.AbsoluteURLFor('calculationlistresource'),
@@ -220,12 +222,7 @@ class CalculationBaseSchema(ma.ModelSchema):
         })
 
 
-class CalculationListSchema(CalculationBaseSchema):
-    results_available = fields.Bool()
-    current_task = fields.Nested('Task2ListSchema')
-
-
-class CalculationSchema(CalculationBaseSchema):
+class CalculationSchema(CalculationListSchema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
     code = fields.Str(attribute='code.name')
