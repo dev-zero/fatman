@@ -486,7 +486,8 @@ class Task2(Base):
     calculation_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id', ondelete='CASCADE'),
                             nullable=False)
     calculation = relationship("Calculation",
-                               backref=backref("tasks", cascade="all", passive_deletes=True))
+                               backref=backref("tasks", order_by=lambda: Task2.ctime.desc(),
+                                               cascade="all", passive_deletes=True))
     status_id = Column(Integer, ForeignKey('task_status.id'), nullable=False)
     status = relationship("TaskStatus", lazy='joined', innerjoin=True)
 
