@@ -19,6 +19,7 @@ from sqlalchemy import text
 from sqlalchemy import Column, ForeignKey, UniqueConstraint
 from sqlalchemy import Integer, String, Boolean, DateTime, Text, Enum
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.orm import column_property
 
 from werkzeug.datastructures import FileStorage
 
@@ -394,9 +395,7 @@ class Calculation(Base):
     restrictions = Column(JSONB)
     results = Column(JSONB)
 
-    @property
-    def results_available(self):
-        return self.results.isnot(None)
+    results_available = column_property(results.isnot(None))
 
     @property
     def current_task(self):
