@@ -17,6 +17,10 @@ import { Calculation } from './calculation';
             <th>Structure</th>
             <th>Code</th>
             <th>Collection</th>
+            <th>Created</th>
+            <th>Modified</th>
+            <th>Status</th>
+            <th>Result</th>
           </tr>
         </thead>
         <tbody>
@@ -27,6 +31,13 @@ import { Calculation } from './calculation';
             <td>{{ calculation.structure }}</td>
             <td>{{ calculation.code }}</td>
             <td>{{ calculation.collection }}</td>
+            <td>{{ calculation.current_task.ctime | date:'medium' }}</td>
+            <td>{{ calculation.current_task.mtime | date:'medium' }}</td>
+            <td>{{ calculation.current_task.status }}</td>
+            <td><i class="fa" aria-hidden="true"
+                 [class.fa-check]="calculation.result_available"
+                 [class.fa-times]="!calculation.result_available"></i>
+            </td>
           </tr>
         </tbody>
       </table>
