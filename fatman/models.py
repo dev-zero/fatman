@@ -394,6 +394,14 @@ class Calculation(Base):
     restrictions = Column(JSONB)
     results = Column(JSONB)
 
+    @property
+    def results_available(self):
+        return self.results.isnot(None)
+
+    @property
+    def current_task(self):
+        return self.tasks[0]
+
     # for later: link together already defined calculations (but full copy existing ones)
     # parent_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id'))
     # parent = relationship("Calculation", remote_side=[id])

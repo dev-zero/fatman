@@ -16,7 +16,8 @@ from webargs.flaskparser import (
     abort,
     )
 from werkzeug.exceptions import HTTPException
-from sqlalchemy.orm import contains_eager, joinedload
+from sqlalchemy import and_
+from sqlalchemy.orm import contains_eager, joinedload, aliased
 
 from ase import io as ase_io
 import numpy as np
@@ -199,7 +200,14 @@ class CalculationCollectionResource(Resource):
         return schema.jsonify((CalculationCollection.query.get_or_404(ccid)))
 
 
-class CalculationListSchema(ma.ModelSchema):
+class CalculationBasisSetAssociationSchema(ma.ModelSchema):
+    basis_set = fields.Nested(
+        BasisSetSchema(exclude=('basis', ))
+        )
+    type = fields.Str(attribute='btype')
+
+
+class CalculationBaseSchema(ma.ModelSchema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
     code = fields.Str(attribute='code.name')
@@ -212,30 +220,60 @@ class CalculationListSchema(ma.ModelSchema):
         })
 
 
-class CalculationBasisSetAssociationSchema(ma.ModelSchema):
-    basis_set = fields.Nested(
-        BasisSetSchema(exclude=('basis', ))
-        )
-    type = fields.Str(attribute='btype')
+class CalculationListSchema(CalculationBaseSchema):
+    results_available = fields.Bool()
+    current_task = fields.Nested('Task2ListSchema')
 
 
-class CalculationSchema(CalculationListSchema):
+class CalculationSchema(CalculationBaseSchema):
+    id = fields.UUID()
+    collection = fields.Str(attribute='collection.name')
+    code = fields.Str(attribute='code.name')
+    structure = fields.Str(attribute='structure.name')
+    test = fields.Str(attribute='test.name')
+    tasks = fields.Nested('Task2ListSchema', many=True)
+
+    _links = ma.Hyperlinks({
+        'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
+        'collection': ma.AbsoluteURLFor('calculationlistresource'),
+        'tasks': ma.AbsoluteURLFor('calculationtask2listresource', cid='<id>'),
+        })
+
     basis_sets = fields.Nested(
         CalculationBasisSetAssociationSchema,
         attribute='basis_set_associations',
         many=True)
 
-    tasks = fields.Nested('Task2ListSchema', many=True)
-
     class Meta:
         model = Calculation
-        exclude = ('basis_set_associations', 'tasks_query', 'testresults_query', )
+        exclude = (
+            'basis_set_associations',
+            'tasks_query',
+            'testresults_query',
+            )
 
 
 class CalculationListResource(Resource):
     def get(self):
         schema = CalculationListSchema(many=True)
-        return schema.jsonify(Calculation.query.all())
+
+        # The following join is inspired by http://stackoverflow.com/a/2111420/1400465
+        # to first join the last added tasks and then sort the list of Calculations by the mtime
+        # of this latest task.
+        # Alternatively we could exploit that the ORM is doing a de-dup and sort by mtime right away.
+        t2 = aliased(Task2)
+        calcs = (db.session.query(Calculation)
+                 .options(joinedload('structure'))
+                 .options(joinedload('code'))
+                 .options(joinedload('test'))
+                 .join(Task2)
+                 .options(contains_eager('tasks').joinedload('machine'))  # load the Task we selected together with the Calc
+                 .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
+                 .filter(t2.id == None)
+                 .order_by(Task2.mtime.desc()).all()
+                 )
+
+        return schema.jsonify(calcs)
 
     calculation_args = {
         'collection': fields.Str(
