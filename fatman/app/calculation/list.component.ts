@@ -9,10 +9,9 @@ import { Calculation } from './calculation';
   template: `
   <div class="row">
     <div class="col-md-12">
-      <table class="table table-bordered table-striped table-condensed">
+      <table class="table table-bordered table-condensed table-hover">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Test</th>
             <th>Structure</th>
             <th>Code</th>
@@ -25,8 +24,9 @@ import { Calculation } from './calculation';
         </thead>
         <tbody>
           <tr *ngFor="let calculation of calculations"
+            class="clickable-row"
+            [class.active]="calculation.id == selectedId"
             (click)="onSelect(calculation)">
-            <td>{{ calculation.id }}</td>
             <td>{{ calculation.test }}</td>
             <td>{{ calculation.structure }}</td>
             <td>{{ calculation.code }}</td>
@@ -35,8 +35,8 @@ import { Calculation } from './calculation';
             <td>{{ calculation.current_task.mtime | date:'medium' }}</td>
             <td>{{ calculation.current_task.status }}</td>
             <td><i class="fa" aria-hidden="true"
-                 [class.fa-check]="calculation.result_available"
-                 [class.fa-times]="!calculation.result_available"></i>
+                 [class.fa-check]="calculation.results_available"
+                 [class.fa-times]="!calculation.results_available"></i>
             </td>
           </tr>
         </tbody>
@@ -44,13 +44,13 @@ import { Calculation } from './calculation';
     </div>
   </div>
   `,
+  styles: ['tr.clickable-row { cursor: pointer; }']
 })
 
 export class CalculationListComponent implements OnInit {
   errorMessage: string;
   calculations: Calculation[] = [];
-
-  private _selectedId: string;
+  selectedId: string;
 
   constructor(
     private _calculationsService: CalculationsService,
@@ -60,6 +60,8 @@ export class CalculationListComponent implements OnInit {
 
   ngOnInit() {
     this.getCalculations();
+    this._route.params
+      .subscribe((params: Params) => this.selectedId = params['id']);
   }
 
   getCalculations() {
