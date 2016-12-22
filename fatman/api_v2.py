@@ -207,6 +207,11 @@ class CalculationBasisSetAssociationSchema(ma.ModelSchema):
     type = fields.Str(attribute='btype')
 
 
+class TestResultSchema(ma.ModelSchema):
+    test = fields.Str(attribute="test.name")
+    data = fields.Dict()
+
+
 class CalculationListSchema(ma.ModelSchema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
@@ -229,6 +234,7 @@ class CalculationSchema(CalculationListSchema):
     structure = fields.Str(attribute='structure.name')
     test = fields.Str(attribute='test.name')
     tasks = fields.Nested('Task2ListSchema', many=True)
+    testresults = fields.Nested('TestResultSchema', many=True)
 
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
