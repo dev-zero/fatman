@@ -1,6 +1,11 @@
 
 import { Task2 } from '../task2/task';
 
+export interface TestResult {
+  test: string;
+  data: any;
+}
+
 export interface Calculation {
   id: string;
   code: string;
@@ -12,4 +17,5 @@ export interface Calculation {
   latest_task: Task2;
   results_available: boolean;
   tasks?: any;
+  testresults?: TestResult[];
 }

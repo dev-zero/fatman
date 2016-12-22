@@ -52,4 +52,30 @@ export class ConcatPipe implements PipeTransform {
   }
 }
 
+@Pipe({name: 'stringifydata'})
+export class StringifyPipe implements PipeTransform {
+  transform(value: any) {
+    if (typeof value == 'number')
+      return value.toFixed(0);
+
+    if (typeof value == 'string')
+      return value;
+
+    // if the passed object is not an array (e.g. an arbitrary object)
+    // figure out its keys => values and put them into an array
+    if (!(value instanceof Array)) {
+      let value_array: any[] = [];
+      for (let key in value)
+        if (value.hasOwnProperty(key))
+          value_array.push(`${key}=` + JSON.stringify(value[key]));
+      value = value_array;
+    }
+
+    if (value instanceof Array)
+      return value.join(', ');
+
+    return JSON.stringify(value);
+  }
+}
+
 //  vim: set ts=2 sw=2 tw=0 :

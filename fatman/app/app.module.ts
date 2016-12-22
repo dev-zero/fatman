@@ -34,7 +34,7 @@ import { CalculationsService }     from './calculation/calculations.service';
 
 import { TruncatePipe }                           from './details/testdetails.component';
 import { DeltavaluePipe }                         from './periodictable/periodictable-list.component';
-import { IterablePipe, SettingsPipe, ConcatPipe } from './common/pipes';
+import { IterablePipe, SettingsPipe, ConcatPipe, StringifyPipe } from './common/pipes';
 
 @NgModule({
   imports: [
@@ -68,7 +68,8 @@ import { IterablePipe, SettingsPipe, ConcatPipe } from './common/pipes';
     IterablePipe,
     SettingsPipe,
     ConcatPipe,
-    DeltavaluePipe
+    DeltavaluePipe,
+    StringifyPipe
   ],
   providers: [
     ReportService,

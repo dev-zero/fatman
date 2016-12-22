@@ -13,10 +13,12 @@ import { CalculationsService } from './calculations.service';
     <div class="col-md-12"
       *ngIf="calculation">
 
-      <h3>Calculation {{ calculation.id }}</h3>
-      <p>
-        <button (click)="gotoCalculations()">Back</button>
-      </p>
+      <h3>
+        <a class="btn btn-default" (click)="gotoCalculations()">
+          <i class="fa fa-arrow-left" aria-hidden="true"></i>
+        </a>
+        Calculation {{ calculation.id }}
+      </h3>
 
       <div class="panel-group" id="taskAccordion" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default"
@@ -51,6 +53,37 @@ import { CalculationsService } from './calculations.service';
           </div>
         </div>
       </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">Results</h4>
+        </div>
+        <div class="panel-body" *ngIf="!calculation.results">
+          <i class="fa fa-clock-o" aria-hidden="true"></i> not yet available
+        </div>
+        <div class="panel-body" *ngIf="calculation.results">
+          <dl class="dl-horizontal">
+            <template ngFor let-result [ngForOf]="calculation.results | mapToIterable">
+              <dt>{{ result.key }}</dt>
+              <dd>{{ result.value }}</dd>
+            </template>
+          </dl>
+        </div>
+        <div class="list-group" *ngIf="calculation.testresults">
+          <template ngFor let-testresult [ngForOf]="calculation.testresults">
+            <div class="list-group-item">
+              <h4 class="list-group-item-heading">Test: {{ testresult.test }}</h4>
+              <dl class="list-group-item-text dl-horizontal">
+                <template ngFor let-result [ngForOf]="testresult.data | mapToIterable">
+                  <dt>{{ result.key }}</dt>
+                  <dd>{{ result.value | stringifydata }}</dd>
+                </template>
+              </dl>
+            </div>
+          </template>
+        </div>
+      </div>
+
     </div>
   </div>
   `,
