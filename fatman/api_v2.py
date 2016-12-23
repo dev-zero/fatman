@@ -6,7 +6,7 @@ from io import TextIOWrapper, BytesIO
 import copy
 
 import flask
-from flask import make_response
+from flask import make_response, request
 from flask_marshmallow import Marshmallow
 from flask_restful import Api, Resource
 from webargs import fields, ValidationError
@@ -15,6 +15,7 @@ from webargs.flaskparser import (
     parser,
     abort,
     )
+from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException
 from sqlalchemy import and_
 from sqlalchemy.orm import contains_eager, joinedload, aliased
@@ -22,7 +23,7 @@ from sqlalchemy.orm import contains_eager, joinedload, aliased
 from ase import io as ase_io
 import numpy as np
 
-from . import app, db, resultfiles, apiauth
+from . import app, db, resultfiles, apiauth, capp
 from .models import (
     Calculation,
     CalculationCollection,
@@ -48,6 +49,7 @@ from .tools.cp2k import dict2cp2k, mergedicts
 from .tools.slurm import generate_slurm_batch_script
 from .tasks import (
     generate_calculation_results,
+    generate_all_calculation_results,
     generate_test_result,
     )
 
@@ -270,7 +272,7 @@ class CalculationListResource(Resource):
                  .options(joinedload('code'))
                  .options(joinedload('test'))
                  .join(Task2)
-                 .options(contains_eager('tasks').joinedload('machine'))  # load the Task we selected together with the Calc
+                 .options(contains_eager('tasks').joinedload('machine'))  # load selected Task together with Calculation
                  .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
                  .filter(t2.id == None)
                  .order_by(Task2.mtime.desc()).all()
@@ -417,6 +419,22 @@ class CalculationListResource(Resource):
         db.session.commit()
         schema = CalculationSchema()
         return schema.jsonify(calculation)
+
+
+class CalculationListResultsResource(Resource):
+    @apiauth.login_required
+    @use_kwargs({
+        'generateResults': fields.Nested({
+            'update': fields.Boolean(missing=False)})
+        })
+    def post(self, generateResults):
+        if generateResults:
+            async_result = generate_all_calculation_results.delay(generateResults['update'])
+
+            return Response(status=202, headers={
+                'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
+
+        abort(400)
 
 
 class CalculationResource(Resource):
@@ -1045,6 +1063,17 @@ class StructureSetResource(Resource):
         return schema.jsonify(StructureSet.query.filter_by(name=name).one())
 
 
+class ActionResource(Resource):
+    def get(self, aid):
+        async_result = capp.AsyncResult(str(aid))
+
+        if not async_result.ready():
+            return Response(status=202, headers={'Location': request.path})
+
+        # TODO: figure out task name using Celery 4.x and add more infos
+        return {'status': async_result.status}
+
+
 # This error handler is necessary for usage with Flask-RESTful
 @parser.error_handler
 def handle_request_parsing_error(err):
@@ -1060,6 +1089,7 @@ api.add_resource(CalculationCollectionListResource, '/calculationcollections')
 api.add_resource(CalculationCollectionResource,
                  '/calculationcollections/<uuid:ccid>')
 api.add_resource(CalculationListResource, '/calculations')
+api.add_resource(CalculationListResultsResource, '/calculations/action')
 api.add_resource(CalculationResource, '/calculations/<uuid:cid>')
 api.add_resource(CalculationTask2ListResource,
                  '/calculations/<uuid:cid>/tasks')
@@ -1076,3 +1106,4 @@ api.add_resource(StructureListResource_v2, '/structures')
 api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')
 api.add_resource(BasisSetListResource, '/basissets')
 api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
+api.add_resource(ActionResource, '/actions/<uuid:aid>')
