@@ -43,6 +43,7 @@ from .models import (
     Artifact,
     Machine,
     Command,
+    TestResult2,
     )
 from .tools import Json2Atoms, Atoms2Json
 from .tools.cp2k import dict2cp2k, mergedicts
@@ -51,6 +52,7 @@ from .tasks import (
     generate_calculation_results,
     generate_all_calculation_results,
     generate_test_result,
+    generate_all_test_results,
     )
 
 ma = Marshmallow(app)
@@ -209,11 +211,6 @@ class CalculationBasisSetAssociationSchema(ma.ModelSchema):
     type = fields.Str(attribute='btype')
 
 
-class TestResultSchema(ma.ModelSchema):
-    test = fields.Str(attribute="test.name")
-    data = fields.Dict()
-
-
 class CalculationListSchema(ma.ModelSchema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
@@ -229,6 +226,19 @@ class CalculationListSchema(ma.ModelSchema):
         })
 
 
+class TestResultSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'collection': ma.AbsoluteURLFor('testresultlistresource'),
+        })
+
+    test = fields.Str(attribute='test.name')
+    calculations = fields.Nested(CalculationListSchema, many=True)
+    collections = fields.Str(attribute='collections.name')
+
+    class Meta:
+        model = TestResult2
+
+
 class CalculationSchema(CalculationListSchema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
@@ -236,7 +246,7 @@ class CalculationSchema(CalculationListSchema):
     structure = fields.Str(attribute='structure.name')
     test = fields.Str(attribute='test.name')
     tasks = fields.Nested('Task2ListSchema', many=True)
-    testresults = fields.Nested('TestResultSchema', many=True)
+    testresults = fields.Nested('TestResultSchema', many=True, exclude=('calculations',))
 
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
@@ -421,15 +431,34 @@ class CalculationListResource(Resource):
         return schema.jsonify(calculation)
 
 
-class CalculationListResultsResource(Resource):
+class CalculationListActionSchema(ma.Schema):
+    generate = fields.Nested(
+        {'update': fields.Boolean(missing=False)},
+        strict=True)
+
+    class Meta:
+        strict = True
+
+
+class CalculationListActionResource(Resource):
     @apiauth.login_required
-    @use_kwargs({
-        'generateResults': fields.Nested({
-            'update': fields.Boolean(missing=False)})
-        })
-    def post(self, generateResults):
-        if generateResults:
-            async_result = generate_all_calculation_results.delay(generateResults['update'])
+    @use_kwargs(CalculationListActionSchema)
+    def post(self, generate):
+        if generate:
+            async_result = generate_all_calculation_results.delay(generate['update'])
+
+            return Response(status=202, headers={
+                'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
+
+        abort(400)
+
+
+class CalculationActionResource(Resource):
+    @apiauth.login_required
+    @use_kwargs(CalculationListActionSchema)
+    def post(self, cid, generate):
+        if generate:
+            async_result = generate_calculation_results.delay(cid, generate['update'])
 
             return Response(status=202, headers={
                 'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
@@ -1063,6 +1092,35 @@ class StructureSetResource(Resource):
         return schema.jsonify(StructureSet.query.filter_by(name=name).one())
 
 
+class TestResultListResource(Resource):
+    def get(self):
+        schema = TestResultSchema(many=True)
+        tresults = TestResult2.query.all()
+        return schema.jsonify(tresults)
+
+
+class TestResultListActionSchema(ma.Schema):
+    generate = fields.Nested(
+        {'update': fields.Boolean(missing=False)},
+        strict=True)
+
+    class Meta:
+        strict = True
+
+
+class TestResultListActionResource(Resource):
+    @apiauth.login_required
+    @use_kwargs(TestResultListActionSchema)
+    def post(self, generate):
+        if generate:
+            async_result = generate_all_test_results.delay(generate['update'])
+
+            return Response(status=202, headers={
+                'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
+
+        abort(400)
+
+
 class ActionResource(Resource):
     def get(self, aid):
         async_result = capp.AsyncResult(str(aid))
@@ -1089,8 +1147,9 @@ api.add_resource(CalculationCollectionListResource, '/calculationcollections')
 api.add_resource(CalculationCollectionResource,
                  '/calculationcollections/<uuid:ccid>')
 api.add_resource(CalculationListResource, '/calculations')
-api.add_resource(CalculationListResultsResource, '/calculations/action')
+api.add_resource(CalculationListActionResource, '/calculations/action')
 api.add_resource(CalculationResource, '/calculations/<uuid:cid>')
+api.add_resource(CalculationActionResource, '/calculations/<uuid:cid>/action')
 api.add_resource(CalculationTask2ListResource,
                  '/calculations/<uuid:cid>/tasks')
 api.add_resource(Task2ListResource, '/tasks')
@@ -1106,4 +1165,6 @@ api.add_resource(StructureListResource_v2, '/structures')
 api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')
 api.add_resource(BasisSetListResource, '/basissets')
 api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
+api.add_resource(TestResultListResource, '/testresults')
+api.add_resource(TestResultListActionResource, '/testresults/action')
 api.add_resource(ActionResource, '/actions/<uuid:aid>')
