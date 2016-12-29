@@ -432,7 +432,7 @@ class CalculationListResource(Resource):
 
 
 class CalculationListActionSchema(ma.Schema):
-    generate = fields.Nested(
+    generateResults = fields.Nested(
         {'update': fields.Boolean(missing=False)},
         strict=True)
 
@@ -443,9 +443,9 @@ class CalculationListActionSchema(ma.Schema):
 class CalculationListActionResource(Resource):
     @apiauth.login_required
     @use_kwargs(CalculationListActionSchema)
-    def post(self, generate):
-        if generate:
-            async_result = generate_all_calculation_results.delay(generate['update'])
+    def post(self, generateResults):
+        if generateResults:
+            async_result = generate_all_calculation_results.delay(generateResults['update'])
 
             return Response(status=202, headers={
                 'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
