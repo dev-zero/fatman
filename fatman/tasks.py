@@ -333,6 +333,7 @@ def generate_calculation_results(calc_id, update=False):
         return False
 
     task = (calc.tasks_query
+            .join(Task2.status)
             .filter(TaskStatus.name == 'done')
             .order_by(Task2.mtime.desc())
             .first())
@@ -413,9 +414,12 @@ def generate_all_calculation_results(self, update=False):
              .join(Task2)
              .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
              .filter(t2.id == None)
+             .join(Task2.status)
              .filter(TaskStatus.name == 'done')
-             .order_by(Task2.mtime.desc())
-             .all())
+             .order_by(Task2.mtime.desc()))
+
+    if not update:
+        calcs = calcs.filter(Calculation.results_available == False)
 
     # replace the task with a group task for the single calculations
     raise self.replace(group(generate_calculation_results.s(c.id, update) for c in calcs))
