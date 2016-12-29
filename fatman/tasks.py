@@ -328,7 +328,7 @@ def generate_calculation_results(calc_id, update=False):
         logger.error("calculation %s: not found")
         return False
 
-    if calc.results and not update:
+    if calc.results_available and not update:
         logger.info("calculation %s: has already a result and update=False, skipping", calc.id)
         return False
 
@@ -388,7 +388,7 @@ def generate_calculation_results(calc_id, update=False):
                      calc.id, artifact.id)
         return False
 
-    task.calculation.results = results
+    calc.results = results
     db.session.commit()
 
     return True
