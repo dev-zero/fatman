@@ -395,6 +395,33 @@ def generate_calculation_results(calc_id, update=False):
 
 
 @capp.task(bind=True)
+def generate_all_calculation_results(self, update=False):
+    """
+    Parse all calculation task outputs and generate the results
+    if not already present.
+
+    Args:
+        update: rewrite the results even if they already exist
+
+    Returns:
+        A tuple of a list of calculation ids and a group task
+    """
+
+    # select only calculations where the latest task is done
+    t2 = aliased(Task2)
+    calcs = (db.session.query(Calculation.id)
+             .join(Task2)
+             .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
+             .filter(t2.id == None)
+             .filter(TaskStatus.name == 'done')
+             .order_by(Task2.mtime.desc())
+             .all())
+
+    # replace the task with a group task for the single calculations
+    raise self.replace(group(generate_calculation_results.s(c.id, update) for c in calcs))
+
+
+@capp.task(bind=True)
 def generate_test_result_deltatest(self, calc_id, tr_id=None):
     """
     Calculate the Δ-test value using a given calculation id.
@@ -544,5 +571,39 @@ def generate_test_result(calc_id, update=False, force_new=False):
 
     logger.error("No test result process function found for test %s", calc.test.name)
     return False
+
+
+@capp.task(bind=True)
+def generate_all_test_results(self, update=False):
+    """
+    Generate all possible test results based on the available calculation results,
+    if there is no calculation result yet for a calculation.
+
+    Args:
+        update: updates the test results if they already exist
+
+    Returns:
+        A tuple of a list of test result ids and a group task
+    """
+
+    # basic filter is on whether a result is available or not
+    calcs = (db.session.query(Calculation.id)
+             .filter(Calculation.results_available))
+
+    if not update:
+        # find all calculations where there is no test result with the same test
+        # as the calculation was initially created for.
+        calcs = (calcs
+                 # We have to manually join the m:n relationship between Calculations and TestResults:
+                 .outerjoin(TestResult2Calculation)
+                 .outerjoin(TestResult2,
+                            and_(Calculation.id == TestResult2Calculation.c.calculation_id,
+                                 # to be able to specify an additional join condition:
+                                 Calculation.test_id == TestResult2.test_id))
+                 # now filter out all results which have an associated test result available
+                 .filter(TestResult2.id == None))
+
+    # replace the task with a group task for the single calculations
+    raise self.replace(group(generate_test_result.s(c.id, update) for c in calcs))
 
 #  vim: set ts=4 sw=4 tw=0 :
