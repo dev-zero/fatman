@@ -8,3 +8,4 @@ import '@angular/router';
 
 import 'jquery';
 import 'bootstrap/dist/js/bootstrap';
+import 'chart.js/src/chart.js';

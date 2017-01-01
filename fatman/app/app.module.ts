@@ -3,6 +3,8 @@ import { BrowserModule }  from '@angular/platform-browser';
 import { FormsModule }    from '@angular/forms';
 import { HttpModule }     from '@angular/http';
 
+import { ChartsModule }   from 'ng2-charts/ng2-charts';
+
 import { AppComponent }   from './app.component';
 import { routing }        from './app.routing';
 
@@ -41,7 +43,8 @@ import { IterablePipe, SettingsPipe, ConcatPipe, StringifyPipe } from './common/
     BrowserModule,
     FormsModule,
     routing,
-    HttpModule
+    HttpModule,
+    ChartsModule
   ],
   declarations: [
     AppComponent,
