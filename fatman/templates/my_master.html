@@ -11,12 +11,12 @@
         {{ current_user.email }}
         {%- endif %}<span class="caret"></span></a>
     <ul class="dropdown-menu" role="menu">
-        <li><a href="{{ url_for('security.logout') }}">Log out</a></li>
+        <li><a href="{{ url_for('security.logout', next=request.url) }}">Log out</a></li>
     </ul>
 </div>
 {% else %}
 <div class="navbar-text navbar-right">
-    <a href="{{ url_for('security.login') }}">
+    <a href="{{ url_for('security.login', next=request.url) }}">
         <i class="glyphicon glyphicon-user"></i>
         Log in
     </a>
