@@ -185,7 +185,7 @@ class CalculationDefaultSettingsView(BaseDataView):
 class Task2View(BaseDataView):
     column_list = ('id', 'calculation', 'status', 'restrictions',
                    'machine', 'priority', 'ctime', 'mtime',)
-    column_filters = ('status',)
+    column_filters = ('status', 'machine', )
 
 
 class TestResult2View(BaseDataView):
