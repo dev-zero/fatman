@@ -30,6 +30,7 @@ from .models import (
     Machine,
     Artifact,
     Command,
+    TaskRuntimeSettings
 )
 
 
@@ -201,11 +202,13 @@ class CodeView(BaseDataView):
 
 class MachineView(BaseDataView):
     column_list = ('id', 'shortname', 'name', )
+    inline_models = [
+        (TaskRuntimeSettings, dict(form_columns=['id', 'code', 'test', 'settings'])),
+        ]
 
 
 class CommandView(BaseDataView):
     column_exclude_list = ('environment', 'commands', )
-
 
 
 class ArtifactView(BaseDataView):

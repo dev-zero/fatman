@@ -608,3 +608,31 @@ class TestResult2Collection(Base):
 
     def __str__(self):
         return self.name
+
+
+class TaskRuntimeSettings(Base):
+    """
+    Settings which are applied as soon as we are going to run a task
+    and at which point the machine and the command is finally known.
+
+    Currently hard-linked to Command and Test.
+
+    These settings can currently target the input, the runner arguments
+    or the command environment based on Machine, Code and Test.
+    """
+
+    id = UUIDPKColumn()
+    settings = Column(JSONB, nullable=False)
+
+    machine_id = Column(UUID(as_uuid=True),
+                        ForeignKey('machine.id'),
+                        nullable=False)
+    machine = relationship("Machine", backref="task_runtime_settings")
+    code_id = Column(UUID(as_uuid=True),
+                     ForeignKey('code.id'),
+                     nullable=False)
+    code = relationship("Code", backref="task_runtime_settings")
+    test_id = Column(Integer,
+                     ForeignKey('test.id'),
+                     nullable=False)
+    test = relationship("Test", backref="task_runtime_settings")
