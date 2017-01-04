@@ -40,6 +40,7 @@ from .models import (
     Task2,
     TaskStatus,
     Task2Artifact,
+    TaskRuntimeSettings,
     Artifact,
     Machine,
     Command,
@@ -608,8 +609,14 @@ class Task2Resource(Resource):
         'machine': fields.Str(),
         }, validate=task_args_validate)
     def patch(self, tid, status, data, machine):
-        task = Task2.query.get_or_404(tid)
+        task = (Task2.query
+                # lock this task for editing and don't wait: if it is already locked,
+                # chances are the client has to reconsider what to do any way since the state will have changed
+                .with_for_update(of=Task2, nowait=True)
+                .get_or_404(tid))
 
+        # since the task is locked for writing and we can not change state
+        # to the same state it already is, we get atomic behaviour here:
         if status not in TASK_STATES[task.status.name]:
             raise ValidationError("can not set task to {} from {}".format(
                 status, task.status.name))
@@ -620,6 +627,17 @@ class Task2Resource(Resource):
         # since this is the point where the machine is finally known
         if status == 'pending':
             task.machine = Machine.query.filter_by(shortname=machine).one()
+
+            task_rt_settings = (db.session.query(TaskRuntimeSettings.settings)
+                                .filter_by(machine=task.machine)
+                                .filter_by(code=calc.code)
+                                .filter_by(test=calc.test)
+                                .scalar())
+
+            if task_rt_settings is None:
+                task_rt_settings = {}
+            else:
+                app.logger.info("found task runtime settings for machine '%s'", task.machine)
 
             # see that we have a command for this code and machine
             command = (Command.query
@@ -777,6 +795,9 @@ class Task2Resource(Resource):
                 user_input = task.calculation.settings['input']
                 combined_input = dict(mergedicts(user_input, generated_input))
 
+                # and merge any settings from the Task Runtime Settings (if any)
+                combined_input = dict(mergedicts(combined_input, task_rt_settings.get('input', {})))
+
                 try:
                     # if scf is itself a dict we get a reference here
                     scf = combined_input['force_eval']['dft']['scf']
@@ -801,20 +822,15 @@ class Task2Resource(Resource):
                 app.logger.error("code {} not (yet) supported", calc.code.name)
                 abort(500)
 
-            runner = task.machine.settings['runner']
 
             # ensure that we don't accidentally modify ORM objects
             commands = copy.deepcopy(command.commands)
             environment = copy.deepcopy(command.environment) if command.environment else {}
             machine_settings = copy.deepcopy(task.machine.settings)
+            runner = machine_settings['runner']
 
-            # if the command defines arguments for this runner, merge them over the machine settings
-            # The machine has only one set of runner_args, namely for the runner it is supposed to run
-            if runner in calc.settings.get('runner_args', {}).keys():
-                machine_settings = dict(mergedicts(
-                    machine_settings,
-                    {'runner_args': calc.settings['runner_args'][runner]}
-                    ))
+            # arguments for the runner or the machine can't come from the Calculation object since we don't
+            # know the runner or the machine at the point of creation of the Calculation object
 
             # merge command_args manually since they are not a dict (to preserve order)
             for name, args in calc.settings.get('command_args', {}).items():
@@ -823,26 +839,23 @@ class Task2Resource(Resource):
                         cmd['args'] += args
                         break
 
-            # if the user specifies a new modules list, the one from command will get overridden
+            # if the user specifies a new modules list, the one from command will get overridden.
+            # But usually the user will only overwrite environment variables like OMP_NUM_THREADS
+            # since everything else depends on the environment which is unknown at the point of
+            # creation of the Calculation object
             environment = dict(mergedicts(
                 environment,
                 calc.settings.get('command_environment', {})))
 
-            # If the command defines arguments (currently only runner_args) for this machine,
-            # merge them over the runner-specific settings.
-            # This makes it possible to set an estimated runtime from the calculation object.
-            if machine in calc.settings.get('machine_settings', {}).keys():
-                machine_settings = dict(mergedicts(
-                    machine_settings,
-                    {k: v for k, v in calc.settings['machine_settings'][machine].items() if k != 'command_args'}
-                    ))
+            # Merge the Task Runtime Settings over the pre-machine selection settings
+            # (note: code input merging already happened above)
+            environment = dict(mergedicts(
+                environment,
+                task_rt_settings.get('command', {}).get('environment', {})))
 
-                # merge command_args manually since they are not a dict (to preserve order)
-                for name, args in calc.settings['machine_settings'][machine].get('command_args', {}).items():
-                    for cmd in commands:
-                        if cmd['name'] == name:
-                            cmd['args'] += args
-                            break
+            machine_settings = dict(mergedicts(
+                machine_settings,
+                task_rt_settings.get('machine', {})))
 
             # intentionally merge the task settings over the other settings
             # to give the user the possibility to specify settings at task
