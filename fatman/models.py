@@ -572,8 +572,8 @@ class TestResult2(Base):
                                 backref='testresults')
     data = Column(JSONB)
     collections = relationship('TestResult2Collection',
-                              secondary="test_result2_test_result2_collection",
-                              backref='testresults')
+                               secondary="test_result2_test_result2_collection",
+                               backref='testresults')
 
     def __repr__(self):
         return "<TestResult(id='{}')>".format(self.id)
