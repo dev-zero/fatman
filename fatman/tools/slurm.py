@@ -45,6 +45,7 @@ srun \\
     --job-name="{{command.name}}" \\
     --output="{{command.name}}.out" \\
     --error="{{command.name}}.err" \\
+    --bcast="/tmp/slurm_bcast_{{command.name}}" \\
     {%- if srun_args %}
     {%- for name, value in srun_args.items() %}
     --{{ name }}={{ value | shell_quote }} \\
