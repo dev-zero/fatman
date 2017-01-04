@@ -326,7 +326,7 @@ class Machine(Base):
         return "<Machine(id='{}', shortname='{}')>".format(self.id, self.name)
 
     def __str__(self):
-        return self.name
+        return "{} ({})".format(self.name, self.shortname)
 
 
 class Code(Base):
