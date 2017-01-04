@@ -457,9 +457,9 @@ class CalculationListActionResource(Resource):
 class CalculationActionResource(Resource):
     @apiauth.login_required
     @use_kwargs(CalculationListActionSchema)
-    def post(self, cid, generate):
-        if generate:
-            async_result = generate_calculation_results.delay(cid, generate['update'])
+    def post(self, cid, generateResults):
+        if generateResults:
+            async_result = generate_calculation_results.delay(cid, generateResults['update'])
 
             return Response(status=202, headers={
                 'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
