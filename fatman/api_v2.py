@@ -918,6 +918,12 @@ class Task2Resource(Resource):
         task.status = TaskStatus.query.filter_by(name=status).one()
         db.session.commit()
 
+        if status == 'done':
+            # start generating results and then test results if succeeded
+            generate_calculation_results.apply_async(
+                (task.calculation.id,),
+                link=generate_test_result.si(task.calculation.id))
+
         schema = Task2Schema()
         return schema.jsonify(task)
 
@@ -945,11 +951,6 @@ class Task2UploadResource(Resource):
         db.session.add(Task2Artifact(artifact=artifact, task=task,
                                      linktype="output"))
         db.session.commit()
-
-        # start generating results and test results if succeeded
-        generate_calculation_results.apply_async(
-            (task.calculation.id,),
-            link=generate_test_result.si(task.calculation.id))
 
         schema = ArtifactSchema()
         return schema.jsonify(artifact)
