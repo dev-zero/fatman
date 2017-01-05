@@ -399,7 +399,10 @@ class Calculation(Base):
 
     @property
     def current_task(self):
-        return self.tasks[0]
+        try:
+            return self.tasks[0]
+        except IndexError:
+            return None
 
     # for later: link together already defined calculations (but full copy existing ones)
     # parent_id = Column(UUID(as_uuid=True), ForeignKey('calculation.id'))
