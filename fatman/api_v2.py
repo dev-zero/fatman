@@ -270,7 +270,19 @@ class CalculationSchema(CalculationListSchema):
 
 
 class CalculationListResource(Resource):
-    def get(self):
+    calculation_list_args = {
+        'collection': fields.Str(
+            validate=must_exist_in_db(CalculationCollection, 'name')),
+        'test': fields.String(
+            validate=must_exist_in_db(Test, 'name')),
+        'structure': fields.Str(),  # not validating here since we have a "contains" match for this
+        'code': fields.String(
+            validate=must_exist_in_db(Code, 'name')),
+        'status': fields.String(
+            validate=must_exist_in_db(TaskStatus, 'name')),
+        }
+    @use_kwargs(calculation_list_args)
+    def get(self, collection, test, structure, code, status):
         schema = CalculationListSchema(many=True)
 
         # The following join is inspired by http://stackoverflow.com/a/2111420/1400465
@@ -285,9 +297,26 @@ class CalculationListResource(Resource):
                  .join(Task2)
                  .options(contains_eager('tasks').joinedload('machine'))  # load selected Task together with Calculation
                  .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
-                 .filter(t2.id == None)
-                 .order_by(Task2.mtime.desc()).all()
-                 )
+                 .filter(t2.id == None))
+
+        if collection:
+            calcs = calcs.join(Calculation.collection).filter(CalculationCollection.name == collection)
+
+        if test:
+            calcs = calcs.join(Calculation.test).filter(Test.name == test)
+
+        if structure:
+            calcs = calcs.join(Calculation.structure).filter(Structure.name.contains(structure))
+
+        if code:
+            calcs = calcs.join(Calculation.code).filter(Code.name == code)
+
+        if status:
+            calcs = calcs.join(Task2.status).filter(TaskStatus.name == status)
+
+        calcs = (calcs
+                 .order_by(Task2.mtime.desc())
+                 .all())
 
         return schema.jsonify(calcs)
 
