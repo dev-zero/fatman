@@ -16,12 +16,8 @@ export class Task2Service {
     let headers = new Headers();
     headers.append('Content-Type', 'application/json');
     return this._http.get(this._tasksUrl + '/' + id, {headers: headers})
-      .map(response => this._mapTask(response))
+      .map(response => response.json() as Task2)
       .catch(this.handleError);
-  }
-
-  private _mapTask(response: Response) : Task2 {
-    return response.json() as Task2;
   }
 
   private handleError(error: any) {

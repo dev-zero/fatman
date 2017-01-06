@@ -13,6 +13,8 @@ export interface Task2 {
   priority: number;
   _links: { [name: string]: string };
 
-  outfiles: Artifact[];
-  infiles: Artifact[];
+  outfiles?: Artifact[];
+  infiles?: Artifact[];
+  settings?: any;
+  results?: any;
 }

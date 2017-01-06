@@ -6,6 +6,8 @@ import { Router, ActivatedRoute, Params } from '@angular/router';
 
 import { Calculation }         from './calculation';
 import { CalculationsService } from './calculations.service';
+import { Task2Service }        from '../task2/task.service';
+import { Task2 }               from '../task2/task';
 
 @Component({
   template: `
@@ -20,39 +22,35 @@ import { CalculationsService } from './calculations.service';
         Calculation {{ calculation.id }}
       </h3>
 
-      <div class="panel-group" id="taskAccordion" role="tablist" aria-multiselectable="true">
-        <div class="panel panel-default"
-          *ngFor="let task of calculation.tasks; let isFirst = first"
-          [ngClass]="{
-            'panel-danger': task.status == 'error',
-            'panel-warning': task.status == 'running',
-            'panel-success': task.status == 'done'
-            }">
-          <div class="panel-heading" role="tab"
-            [id]="'heading_' + task.id">
-            <h4 class="panel-title">
-              <a role="button" data-toggle="collapse" data-parent="#taskAccordion"
-                [href]="'#collapse_' + task.id"
-                [attr.aria-controls]="'collapse_' + task.id"
-                [attr.aria-expanded]="isFirst">
-                Task {{ task.id }} <span class="pull-right">{{ task.status | uppercase }}</span>
-              </a>
-            </h4>
-          </div>
-          <div class="panel-collapse collapse" role="tabpanel" 
-              [class.in]="isFirst"
-              [id]="'collapse_' + task.id"
-              [attr.aria-labelledby]="'heading_' + task.id">
-            <div class="panel-body">
-              <dl class="dl-horizontal">
-                <dt>Last Update</dt><dd>{{ task.mtime }}</dd>
-                <dt>Created</dt><dd>{{ task.ctime }}</dd>
-                <dt>Machine</dt><dd>{{ task.machine }}</dd>
-              </dl>
-            </div>
-          </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">Settings</h4>
+        </div>
+        <div class="panel-body">
+          <dl class="dl-horizontal">
+            <dt>Structure</dt>
+            <dd>{{ calculation.structure }}</dd>
+
+            <dt>Code</dt>
+            <dd>{{ calculation.code }}</dd>
+
+            <dt>Collection</dt>
+            <dd>{{ calculation.collection }}</dd>
+
+            <template ngFor let-basis_set [ngForOf]="calculation.basis_sets">
+              <dt>Basis Set for {{ basis_set.basis_set.element }} ({{ basis_set.type }})</dt>
+              <dd>{{ basis_set.basis_set.family }}</dd>
+            </template>
+
+            <template ngFor let-pseudo [ngForOf]="calculation.pseudos">
+              <dt>Pseudo</dt>
+              <dd>{{ pseudo }}</dd>
+            </template>
+          </dl>
         </div>
       </div>
+
+      <task2-detail [task]="calculation.current_task"></task2-detail>
 
       <div class="panel panel-default">
         <div class="panel-heading">
@@ -189,7 +187,8 @@ export class CalculationDetailComponent implements OnInit {
   constructor(
     private _route: ActivatedRoute,
     private _router: Router,
-    private _service: CalculationsService
+    private _service: CalculationsService,
+    private _tService: Task2Service
   ) {}
 
   ngOnInit() {
@@ -197,6 +196,11 @@ export class CalculationDetailComponent implements OnInit {
       .switchMap((params: Params) => this._service.getCalculation(params['id']))
       .subscribe((calc: Calculation) => {
         this.calculation = calc;
+
+        // fetch the full task object
+        if (this.calculation.current_task)
+          this._tService.getTask(this.calculation.current_task.id)
+            .subscribe((full_task: Task2) => { this.calculation.current_task = full_task; });
 
         if (calc.testresults && calc.testresults[0].test == 'deltatest') {
           let dtres = calc.testresults[0].data;

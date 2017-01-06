@@ -14,8 +14,9 @@ export interface Calculation {
   structure: string;
   _links: { [name: string]: string };
   settings?: any;
-  latest_task: Task2;
   results_available: boolean;
+
+  current_task?: Task2;
   tasks?: any;
   testresults?: TestResult[];
 }
