@@ -513,6 +513,9 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
         energies.append(calc.results['total_energy']/natom)
         volumes.append(struct.get_volume()/natom)
 
+    # sort the values by increasing volume
+    volumes, energies = (list(t) for t in zip(*sorted(zip(volumes, energies))))
+
     result_data.update({
         'energies': energies,
         'volumes': volumes,
@@ -527,6 +530,11 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
             'status': "fitted",
             'coefficients': dict(zip(('V', 'E0', 'B0', 'B1', 'R'), coeffs)),
             })
+
+    # make some additional checks to tag bad values
+    result_data['checks'] = {
+        'min_at_V0': all(e > energies[2] for e in energies[:2] + energies[3:]),
+        }
 
     if tr_id:
         tresult = TestResult2.query.get(tr_id)
