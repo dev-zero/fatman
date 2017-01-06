@@ -77,6 +77,10 @@ import { Task2 }               from '../task2/task';
                 <dl class="dl-horizontal">
                   <dt>Status</dt>
                   <dd>{{ testresult.data.status}}</dd>
+                  <template ngFor let-check [ngForOf]="testresult.data.checks | mapToIterable">
+                    <dt>Check: {{ check.key }}</dt>
+                    <dd>{{ check.value }}</dd>
+                  </template>
                   <dt>E<sub>0</sub></dt>
                   <dd *ngIf="testresult.data.status == 'fitted'">{{ testresult.data.coefficients.E0 }}</dd>
                   <dt>B<sub>0</sub></dt>
