@@ -1060,7 +1060,7 @@ def get_data_from_output(fhandle, code):
 
             return value_type(match.group('value'))
 
-        return {
+        data = {
             'version': key_value_match('CP2K| source code revision number:'),
             'mpiranks': key_value_match('GLOBAL| Total number of message passing processes', int),
             'threads': key_value_match('GLOBAL| Number of threads for this process', int),
@@ -1068,6 +1068,41 @@ def get_data_from_output(fhandle, code):
             'nkpoints': key_value_match('BRILLOUIN| List of Kpoints [2 Pi/Bohr]', int),
             'total_energy': key_value_match('ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):', float),
             }
+
+        match = re.search(r'''
+# anchor to indicate beginning of the HOMO/LUMO GW energy table
+^[ \t]* MO [ \t]* E_SCF [ \t]* Sigc [ \t]* Sigc_fit [ \t]* Sigx-vxc [ \t]* Z [ \t]* E_GW \n
+
+(
+  ^
+  [ \t]+ \d+
+  [ \t]+ \(\ occ\ \)
+  [ \t]+ (?P<HOMO_energy_SCF>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<HOMO_energy_GW>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  \n
+)+  # the regex engine will only keep the last capture groups, effectively selecting the LUMO
+(
+  ^
+  [ \t]+ \d+
+  [ \t]+ \(\ vir\ \)
+  [ \t]+ (?P<LUMO_energy_SCF>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<LUMO_energy_GW>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  \n
+)  # do not match more since we want only the HOMO
+''', content, re.MULTILINE | re.VERBOSE)
+
+        if match:
+            data.update(match.groupdict())
+
+        return data
 
 
     elif code == 'espresso':
