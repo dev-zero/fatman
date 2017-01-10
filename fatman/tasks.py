@@ -422,6 +422,14 @@ def generate_all_calculation_results(self, update=False):
     if not update:
         calcs = calcs.filter(Calculation.results_available == False)
 
+    # execute the query to check whether we have anything to do
+    calcs = calcs.all()
+
+    if not calcs:
+        # Celery does not like empty groups, end it here
+        logger.info("no calculations found which require processing")
+        return
+
     # replace the task with a group task for the single calculations
     raise self.replace(group(generate_calculation_results.s(c.id, update) for c in calcs))
 
@@ -612,6 +620,14 @@ def generate_all_test_results(self, update=False):
                                  Calculation.test_id == TestResult2.test_id))
                  # now filter out all results which have an associated test result available
                  .filter(TestResult2.id == None))
+
+    # execute the query to check whether we have anything to do
+    calcs = calcs.all()
+
+    if not calcs:
+        # Celery does not like empty groups, end it here
+        logger.info("no calculations/testresults found which require processing")
+        return
 
     # replace the task with a group task for the single calculations
     raise self.replace(group(generate_test_result.s(c.id, update) for c in calcs))
