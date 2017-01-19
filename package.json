@@ -3,11 +3,11 @@
   "version": "0.0.2",
   "description": "Flexible Accuracy Testing MANager",
   "devDependencies": {
-    "typescript": "~2.0.10",
-    "webpack": "^1.13.3",
-    "webpack-merge": "^1.0.2",
-    "source-maps-loader": "^0.1.8",
-    "ts-loader": "^1.2.2",
+    "typescript": "~2.1.5",
+    "webpack": "^1.14.0",
+    "webpack-merge": "^2.4.0",
+    "source-maps-loader": "^0.1.9",
+    "ts-loader": "^1.3.3",
     "@types/node": "^6.0.46"
   },
   "dependencies": {
