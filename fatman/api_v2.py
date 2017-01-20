@@ -281,6 +281,7 @@ class CalculationListResource(Resource):
         'status': fields.String(
             validate=must_exist_in_db(TaskStatus, 'name')),
         }
+
     @use_kwargs(calculation_list_args)
     def get(self, collection, test, structure, code, status):
         schema = CalculationListSchema(many=True)
@@ -851,7 +852,6 @@ class Task2Resource(Resource):
                 app.logger.error("code {} not (yet) supported", calc.code.name)
                 abort(500)
 
-
             # ensure that we don't accidentally modify ORM objects
             commands = copy.deepcopy(command.commands)
             environment = copy.deepcopy(command.environment) if command.environment else {}
@@ -1175,6 +1175,102 @@ class ActionResource(Resource):
         return {'status': async_result.status}
 
 
+class CodeListSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'self': ma.AbsoluteURLFor('coderesource', cid='<id>'),
+        'collection': ma.AbsoluteURLFor('codelistresource'),
+        })
+
+    id = fields.UUID()
+    name = fields.Str()
+
+
+class CodeCommandListSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'self': ma.AbsoluteURLFor('codecommandresource', cid='<code_id>', mid='<machine_id>'),
+        'collection': ma.AbsoluteURLFor('codecommandlistresource', cid='<code_id>'),
+        })
+
+    machine_id = fields.UUID()
+    machine_name = fields.Str(attribute='machine.name')
+    machine_shortname = fields.Str(attribute='machine.shortname')
+
+
+class CodeCommandSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'self': ma.AbsoluteURLFor('codecommandresource', cid='<code_id>', mid='<machine_id>'),
+        'collection': ma.AbsoluteURLFor('codecommandlistresource', cid='<code_id>'),
+        })
+
+    code = fields.Nested(CodeListSchema)
+
+    class Meta:
+        model = Command
+        strict = True
+
+
+class CodeSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'self': ma.AbsoluteURLFor('coderesource', cid='<id>'),
+        'collection': ma.AbsoluteURLFor('codelistresource'),
+        })
+
+    commands = fields.Nested(CodeCommandListSchema, many=True)
+
+    class Meta:
+        model = Code
+
+        exclude = ('calculations', 'default_settings', 'task_runtime_settings', )
+
+
+class CodeListResource(Resource):
+    def get(self):
+        schema = CodeListSchema(many=True)
+        return schema.jsonify(Code.query.all())
+
+
+class CodeResource(Resource):
+    def get(self, cid):
+        schema = CodeSchema()
+        return schema.jsonify((Code.query.get_or_404(cid)))
+
+
+class CodeCommandListResource(Resource):
+    def get(self, cid):
+        schema = CodeCommandListSchema(many=True)
+        return schema.jsonify(Command.query.filter_by(code_id=cid).all())
+
+
+class CodeCommandResource(Resource):
+    def get(self, cid, mid):
+        schema = CodeCommandSchema()
+        return schema.jsonify((Command.query.filter_by(code_id=cid, machine_id=mid).one()))
+
+    codecommand_args = {
+        'commands': fields.Nested({
+            'name': fields.Str(required=True),
+            'args': fields.List(fields.Str, required=True),
+            'cmd': fields.Str(required=True),
+            }, many=True, required=True),
+        'environment': fields.Nested({
+            'modules': fields.List(fields.Str, required=False),
+            'variables': fields.Dict(required=False),
+            }, required=True),
+        }
+
+    @apiauth.login_required
+    @use_kwargs(codecommand_args)
+    def post(self, cid, mid, commands, environment):
+        command = (Command.query
+                   .filter_by(code_id=cid, machine_id=mid)
+                   .one())
+
+        command.commands = commands
+        command.environment = environment
+
+        db.session.commit()
+
+
 # This error handler is necessary for usage with Flask-RESTful
 @parser.error_handler
 def handle_request_parsing_error(err):
@@ -1211,3 +1307,7 @@ api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
 api.add_resource(TestResultListResource, '/testresults')
 api.add_resource(TestResultListActionResource, '/testresults/action')
 api.add_resource(ActionResource, '/actions/<uuid:aid>')
+api.add_resource(CodeListResource, '/codes')
+api.add_resource(CodeResource, '/codes/<uuid:cid>')
+api.add_resource(CodeCommandListResource, '/codes/<uuid:cid>/commands')
+api.add_resource(CodeCommandResource, '/codes/<uuid:cid>/commands/<uuid:mid>')
