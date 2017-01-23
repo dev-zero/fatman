@@ -20,7 +20,7 @@ from werkzeug.exceptions import HTTPException
 from sqlalchemy import and_
 from sqlalchemy.orm import contains_eager, joinedload, aliased
 
-from ase import io as ase_io
+from ase import io as ase_io, data as ase_data
 import numpy as np
 
 from . import app, db, resultfiles, apiauth, capp
@@ -1013,7 +1013,8 @@ class StructureListResource_v2(Resource):
             required=True,
             validate=must_exist_in_db(StructureSet, 'name'))),
         'pbc': fields.Boolean(required=False, default=True),
-        'gformat': fields.Str(required=True, load_from='format')
+        'gformat': fields.Str(required=True, load_from='format'),
+        'cubic_cell': fields.Boolean(required=False, default=False),  # whether to generate a cubic cell
         }
     file_args = {
         'geometry': fields.Field(required=True)
@@ -1022,7 +1023,7 @@ class StructureListResource_v2(Resource):
     @apiauth.login_required
     @use_kwargs(structure_args)
     @use_kwargs(file_args, locations=('files', ))
-    def post(self, name, sets, pbc, gformat, geometry):
+    def post(self, name, sets, pbc, gformat, geometry, cubic_cell):
         sets = (StructureSet.query
                 .filter(StructureSet.name.in_(sets))
                 .all())
@@ -1031,26 +1032,44 @@ class StructureListResource_v2(Resource):
                              format=gformat)
 
         struct.set_pbc(pbc)
-        pos = struct.get_positions()
 
-        # if the structure is passed in XYZ-format, we generate
-        # a cell which is 2x the size of the molecule (3x if non-periodic)
-        # but at least 5 Å (important for 2D structures)
-        scale = 2. if pbc else 3.
-        min_d = 5.
-        cell = [max(min_d, scale*(max(pos[:, 0]) - min(pos[:, 0]))),
-                max(min_d, scale*(max(pos[:, 1]) - min(pos[:, 1]))),
-                max(min_d, scale*(max(pos[:, 2]) - min(pos[:, 2])))]
-        # and round up
+        # if the structure is passed in XYZ-format, we generate a cell based on the moleculare boundary box,
+        # where the molecule boundary box is defined as the minimal/maximal coordinates
+        # over all atoms minus/plus their respective VdW radii plus a buffer of 2.5 Å,
+        # resp. 5 for non-pbc on each side.
+        # This results in each side of the box being > 5 Å for the periodic,
+        # respectively > 10 Å for the non-periodic case
+        buf_size = 2.5 if pbc else 5.
+
+        vdwr_pos = list(zip([ase_data.vdw_radii[n] for n in struct.get_atomic_numbers()], struct.get_positions()))
+
+        cell = [
+            max(pos[0] + vdwr for vdwr, pos in vdwr_pos) - min(pos[0] - vdwr for vdwr, pos in vdwr_pos) + buf_size,
+            max(pos[1] + vdwr for vdwr, pos in vdwr_pos) - min(pos[1] - vdwr for vdwr, pos in vdwr_pos) + buf_size,
+            max(pos[2] + vdwr for vdwr, pos in vdwr_pos) - min(pos[2] - vdwr for vdwr, pos in vdwr_pos) + buf_size,
+            ]
+
+        # and round up to nearest full Angstrom
         cell = np.ceil(cell)
 
+        # if a cubic box is requested, use the largest coordinate
+        if cubic_cell:
+            cell = [max(cell)] * 3
+
         struct.set_cell(cell, scale_atoms=False)
+
+        # Finally, we center the atom in the cell (with the cell starting at 0/0/0)
+        # to also accomodate for non-periodic calculations and cases where we do not want
+        # the code to auto-center the coordinates in the box.
+        struct.center()
+
         ase_structure = Atoms2Json(struct)
 
         structure = Structure(name=name, sets=sets,
                               ase_structure=ase_structure)
         db.session.add(structure)
         db.session.commit()
+
         schema = StructureSchema()
         return schema.jsonify(structure)
 
