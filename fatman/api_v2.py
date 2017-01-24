@@ -998,16 +998,12 @@ class StructureSchema(ma.ModelSchema):
 
     replaced_by = fields.Nested(
         'StructureSchema',
-        exclude=('ase_structure', 'name', 'replaced', ))
-
-    replaced = fields.Nested(
-        'StructureSchema',
-        exclude=('ase_structure', 'name', 'replaced_by', ))
+        exclude=('ase_structure', 'name', ))
 
     class Meta:
         model = Structure
         # tests is an old table
-        exclude = ('tests', 'replaced_by_id', 'calculations', )
+        exclude = ('tests', 'replaced_by_id', 'calculations', 'replaced', )
 
 
 class StructureListResource_v2(Resource):
@@ -1124,7 +1120,10 @@ class StructureResource_v2(Resource):
 
     @apiauth.login_required
     def delete(self, sid):
-        structure = Structure.query.get_or_404(sid)
+        # here we load the replaced relationship to have SQLA set the references to NULL
+        structure = (Structure.query
+                     .options(joinedload(Structure.replaced))
+                     .get_or_404(sid))
         db.session.delete(structure)
         db.session.commit()
         return Response(status=204)  # return completely empty
