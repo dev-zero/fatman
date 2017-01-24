@@ -1011,6 +1011,7 @@ class StructureListResource_v2(Resource):
         'include_replaced': fields.Boolean(required=False, default=False),
         'limit': fields.Integer(required=False, missing=-1),
         }
+
     @use_kwargs(filter_args, locations=('query',))
     def get(self, include_replaced, limit):
         query = (Structure.query
@@ -1079,12 +1080,19 @@ class StructureListResource_v2(Resource):
         # respectively > 10 Å for the non-periodic case
         buf_size = 5. if pbc else 10.
 
-        vdwr_pos = list(zip([ase_data.vdw_radii[n] for n in struct.get_atomic_numbers()], struct.get_positions()))
+        # The VdW radius if available, otherwise the covalent radius
+        radii = [ase_data.vdw_radii[n]
+                 if not np.isnan(ase_data.vdw_radii[n])
+                 else ase_data.covalent_radii[n]
+                 for n in struct.get_atomic_numbers()]
+
+        radii_pos = list(zip(radii, struct.get_positions()))
 
         cell = [
-            max(pos[0] + vdwr for vdwr, pos in vdwr_pos) - min(pos[0] - vdwr for vdwr, pos in vdwr_pos) + buf_size,
-            max(pos[1] + vdwr for vdwr, pos in vdwr_pos) - min(pos[1] - vdwr for vdwr, pos in vdwr_pos) + buf_size,
-            max(pos[2] + vdwr for vdwr, pos in vdwr_pos) - min(pos[2] - vdwr for vdwr, pos in vdwr_pos) + buf_size,
+            max(pos[i] + rad for rad, pos in radii_pos) -
+            min(pos[i] - rad for rad, pos in radii_pos) +
+            buf_size
+            for i in range(3)
             ]
 
         # and round up to nearest full Angstrom
