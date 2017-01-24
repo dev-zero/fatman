@@ -1070,10 +1070,11 @@ class StructureListResource_v2(Resource):
         # if the structure is passed in XYZ-format, we generate a cell based on the moleculare boundary box,
         # where the molecule boundary box is defined as the minimal/maximal coordinates
         # over all atoms minus/plus their respective VdW radii plus a buffer of 2.5 Å,
-        # resp. 5 for non-pbc on each side.
+        # resp. 5 for non-pbc on each side
+        # So, for the periodic case the buffers "overlap" between images compared to the non-periodic case.
         # This results in each side of the box being > 5 Å for the periodic,
         # respectively > 10 Å for the non-periodic case
-        buf_size = 2.5 if pbc else 5.
+        buf_size = 5. if pbc else 10.
 
         vdwr_pos = list(zip([ase_data.vdw_radii[n] for n in struct.get_atomic_numbers()], struct.get_positions()))
 
