@@ -1013,7 +1013,10 @@ class StructureListResource_v2(Resource):
         }
     @use_kwargs(filter_args, locations=('query',))
     def get(self, include_replaced, limit):
-        query = Structure.query
+        query = (Structure.query
+                 .join(Structure.sets)
+                 .options(contains_eager(Structure.sets))
+                 )
 
         if not include_replaced:
             query = query.filter(Structure.replaced_by_id == None)

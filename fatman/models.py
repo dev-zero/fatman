@@ -131,7 +131,7 @@ class StructureSet(Base):
     name = Column(String(255), unique=True, nullable=False)
     description = Column(Text)
     structures = relationship('Structure', secondary="structure_set_structure",
-                              backref=backref('sets', lazy='dynamic'))
+                              backref=backref('sets'))
 
     def __repr__(self):
         return "<StructureSet(name='{}')>".format(self.name)
