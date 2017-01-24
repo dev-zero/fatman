@@ -1156,7 +1156,7 @@ class StructureSetCalculationsListResource(Resource):
 
         structures = (db.session.query(Structure.name)
                       .join(StructureSet, Structure.sets)
-                      .filter(StructureSet.name == name)
+                      .filter(StructureSet.name == name, Structure.replaced_by_id == None)
                       .all())
 
         calculations = []
