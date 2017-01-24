@@ -96,6 +96,10 @@ class Structure(Base):
     replaced_by_id = Column(UUID(as_uuid=True), ForeignKey('structure.id'))
     replaced_by = relationship("Structure", remote_side=[id])
 
+    # this is also required to make the cascade work when deleting a structure
+    replaced = relationship("Structure", remote_side=[replaced_by_id],
+                            single_parent=True, uselist=False)
+
     def __repr__(self):
         return "<Structure(name='{}')>".format(self.name)
 

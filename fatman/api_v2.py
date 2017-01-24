@@ -998,7 +998,11 @@ class StructureSchema(ma.ModelSchema):
 
     replaced_by = fields.Nested(
         'StructureSchema',
-        exclude=('ase_structure', 'name', ))
+        exclude=('ase_structure', 'name', 'replaced', ))
+
+    replaced = fields.Nested(
+        'StructureSchema',
+        exclude=('ase_structure', 'name', 'replaced_by', ))
 
     class Meta:
         model = Structure
@@ -1117,6 +1121,13 @@ class StructureResource_v2(Resource):
     def get(self, sid):
         schema = StructureSchema()
         return schema.jsonify((Structure.query.get_or_404(sid)))
+
+    @apiauth.login_required
+    def delete(self, sid):
+        structure = Structure.query.get_or_404(sid)
+        db.session.delete(structure)
+        db.session.commit()
+        return Response(status=204)  # return completely empty
 
 
 class StructureSetSchema(ma.ModelSchema):
