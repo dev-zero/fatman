@@ -18,8 +18,9 @@ from flask_security import UserMixin, RoleMixin
 from sqlalchemy import text
 from sqlalchemy import Column, ForeignKey, UniqueConstraint
 from sqlalchemy import Integer, String, Boolean, DateTime, Text, Enum
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID, JSONB, ExcludeConstraint
 from sqlalchemy.orm import column_property
+from sqlalchemy.sql.expression import null
 
 from werkzeug.datastructures import FileStorage
 
@@ -88,15 +89,29 @@ class User(Base, UserMixin):
 
 class Structure(Base):
     id = UUIDPKColumn()
-    name = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
     # ase_structure = Column(JSONB, nullable=False)
     ase_structure = Column(Text, nullable=False)
+
+    replaced_by_id = Column(UUID(as_uuid=True), ForeignKey('structure.id'))
+    replaced_by = relationship("Structure", remote_side=[id])
 
     def __repr__(self):
         return "<Structure(name='{}')>".format(self.name)
 
     def __str__(self):
         return self.name
+
+    __table_args__ = (
+        # ensure that the name is unique amongst non-replaced structures,
+        # and defer constraint to end of transaction to be able to replace
+        # structures within one transaction
+        ExcludeConstraint(
+            ('name', '='),
+            using='btree',
+            where=replaced_by_id == null(),
+            deferrable=True, initially='DEFERRED'),
+        )
 
 
 StructureSetStructure = Table('structure_set_structure', Base.metadata,

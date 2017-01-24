@@ -246,7 +246,9 @@ class TaskList(Resource):
 
         if args['structure'] is not None:
             # not using .all() to get exception if nothing found
-            structs = [Structure.query.filter_by(name=args['structure']).one()]
+            structs = [
+                Structure.query.filter(Structure.name == args['structure'], Structure.replaced_by_id == None).one(),
+                ]
         else:
             structs = t.structures
 
@@ -909,7 +911,7 @@ class StructureResource(Resource):
             s = Structure.query.get_or_404(args['id'])
         elif args['test']:
             s = (Structure.query
-                 .filter(Structure.tests.any(name=args['test']))
+                 .filter(Structure.tests.any(name=args['test']), Structure.replaced_by_id == None)
                  .first())
         else:
             raise ParameterError("exactly one of id or test parameter is required")

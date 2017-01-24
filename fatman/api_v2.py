@@ -369,7 +369,8 @@ class CalculationListResource(Resource):
                       .one())
 
         structure = (Structure.query
-                     .filter_by(name=structure).one())
+                     .filter(Structure.name == structure, Structure.replaced_by_id == None)
+                     .one())
         atoms = Json2Atoms(structure.ase_structure)
         kinds = set(atoms.get_chemical_symbols())
 
@@ -995,17 +996,34 @@ class StructureSchema(ma.ModelSchema):
         'collection': ma.AbsoluteURLFor('structurelistresource_v2'),
         })
 
+    replaced_by = fields.Nested(
+        'StructureSchema',
+        exclude=('ase_structure', 'name', ))
+
     class Meta:
         model = Structure
         # tests is an old table
-        exclude = ('tests', )
+        exclude = ('tests', 'replaced_by_id', 'calculations', )
 
 
 class StructureListResource_v2(Resource):
-    def get(self):
+    filter_args = {
+        'include_replaced': fields.Boolean(required=False, default=False),
+        'limit': fields.Integer(required=False, missing=-1),
+        }
+    @use_kwargs(filter_args, locations=('query',))
+    def get(self, include_replaced, limit):
+        query = Structure.query
+
+        if not include_replaced:
+            query = query.filter(Structure.replaced_by_id == None)
+
+        if limit > 0:
+            query = query.limit(limit)
+
         schema = StructureSchema(many=True,
                                  exclude=('calculations', 'ase_structure',))
-        return schema.jsonify(Structure.query.all())
+        return schema.jsonify(query.all())
 
     structure_args = {
         'name': fields.Str(required=True),
@@ -1015,6 +1033,7 @@ class StructureListResource_v2(Resource):
         'pbc': fields.Boolean(required=False, default=True),
         'gformat': fields.Str(required=True, load_from='format'),
         'cubic_cell': fields.Boolean(required=False, default=False),  # whether to generate a cubic cell
+        'replace_existing': fields.Boolean(required=False, default=False),  # whether to replace an existing structure
         }
     file_args = {
         'geometry': fields.Field(required=True)
@@ -1023,10 +1042,25 @@ class StructureListResource_v2(Resource):
     @apiauth.login_required
     @use_kwargs(structure_args)
     @use_kwargs(file_args, locations=('files', ))
-    def post(self, name, sets, pbc, gformat, geometry, cubic_cell):
+    def post(self, name, sets, pbc, gformat, geometry, cubic_cell, replace_existing):
         sets = (StructureSet.query
                 .filter(StructureSet.name.in_(sets))
                 .all())
+
+        existing_structure = (Structure.query
+                              .filter(Structure.name == name, Structure.replaced_by_id == None)
+                              .one_or_none())
+
+        if existing_structure and not replace_existing:
+            try:
+                flask.abort(422)
+            except HTTPException as exc:
+                exc.data = {
+                    'errors': {
+                        'name': "A structure with this name already exists and replace_existing is not true",
+                        },
+                    }
+                raise exc
 
         struct = ase_io.read(TextIOWrapper(geometry),
                              format=gformat)
@@ -1068,6 +1102,10 @@ class StructureListResource_v2(Resource):
         structure = Structure(name=name, sets=sets,
                               ase_structure=ase_structure)
         db.session.add(structure)
+
+        if existing_structure:
+            existing_structure.replaced_by = structure
+
         db.session.commit()
 
         schema = StructureSchema()
