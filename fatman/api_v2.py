@@ -244,7 +244,7 @@ class CalculationSchema(CalculationListSchema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
     code = fields.Str(attribute='code.name')
-    structure = fields.Str(attribute='structure.name')
+    structure = fields.Nested('StructureSchema', only=('id', 'name', '_links', ))
     test = fields.Str(attribute='test.name')
     tasks = fields.Nested('Task2ListSchema', many=True)
     testresults = fields.Nested('TestResultSchema', many=True, exclude=('calculations',))
