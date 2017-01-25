@@ -7,7 +7,6 @@ import copy
 
 import flask
 from flask import make_response, request
-from flask_marshmallow import Marshmallow
 from flask_restful import Api, Resource
 from webargs import fields, ValidationError
 from webargs.flaskparser import (
@@ -56,7 +55,24 @@ from .tasks import (
     generate_all_test_results,
     )
 
-ma = Marshmallow(app)
+from .schemas import (
+    ArtifactSchema,
+    BasisSetSchema,
+    CalculationCollectionSchema,
+    CalculationListSchema,
+    TestResultSchema,
+    CalculationSchema,
+    CalculationListActionSchema,
+    Task2ListSchema,
+    Task2Schema,
+    StructureSchema,
+    StructureSetSchema,
+    TestResultListActionSchema,
+    CodeListSchema,
+    CodeCommandListSchema,
+    CodeCommandSchema,
+    CodeSchema,
+    )
 
 
 def must_exist_in_db(model, field='id'):
@@ -66,18 +82,6 @@ def must_exist_in_db(model, field='id'):
                 model.__name__))
 
     return check
-
-
-class ArtifactSchema(ma.Schema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('artifactresource', aid='<id>'),
-        'collection': ma.AbsoluteURLFor('artifactlistresource'),
-        'download': ma.AbsoluteURLFor('artifactdownloadresource', aid='<id>'),
-        })
-
-    class Meta:
-        model = Artifact
-        fields = ('id', 'name', '_links')
 
 
 class ArtifactListResource(Resource):
@@ -128,19 +132,6 @@ class ArtifactDownloadResource(Resource):
         abort(500)
 
 
-class BasisSetSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('basissetresource', bid='<id>'),
-        'collection': ma.AbsoluteURLFor('basissetlistresource'),
-        })
-
-    family = fields.Str(attribute='family.name')
-
-    class Meta:
-        model = BasisSet
-        exclude = ('calculations', 'calculation_associations', )
-
-
 class BasisSetListResource(Resource):
     def get(self):
         schema = BasisSetSchema(exclude=('basis', ), many=True)
@@ -181,18 +172,6 @@ class BasisSetResource(Resource):
         return schema.jsonify((BasisSet.query.get_or_404(bid)))
 
 
-class CalculationCollectionSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('calculationcollectionresource', ccid='<id>'),
-        'collection': ma.AbsoluteURLFor('calculationcollectionlistresource'),
-        })
-
-    class Meta:
-        model = CalculationCollection
-        strict = True
-        fields = ('_links', 'id', 'name', 'desc', )
-
-
 class CalculationCollectionListResource(Resource):
     def get(self):
         schema = CalculationCollectionSchema(many=True)
@@ -203,70 +182,6 @@ class CalculationCollectionResource(Resource):
     def get(self, ccid):
         schema = CalculationCollectionSchema()
         return schema.jsonify((CalculationCollection.query.get_or_404(ccid)))
-
-
-class CalculationBasisSetAssociationSchema(ma.ModelSchema):
-    basis_set = fields.Nested(
-        BasisSetSchema(exclude=('basis', ))
-        )
-    type = fields.Str(attribute='btype')
-
-
-class CalculationListSchema(ma.ModelSchema):
-    id = fields.UUID()
-    collection = fields.Str(attribute='collection.name')
-    code = fields.Str(attribute='code.name')
-    structure = fields.Str(attribute='structure.name')
-    test = fields.Str(attribute='test.name')
-    results_available = fields.Bool()
-    current_task = fields.Nested('Task2ListSchema')
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
-        'collection': ma.AbsoluteURLFor('calculationlistresource'),
-        'tasks': ma.AbsoluteURLFor('calculationtask2listresource', cid='<id>'),
-        })
-
-
-class TestResultSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'collection': ma.AbsoluteURLFor('testresultlistresource'),
-        })
-
-    test = fields.Str(attribute='test.name')
-    calculations = fields.Nested(CalculationListSchema, many=True)
-    collections = fields.Str(attribute='collections.name')
-
-    class Meta:
-        model = TestResult2
-
-
-class CalculationSchema(CalculationListSchema):
-    id = fields.UUID()
-    collection = fields.Str(attribute='collection.name')
-    code = fields.Str(attribute='code.name')
-    structure = fields.Nested('StructureSchema', only=('id', 'name', '_links', ))
-    test = fields.Str(attribute='test.name')
-    tasks = fields.Nested('Task2ListSchema', many=True)
-    testresults = fields.Nested('TestResultSchema', many=True, exclude=('calculations',))
-
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
-        'collection': ma.AbsoluteURLFor('calculationlistresource'),
-        'tasks': ma.AbsoluteURLFor('calculationtask2listresource', cid='<id>'),
-        })
-
-    basis_sets = fields.Nested(
-        CalculationBasisSetAssociationSchema,
-        attribute='basis_set_associations',
-        many=True)
-
-    class Meta:
-        model = Calculation
-        exclude = (
-            'basis_set_associations',
-            'tasks_query',
-            'testresults_query',
-            )
 
 
 class CalculationListResource(Resource):
@@ -463,15 +378,6 @@ class CalculationListResource(Resource):
         return schema.jsonify(calculation)
 
 
-class CalculationListActionSchema(ma.Schema):
-    generateResults = fields.Nested(
-        {'update': fields.Boolean(missing=False)},
-        strict=True)
-
-    class Meta:
-        strict = True
-
-
 class CalculationListActionResource(Resource):
     @apiauth.login_required
     @use_kwargs(CalculationListActionSchema)
@@ -513,32 +419,6 @@ class CalculationResource(Resource):
                        .get_or_404(cid))
         schema = CalculationSchema()
         return schema.jsonify(calculation)
-
-
-class Task2ListSchema(ma.ModelSchema):
-    id = fields.UUID()
-    status = fields.Str(attribute='status.name')
-    ctime = fields.DateTime()
-    mtime = fields.DateTime()
-    machine = fields.Str(attribute='machine.name')
-    priority = fields.Int()
-
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('task2resource', tid='<id>'),
-        'collection': ma.AbsoluteURLFor('task2listresource'),
-        'uploads': ma.AbsoluteURLFor('task2uploadresource', tid='<id>'),
-        })
-
-
-class Task2Schema(Task2ListSchema):
-    calculation = fields.Nested(CalculationListSchema)
-    infiles = fields.Nested(ArtifactSchema, many=True)
-    outfiles = fields.Nested(ArtifactSchema, many=True)
-    data = fields.Dict()
-
-    class Meta:
-        model = Task2
-        exclude = ('artifacts', )
 
 
 class Task2ListResource(Resource):
@@ -986,26 +866,6 @@ class Task2UploadResource(Resource):
         return schema.jsonify(artifact)
 
 
-class StructureSchema(ma.ModelSchema):
-    calculations = fields.Nested(CalculationListSchema, many=True,
-                                 exclude=('structure', ))
-
-    sets = fields.DelimitedList(fields.Str())
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('structureresource_v2', sid='<id>'),
-        'collection': ma.AbsoluteURLFor('structurelistresource_v2'),
-        })
-
-    replaced_by = fields.Nested(
-        'StructureSchema',
-        exclude=('ase_structure', 'name', ))
-
-    class Meta:
-        model = Structure
-        # tests is an old table
-        exclude = ('tests', 'replaced_by_id', 'calculations', 'replaced', )
-
-
 class StructureListResource_v2(Resource):
     filter_args = {
         'include_replaced': fields.Boolean(required=False, default=False),
@@ -1140,18 +1000,6 @@ class StructureResource_v2(Resource):
         return Response(status=204)  # return completely empty
 
 
-class StructureSetSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('structuresetresource', name='<name>'),
-        'collection': ma.AbsoluteURLFor('structuresetlistresource'),
-        'calculations': ma.AbsoluteURLFor('structuresetcalculationslistresource', name='<name>'),
-        })
-
-    class Meta:
-        model = StructureSet
-        exclude = ('id', 'structures', )
-
-
 class StructureSetListResource(Resource):
     def get(self):
         schema = StructureSetSchema(many=True)
@@ -1221,15 +1069,6 @@ class TestResultListResource(Resource):
         return schema.jsonify(tresults)
 
 
-class TestResultListActionSchema(ma.Schema):
-    generate = fields.Nested(
-        {'update': fields.Boolean(missing=False)},
-        strict=True)
-
-    class Meta:
-        strict = True
-
-
 class TestResultListActionResource(Resource):
     @apiauth.login_required
     @use_kwargs(TestResultListActionSchema)
@@ -1252,54 +1091,6 @@ class ActionResource(Resource):
 
         # TODO: figure out task name using Celery 4.x and add more infos
         return {'status': async_result.status}
-
-
-class CodeListSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('coderesource', cid='<id>'),
-        'collection': ma.AbsoluteURLFor('codelistresource'),
-        })
-
-    id = fields.UUID()
-    name = fields.Str()
-
-
-class CodeCommandListSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('codecommandresource', cid='<code_id>', mid='<machine_id>'),
-        'collection': ma.AbsoluteURLFor('codecommandlistresource', cid='<code_id>'),
-        })
-
-    machine_id = fields.UUID()
-    machine_name = fields.Str(attribute='machine.name')
-    machine_shortname = fields.Str(attribute='machine.shortname')
-
-
-class CodeCommandSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('codecommandresource', cid='<code_id>', mid='<machine_id>'),
-        'collection': ma.AbsoluteURLFor('codecommandlistresource', cid='<code_id>'),
-        })
-
-    code = fields.Nested(CodeListSchema)
-
-    class Meta:
-        model = Command
-        strict = True
-
-
-class CodeSchema(ma.ModelSchema):
-    _links = ma.Hyperlinks({
-        'self': ma.AbsoluteURLFor('coderesource', cid='<id>'),
-        'collection': ma.AbsoluteURLFor('codelistresource'),
-        })
-
-    commands = fields.Nested(CodeCommandListSchema, many=True)
-
-    class Meta:
-        model = Code
-
-        exclude = ('calculations', 'default_settings', 'task_runtime_settings', )
 
 
 class CodeListResource(Resource):
