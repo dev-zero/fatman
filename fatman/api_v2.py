@@ -1064,9 +1064,36 @@ class StructureSetResource(Resource):
 
 class TestResultListResource(Resource):
     def get(self):
-        schema = TestResultSchema(many=True)
-        tresults = TestResult2.query.all()
-        return schema.jsonify(tresults)
+        schema = TestResultSchema(many=True, exclude=('data', ))
+        # optimize the query by eager_loading calculations, structure and task
+        tresults = (TestResult2.query
+                    .options(
+                        joinedload('calculations').
+                            joinedload('structure')
+                        )
+                    .options(
+                        joinedload('calculations').
+                            joinedload('tasks')
+                        )
+                    )
+        return schema.jsonify(tresults.all())
+
+
+class TestResultResource(Resource):
+    def get(self, trid):
+        schema = TestResultSchema()
+        tresult = (TestResult2.query
+                    .options(
+                        joinedload('calculations').
+                            joinedload('structure')
+                        )
+                    .options(
+                        joinedload('calculations').
+                            joinedload('tasks')
+                        )
+                    .get_or_404(trid))
+
+        return schema.jsonify(tresult)
 
 
 class TestResultListActionResource(Resource):
@@ -1175,6 +1202,7 @@ api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')
 api.add_resource(BasisSetListResource, '/basissets')
 api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
 api.add_resource(TestResultListResource, '/testresults')
+api.add_resource(TestResultResource, '/testresults/<uuid:trid>')
 api.add_resource(TestResultListActionResource, '/testresults/action')
 api.add_resource(ActionResource, '/actions/<uuid:aid>')
 api.add_resource(CodeListResource, '/codes')

@@ -588,13 +588,13 @@ class Artifact(Base):
 class TestResult2(Base):
     id = UUIDPKColumn()
     test_id = Column(Integer, ForeignKey('test.id'), nullable=False)
-    test = relationship("Test")
+    test = relationship("Test", lazy='joined')
     calculations = relationship("Calculation", secondary="test_result2_calculation",
                                 backref='testresults')
     data = Column(JSONB)
     collections = relationship('TestResult2Collection',
                                secondary="test_result2_test_result2_collection",
-                               backref='testresults')
+                               backref='testresults', lazy='joined')
 
     def __repr__(self):
         return "<TestResult(id='{}')>".format(self.id)

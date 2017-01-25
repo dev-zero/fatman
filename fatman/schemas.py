@@ -82,6 +82,7 @@ class CalculationListSchema(ma.ModelSchema):
 class TestResultSchema(ma.ModelSchema):
     _links = ma.Hyperlinks({
         'collection': ma.AbsoluteURLFor('testresultlistresource'),
+        'self': ma.AbsoluteURLFor('testresultresource', trid='<id>'),
         })
 
     test = fields.Str(attribute='test.name')
