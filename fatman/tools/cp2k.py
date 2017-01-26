@@ -35,7 +35,7 @@ def dict2line_iter(nested, ilevel=0):
             yield "{}{} {}".format(' '*ilevel, key.upper(), val)
 
 
-def dict2cp2k(data, output=None, parameters=None):
+def dict2cp2k(data, output=None, parameters={}):  # pylint: disable=locally-disabled, dangerous-default-value
     """Convert and write a nested python dict to a CP2K input file.
 
     Some of this code is either taken from AiiDA or heavily
