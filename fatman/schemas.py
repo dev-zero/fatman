@@ -1,4 +1,6 @@
 
+import collections
+
 from flask_marshmallow import Marshmallow
 from webargs import fields
 
@@ -19,6 +21,41 @@ from .models import (
 
 ma = Marshmallow(app)
 
+
+# Custom fields:
+
+class BoolValuedDict(fields.Field):
+    """A dictionary where all values are booleans.
+
+    Basically a merge of fields.Boolean and fields.Dict"""
+
+    truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
+    falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+
+    default_error_messages = {
+        'invalid-dict': 'Not a valid mapping type.',
+        'invalid-bool': 'Not a valid boolean.'
+    }
+
+    def _convert_value(self, value):
+        try:
+            if value in self.truthy:
+                return True
+            elif value in self.falsy:
+                return False
+        except TypeError:
+            pass
+
+        self.fail('invalid-bool')
+
+    def _deserialize(self, value, attr, obj):
+        if not isinstance(value, collections.Mapping):
+            self.fail('invalid')
+
+        return {k: self._convert_value(v) for k, v in value.items()}
+
+
+# The schemas:
 
 class ArtifactSchema(ma.Schema):
     _links = ma.Hyperlinks({

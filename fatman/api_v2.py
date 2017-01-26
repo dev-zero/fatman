@@ -4,6 +4,7 @@ from urllib.parse import urlsplit
 from os.path import basename
 from io import TextIOWrapper, BytesIO
 import copy
+import collections
 
 import flask
 from flask import make_response, request
@@ -16,8 +17,9 @@ from webargs.flaskparser import (
     )
 from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException
-from sqlalchemy import and_
+from sqlalchemy import and_, cast
 from sqlalchemy.orm import contains_eager, joinedload, aliased
+from sqlalchemy.dialects.postgresql import JSONB
 
 from ase import io as ase_io, data as ase_data
 import numpy as np
@@ -48,6 +50,8 @@ from .models import (
 from .tools import Json2Atoms, Atoms2Json
 from .tools.cp2k import dict2cp2k, mergedicts
 from .tools.slurm import generate_slurm_batch_script
+from .tools.webargs import nested_parser
+
 from .tasks import (
     generate_calculation_results,
     generate_all_calculation_results,
@@ -72,6 +76,8 @@ from .schemas import (
     CodeCommandListSchema,
     CodeCommandSchema,
     CodeSchema,
+
+    BoolValuedDict,
     )
 
 
@@ -1062,21 +1068,90 @@ class StructureSetResource(Resource):
         return schema.jsonify(StructureSet.query.filter_by(name=name).one())
 
 
+
 class TestResultListResource(Resource):
-    def get(self):
+    filter_args = {
+        'test': fields.String(required=False),
+        'structure': fields.String(required=False),
+        # the nested parser unpacks data.foo=10 to data: { 'foo': 10 },
+        # TODO: validate checks to be a dict of (str, bool)
+        'data': fields.Nested({
+            'checks': BoolValuedDict(),
+            'coefficients': fields.Dict(),
+            'status': fields.String(),
+            'element': fields.String(),
+            }),
+        }
+
+    @nested_parser.use_kwargs(filter_args, locations=('query',))
+    def get(self, test, structure, data):
         schema = TestResultSchema(many=True, exclude=('data', ))
         # optimize the query by eager_loading calculations, structure and task
-        tresults = (TestResult2.query
-                    .options(
-                        joinedload('calculations').
-                            joinedload('structure')
-                        )
-                    .options(
-                        joinedload('calculations').
-                            joinedload('tasks')
-                        )
-                    )
-        return schema.jsonify(tresults.all())
+        query = (TestResult2.query
+                 .options(
+                     joinedload('calculations').
+                         joinedload('structure')
+                     )
+                 .options(
+                     joinedload('calculations').
+                         joinedload('tasks')
+                     )
+                 .options(
+                     joinedload('calculations').
+                         joinedload('code')
+                     )
+                 )
+
+        if test:
+            query = query.join(TestResult2.test).filter(Test.name.contains(test))
+
+        if structure:
+            query = (query
+                     .join(TestResult2.calculations)
+                     .join(Calculation.structure)
+                     .filter(Structure.name.contains(structure)))
+
+        if data:
+            # here we are going to build the JSON query
+            if 'checks' in data:
+                # the checks are a series of key: bool
+                for check, value in data['checks'].items():
+                    query = query.filter(TestResult2.data[('checks', check, )] == cast(value, JSONB))
+
+            if 'element' in data.keys():
+                query = query.filter(TestResult2.data['element'] == cast(data['element'], JSONB))
+
+            if 'coefficients' in data.keys():
+                for coeff, value in data['coefficients'].items():
+                    # we can either have coefficients.R0=10. for an equal match
+                    # or something like coefficients.R0.lt=10. for a '< 10' match
+                    if isinstance(value, collections.Mapping):
+                        op, value = value.popitem()
+                    else:
+                        op = 'eq'
+
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        raise ValidationError("invalid boolean value specified for 'coefficients.{}'".format(coeff))
+
+                    # Note: PostgreSQL is faster when doing the op evaluation on the JSONB side rather than
+                    #       explicitly converting the retrieved values to float and doing the comparison by itself.
+                    if op == 'lt':
+                        query = query.filter(TestResult2.data[('coefficients', coeff, )] < cast(value, JSONB))
+                    elif op == 'le':
+                        query = query.filter(TestResult2.data[('coefficients', coeff, )] <= cast(value, JSONB))
+                    elif op == 'eq':
+                        query = query.filter(TestResult2.data[('coefficients', coeff, )] == cast(value, JSONB))
+                    elif op == 'gt':
+                        query = query.filter(TestResult2.data[('coefficients', coeff, )] > cast(value, JSONB))
+                    elif op == 'ge':
+                        query = query.filter(TestResult2.data[('coefficients', coeff, )] >= cast(value, JSONB))
+                    else:
+                        raise ValidationError("invalid operator '{}' specified for 'coefficients.{}'".format(op, coeff))
+
+
+        return schema.jsonify(query.all())
 
 
 class TestResultResource(Resource):
@@ -1085,11 +1160,7 @@ class TestResultResource(Resource):
         tresult = (TestResult2.query
                     .options(
                         joinedload('calculations').
-                            joinedload('structure')
-                        )
-                    .options(
-                        joinedload('calculations').
-                            joinedload('tasks')
+                            joinedload('structure', 'tasks')
                         )
                     .get_or_404(trid))
 
