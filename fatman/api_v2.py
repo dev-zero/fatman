@@ -616,9 +616,9 @@ class Task2Resource(Resource):
                     = periodic
 
                 cell = {
-                    'a': (('[angstrom]',) + tuple(struct.get_cell()[:, 0])),
-                    'b': (('[angstrom]',) + tuple(struct.get_cell()[:, 1])),
-                    'c': (('[angstrom]',) + tuple(struct.get_cell()[:, 2])),
+                    'a': (('[angstrom]',) + tuple(struct.get_cell()[0, :])),
+                    'b': (('[angstrom]',) + tuple(struct.get_cell()[1, :])),
+                    'c': (('[angstrom]',) + tuple(struct.get_cell()[2, :])),
                     'periodic': periodic,
                     }
                 generated_input['force_eval']['subsys']['cell'] = cell
