@@ -270,13 +270,14 @@ class CalculationListResource(Resource):
                                                            'name')),
             },
             required=False),
+        'settings': fields.Dict(missing={}),
         'restrictions': fields.Dict(missing=None),
         }
 
     @staticmethod
     def new_calculation(collection, test, structure, code,
                         pseudo_family, basis_set_family, basis_set_family_fallback,
-                        restrictions):
+                        settings, restrictions):
 
         # replace IDs by ORM objects where necessary:
 
@@ -359,10 +360,13 @@ class CalculationListResource(Resource):
         if default_settings:
             app.logger.info(("found default settings for code '%s'"
                              " and test '%s'"), code.name, test.name)
+            # merge the settings specified by the user over the default_settings
+            # to give the user the possibility to overwrite them
+            settings = dict(mergedicts(default_settings, settings))
 
         calculation = Calculation(collection=collection, test=test,
                                   structure=structure, code=code,
-                                  settings=default_settings,
+                                  settings=settings,
                                   restrictions=restrictions,
                                   pseudos=pseudos)
 
@@ -1075,7 +1079,6 @@ class StructureSetResource(Resource):
         return schema.jsonify(StructureSet.query.filter_by(name=name).one())
 
 
-
 class TestResultListResource(Resource):
     filter_args = {
         'test': fields.String(required=False),
@@ -1092,7 +1095,7 @@ class TestResultListResource(Resource):
 
     @nested_parser.use_kwargs(filter_args, locations=('query',))
     def get(self, test, structure, data):
-        schema_excluded_columns=['data', ]
+        schema_excluded_columns = ['data', ]
 
         # optimize the query by eager_loading calculations, structure and task
         query = (TestResult2.query
@@ -1160,7 +1163,6 @@ class TestResultListResource(Resource):
                         query = query.filter(TestResult2.data[('coefficients', coeff, )] >= cast(value, JSONB))
                     else:
                         raise ValidationError("invalid operator '{}' specified for 'coefficients.{}'".format(op, coeff))
-
 
         schema = TestResultSchema(many=True, exclude=schema_excluded_columns)
         return schema.jsonify(query.all())
