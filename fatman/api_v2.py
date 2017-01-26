@@ -723,6 +723,13 @@ class Task2Resource(Resource):
                 except KeyError:
                     pass
 
+                # enforce same periodicity for CELL_REF (if specified) as for the cell itself
+                try:
+                    combined_input['force_eval']['subsys']['cell']['cell_ref']['periodic'] = \
+                        combined_input['force_eval']['subsys']['cell']['periodic']
+                except KeyError:
+                    pass
+
                 inputs['calc'] = Artifact(name="calc.inp",
                                           path=basepath+"{id}")
                 bytebuf = BytesIO()
