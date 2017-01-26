@@ -6,12 +6,17 @@ export interface TestResult {
   data: any;
 }
 
+export interface Structure {
+  id: string;
+  name: string;
+}
+
 export interface Calculation {
   id: string;
   code: string;
   collection: string;
   test: string;
-  structure: string;
+  structure: Structure;
   _links: { [name: string]: string };
   settings?: any;
   results_available: boolean;

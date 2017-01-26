@@ -29,7 +29,7 @@ import { Task2 }               from '../task2/task';
         <div class="panel-body">
           <dl class="dl-horizontal">
             <dt>Structure</dt>
-            <dd>{{ calculation.structure }}</dd>
+            <dd>{{ calculation.structure.name }}</dd>
 
             <dt>Code</dt>
             <dd>{{ calculation.code }}</dd>
