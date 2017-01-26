@@ -1085,7 +1085,8 @@ class TestResultListResource(Resource):
 
     @nested_parser.use_kwargs(filter_args, locations=('query',))
     def get(self, test, structure, data):
-        schema = TestResultSchema(many=True, exclude=('data', ))
+        schema_excluded_columns=['data', ]
+
         # optimize the query by eager_loading calculations, structure and task
         query = (TestResult2.query
                  .options(
@@ -1112,6 +1113,9 @@ class TestResultListResource(Resource):
                      .filter(Structure.name.contains(structure)))
 
         if data:
+            # show the data when filtering by data
+            schema_excluded_columns.remove('data')
+
             # here we are going to build the JSON query
             if 'checks' in data:
                 # the checks are a series of key: bool
@@ -1151,6 +1155,7 @@ class TestResultListResource(Resource):
                         raise ValidationError("invalid operator '{}' specified for 'coefficients.{}'".format(op, coeff))
 
 
+        schema = TestResultSchema(many=True, exclude=schema_excluded_columns)
         return schema.jsonify(query.all())
 
 
