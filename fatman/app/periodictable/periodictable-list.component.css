@@ -1,9 +1,0 @@
-@media print {
-  a[href]:after {
-    content: none;
-  }
-}
-
-table.periodic-table > tr > td[class^="gap-"] {
-  border: 0;
-}
