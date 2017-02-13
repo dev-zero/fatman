@@ -17,7 +17,7 @@ from webargs.flaskparser import (
     )
 from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException
-from sqlalchemy import and_, cast
+from sqlalchemy import and_, cast, distinct
 from sqlalchemy.orm import contains_eager, joinedload, aliased
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -352,16 +352,63 @@ class CalculationListResource(Resource):
         default_settings = None
 
         if test and code:
+            # get the general per-code and -test settings first
             default_settings = (db.session
                                 .query(CalculationDefaultSettings.settings)
-                                .filter_by(code=code, test=test)
+                                .filter_by(code=code, test=test, structure=None, structure_set=None)
                                 .scalar())
 
+            if not default_settings:
+                default_settings = {}
+            else:
+                app.logger.info("found base default settings for code '%s' and test '%s'", code.name, test.name)
+
+            def walk_ssets(sset, depth=0):
+                if depth > 100:
+                    raise RuntimeError(
+                        "possible circular reference detected in structure super sets for set {}".format(sset.name))
+
+                yield sset.id
+
+                if sset.superset:
+                    yield from walk_ssets(sset.superset, depth+1)
+
+            # for each structure set there may be a path of nested sets, follow it upwards
+            sset_paths = []
+            for sset in structure.sets:
+                sset_paths.append([ss for ss in walk_ssets(sset)])
+
+            # for each path, apply per-structure-set settings from top to bottom
+            for sset_path in sset_paths:
+                for sset_id in reversed(sset_path):
+                    additional_settings = (db.session
+                                           .query(CalculationDefaultSettings.settings)
+                                           .filter_by(code=code, test=test, structure=None, structure_set_id=sset_id)
+                                           .scalar())
+
+                    if additional_settings:
+                        app.logger.info(("found additional default settings for"
+                                         " code '%s', test '%s' and structure set id '%i'"),
+                                        code.name, test.name, sset_id)
+
+                        default_settings = dict(mergedicts(default_settings, additional_settings))
+
+            # finally check whether we have structure-specific settings
+            additional_settings = (db.session
+                                   .query(CalculationDefaultSettings.settings)
+                                   .filter_by(code=code, test=test, structure=structure, structure_set=None)
+                                   .scalar())
+
+            if additional_settings:
+                app.logger.info(("found additional default settings for"
+                                 " code '%s', test '%s' and structure '%s'"),
+                                code.name, test.name, structure)
+
+                default_settings = dict(mergedicts(default_settings, additional_settings))
+
         if default_settings:
-            app.logger.info(("found default settings for code '%s'"
-                             " and test '%s'"), code.name, test.name)
             # merge the settings specified by the user over the default_settings
-            # to give the user the possibility to overwrite them
+            # to give the user the possibility to overwrite them, settings is at least an empty dict
             settings = dict(mergedicts(default_settings, settings))
 
         calculation = Calculation(collection=collection, test=test,
@@ -903,7 +950,7 @@ class StructureListResource_v2(Resource):
             query = query.limit(limit)
 
         schema = StructureSchema(many=True,
-                                 exclude=('calculations', 'ase_structure',))
+                                 exclude=('calculations', 'ase_structure', 'default_settings', ))
         return schema.jsonify(query.all())
 
     structure_args = {
@@ -1038,12 +1085,24 @@ class StructureSetCalculationsListResource(Resource):
     @apiauth.login_required
     @use_kwargs({k: v for k, v in CalculationListResource.calculation_args.items() if k != 'structure'})
     def post(self, name, **kwargs):
-        # validate the name
-        StructureSet.query.filter_by(name=name).one()
 
-        structures = (db.session.query(Structure.name)
+        # validate the name
+        sset = StructureSet.query.filter_by(name=name).one()
+
+        # TODO: the following should be done using a Recursive CTE,
+        #        but since our dataset is small enough, oh, well ;-)
+
+        def get_set_ids(structure_set):
+            yield structure_set.id
+
+            for subset in structure_set.subsets:
+                yield from get_set_ids(subset)
+
+        sset_ids = set(i for i in get_set_ids(sset))
+
+        structures = (db.session.query(distinct(Structure.name))
                       .join(StructureSet, Structure.sets)
-                      .filter(StructureSet.name == name, Structure.replaced_by_id == None)
+                      .filter(Structure.sets.any(StructureSet.id.in_(sset_ids)), Structure.replaced_by_id == None)
                       .all())
 
         calculations = []

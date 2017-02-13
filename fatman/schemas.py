@@ -221,9 +221,11 @@ class StructureSetSchema(ma.ModelSchema):
         'calculations': ma.AbsoluteURLFor('structuresetcalculationslistresource', name='<name>'),
         })
 
+    superset = fields.Str(attribute='superset.name')
+
     class Meta:
         model = StructureSet
-        exclude = ('id', 'structures', )
+        exclude = ('id', 'structures', 'default_settings', 'subsets', )
 
 
 class TestResultListActionSchema(ma.Schema):

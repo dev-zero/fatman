@@ -96,7 +96,9 @@ class UserView(BaseManagementView):
 
 
 class StructureSetView(BaseDataView):
-    column_list = ('id', 'name', 'description')
+    column_list = ('id', 'name', 'description', 'superset', )
+    form_columns = ('name', 'description', 'superset', 'structures', 'subsets', )
+    column_details_list = ('id', ) + form_columns
 
 
 class StructureView(BaseDataView):
@@ -179,7 +181,7 @@ class CalculationCollectionView(BaseDataView):
 
 
 class CalculationDefaultSettingsView(BaseDataView):
-    column_list = ('code', 'test', )
+    column_list = ('code', 'test', 'structure', 'structure_set', )
 
 
 class Task2View(BaseDataView):

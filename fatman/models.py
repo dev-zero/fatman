@@ -15,12 +15,13 @@ from os import path
 
 from flask_security import UserMixin, RoleMixin
 
-from sqlalchemy import text
-from sqlalchemy import Column, ForeignKey, UniqueConstraint
+from sqlalchemy import text, or_
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, CheckConstraint, Index
 from sqlalchemy import Integer, String, Boolean, DateTime, Text, Enum
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ExcludeConstraint
 from sqlalchemy.orm import column_property
 from sqlalchemy.sql.expression import null
+from sqlalchemy.sql.functions import coalesce
 
 from werkzeug.datastructures import FileStorage
 
@@ -132,6 +133,10 @@ class StructureSet(Base):
     description = Column(Text)
     structures = relationship('Structure', secondary="structure_set_structure",
                               backref=backref('sets'))
+
+    superset_id = Column(Integer, ForeignKey('structure_set.id'))
+    subsets = relationship('StructureSet',
+                           backref=backref('superset', remote_side=[id]))
 
     def __repr__(self):
         return "<StructureSet(name='{}')>".format(self.name)
@@ -470,17 +475,46 @@ class CalculationBasisSet(Base):
 class CalculationDefaultSettings(Base):
     """Default settings for calculations.
 
-    The settings are hard-linked to code and test. Those ID's together also
-    form the PK. Since the settings are copied to a calculation upon creation,
-    there is no point in providing this object directly to the client (e.g.
-    it will be displayed as sub-object of code or test instead)."""
-    code_id = Column(UUID(as_uuid=True),
-                     ForeignKey('code.id'),
-                     primary_key=True)
-    code = relationship("Code", backref="default_settings", uselist=False)
-    test_id = Column(Integer, ForeignKey('test.id'), primary_key=True)
-    test = relationship("Test", backref="default_settings", uselist=False)
+    The settings are hard-linked to code and test and
+    optionally linked to a structure or a structure set.
+
+    Since the structure and the structure set are optional,
+    we can not form a PK out of (code, test, structure, structure set).
+
+    Since NULL is not comparable (NULL == NULL = False), we coalesce NULL values in
+    the structure and structure set columns to a 0 UUID, a 0 respectively before the
+    uniqueness constraint is applied. Even if improbable, we further ensure that the
+    structure and structure set columns can not contain that 0 UUID/0 integer.
+    """
+
+    id = UUIDPKColumn()
+
+    code_id = Column(UUID(as_uuid=True), ForeignKey('code.id'), nullable=False)
+    code = relationship("Code", backref="default_settings")
+
+    test_id = Column(Integer, ForeignKey('test.id'), nullable=False)
+    test = relationship("Test", backref="default_settings")
+
+    structure_id = Column(UUID(as_uuid=True), ForeignKey('structure.id'))
+    structure = relationship("Structure", backref="default_settings")
+
+    structure_set_id = Column(Integer, ForeignKey('structure_set.id'))
+    structure_set = relationship("StructureSet", backref="default_settings")
+
     settings = Column(JSONB)
+
+    __table_args__ = (
+        Index('unique_calculation_default_settings_idx',
+              code_id,
+              test_id,
+              coalesce(structure_id, str(uuid.UUID(int=0))),
+              coalesce(structure_set_id, 0),
+              unique=True),
+        CheckConstraint(structure_id != str(uuid.UUID(int=0))),
+        CheckConstraint(structure_set_id != 0),
+        # ensure that a setting is not restricted to both a structure and a structure set:
+        CheckConstraint(or_(structure_set_id == None, structure_id == None)),
+    )
 
     def __repr__(self):
         return ("<CalculationDefaultSettings("
