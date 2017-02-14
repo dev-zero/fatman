@@ -1100,20 +1100,29 @@ class StructureSetCalculationsListResource(Resource):
 
         sset_ids = set(i for i in get_set_ids(sset))
 
+        # get the name of structures already calculated in this calculation collection
+        calculated_structures = (db.session.query(Structure.name)
+                                 .join(Structure.calculations)
+                                 .join(Calculation.collection)
+                                 .filter(CalculationCollection.name == kwargs['collection'])
+                                 .all())
+
         structures = (db.session.query(distinct(Structure.name))
                       .join(StructureSet, Structure.sets)
-                      .filter(Structure.sets.any(StructureSet.id.in_(sset_ids)), Structure.replaced_by_id == None)
+                      .filter(Structure.sets.any(StructureSet.id.in_(sset_ids)),  # get structures in subsets
+                              Structure.replaced_by_id == None,  # filter out structures replaced by newer revisions
+                              ~Structure.name.in_(calculated_structures))  # ignore structures already calculated
                       .all())
 
         calculations = []
         errors = {}
         for structure in structures:
             try:
-                calculations.append(CalculationListResource.new_calculation(structure=structure.name, **kwargs))
+                calculations.append(CalculationListResource.new_calculation(structure=structure, **kwargs))
                 db.session.add(calculations[-1])
             except ValidationError as exc:
-                app.logger.exception("Creating calculation for structure %s failed", structure.name)
-                errors[structure.name] = exc
+                app.logger.exception("Creating calculation for structure %s failed", structure)
+                errors[structure] = exc
 
         if errors:
             # get an original Flask exception and augment it with data
