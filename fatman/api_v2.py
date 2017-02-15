@@ -46,6 +46,7 @@ from .models import (
     Machine,
     Command,
     TestResult2,
+    TestResult2Collection,
     )
 from .tools import Json2Atoms, Atoms2Json
 from .tools.cp2k import dict2cp2k, mergedicts
@@ -65,6 +66,7 @@ from .schemas import (
     CalculationCollectionSchema,
     CalculationListSchema,
     TestResultSchema,
+    TestResultCollectionSchema,
     CalculationSchema,
     CalculationListActionSchema,
     Task2ListSchema,
@@ -1262,6 +1264,22 @@ class TestResultListActionResource(Resource):
         abort(400)
 
 
+class TestResultCollectionListResource(Resource):
+    def get(self):
+        query = TestResult2Collection.query
+
+        schema = TestResultCollectionSchema(many=True, exclude=('testresults', ))
+        return schema.jsonify(query.all())
+
+
+class TestResultCollectionResource(Resource):
+    def get(self, trcid):
+        trc = TestResult2Collection.query.get(trcid)
+
+        schema = TestResultCollectionSchema()
+        return schema.jsonify(trc)
+
+
 class ActionResource(Resource):
     def get(self, aid):
         async_result = capp.AsyncResult(str(aid))
@@ -1357,6 +1375,8 @@ api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
 api.add_resource(TestResultListResource, '/testresults')
 api.add_resource(TestResultResource, '/testresults/<uuid:trid>')
 api.add_resource(TestResultListActionResource, '/testresults/action')
+api.add_resource(TestResultCollectionListResource, '/testresultcollections')
+api.add_resource(TestResultCollectionResource, '/testresultcollections/<uuid:trcid>')
 api.add_resource(ActionResource, '/actions/<uuid:aid>')
 api.add_resource(CodeListResource, '/codes')
 api.add_resource(CodeResource, '/codes/<uuid:cid>')

@@ -16,6 +16,7 @@ from .models import (
     Artifact,
     Command,
     TestResult2,
+    TestResult2Collection,
     )
 
 
@@ -128,6 +129,18 @@ class TestResultSchema(ma.ModelSchema):
 
     class Meta:
         model = TestResult2
+
+
+class TestResultCollectionSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'collection': ma.AbsoluteURLFor('testresultcollectionlistresource'),
+        'self': ma.AbsoluteURLFor('testresultcollectionresource', trcid='<id>'),
+        })
+
+    testresults = fields.Nested('TestResultSchema', many=True, exclude=('data', 'calculations', ))
+
+    class Meta:
+        model = TestResult2Collection
 
 
 class CalculationSchema(CalculationListSchema):
