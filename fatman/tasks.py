@@ -33,6 +33,7 @@ from .tools import (
     deltatest_ev_curve,
     gmtkn_coefficients,
     parsers,
+    checks,
     )
 
 logger = get_task_logger(__name__)
@@ -385,6 +386,12 @@ def generate_calculation_results(calc_id, update=False):
         else:
             logger.error("unsupported compression scheme found: %s", compressed)
             return False
+
+        try:
+            results['checks'] = checks.generate_checks_dict(results, calc.code.name, calc.test.name)
+        except NotImplementedError:
+            logger.error("no data checking implemented for code: %s", calc.code.name)
+            pass
 
     else:
         logger.error("unsupported storage scheme found: %s", scheme)
