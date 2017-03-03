@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import re
-
 import numpy as np
 from ase.utils.eos import EquationOfState
 from ase.units import kJ
@@ -1030,102 +1028,6 @@ def eos(V0,B0, B1, E0=0.):
     E = [ E0 + 9./16. * V0 * B0 *  ( ((V0/v)**(2./3.) -1)**3 * B1 +
                                      ((V0/v)**(2./3.) -1)**2 * (6-4*(V0/v)**(2./3.)) ) for v in rng]
     return rng, np.array(E)
-
-
-
-
-class OutputParseError(Exception):
-    pass
-
-
-def get_data_from_output(fhandle, code):
-    if code == 'CP2K':
-        content = fhandle.read()
-
-        def key_value_match(key, value_type=str):
-            if value_type == float:
-                value = '[\+\-]?((\d*[\.]\d+)|(\d+[\.]?\d*))([Ee][\+\-]?\d+)?'
-            elif value_type == int:
-                value = '[\+\-]?\d+'
-            else:
-                value = '.+'
-
-            match = re.search(r'^[ \t]*{key}[ \t]+(?P<value>{value})$'.format(
-                key=re.escape(key),
-                value=value  # match any number
-                ), content, re.MULTILINE)
-
-            if not match:
-                return None
-
-            return value_type(match.group('value'))
-
-        data = {
-            'version': key_value_match('CP2K| source code revision number:'),
-            'mpiranks': key_value_match('GLOBAL| Total number of message passing processes', int),
-            'threads': key_value_match('GLOBAL| Number of threads for this process', int),
-            'username': key_value_match('**    ****   ******    PROGRAM STARTED BY'),
-            'nkpoints': key_value_match('BRILLOUIN| List of Kpoints [2 Pi/Bohr]', int),
-            'total_energy': key_value_match('ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):', float),
-            }
-
-        match = re.search(r'''
-# anchor to indicate beginning of the HOMO/LUMO GW energy table
-^[ \t]* MO [ \t]* E_SCF [ \t]* Sigc [ \t]* Sigc_fit [ \t]* Sigx-vxc [ \t]* Z [ \t]* E_GW \n
-
-(
-  ^
-  [ \t]+ \d+
-  [ \t]+ \(\ occ\ \)
-  [ \t]+ (?P<HOMO_energy_SCF>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ (?P<HOMO_energy_GW>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  \n
-)+  # the regex engine will only keep the last capture groups, effectively selecting the LUMO
-(
-  ^
-  [ \t]+ \d+
-  [ \t]+ \(\ vir\ \)
-  [ \t]+ (?P<LUMO_energy_SCF>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ (?P<LUMO_energy_GW>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  \n
-)  # do not match more since we want only the HOMO
-''', content, re.MULTILINE | re.VERBOSE)
-
-        if match:
-            data.update(match.groupdict())
-
-        return data
-
-
-    elif code == 'espresso':
-        data = {}
-
-        for line in fhandle:
-            if 'Program PWSCF v' in line:
-                data['version'] = line.split()[2]
-            if 'Number of MPI processes:' in line:
-                data['mpiranks'] = int(line.split()[-1])
-            if 'Threads/MPI process:' in line:
-                data['threads'] = int(line.split()[-1])
-            if 'number of k points=' in line:
-                data['nkpoints'] = int(line.split()[4])
-            if 'total cpu time spent up to now is' in line:
-                data['runtime'] = float(line.split()[-2])
-            if '!    total energy' in line:
-                # extract the total energy and convert from Ry to eV
-                data['total_energy'] = float(line.split()[-2])*13.605697827758654
-
-        return data
-
-    raise OutputParseError("Unknown code: %s".format(code))
 
 
 class FullEquationOfState(EquationOfState):

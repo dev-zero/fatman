@@ -21,3 +21,4 @@ Jinja2>=2.8
 click>=6.6
 celery>=4.0.2
 redis>=2.10.5
+regex>=2017.02.08

@@ -28,7 +28,12 @@ from .models import (
     Pseudopotential,
     )
 
-from .tools import Json2Atoms, deltatest_ev_curve, gmtkn_coefficients
+from .tools import (
+    Json2Atoms,
+    deltatest_ev_curve,
+    gmtkn_coefficients,
+    parsers,
+    )
 
 logger = get_task_logger(__name__)
 
@@ -73,7 +78,7 @@ def postprocess_result_file(rid, update=False):
 
     with bz2.open(filepath, mode='rt') as infile:
         try:
-            data = tools.get_data_from_output(infile, code)
+            data = parsers.get_data_from_output(infile, code)
         except tools.OutputParseError as exc:
             logger.error("Parsing %s for result id %s failed: %s",
                          filepath, rid, exc)
@@ -373,10 +378,10 @@ def generate_calculation_results(calc_id, update=False):
 
         if compressed is None:
             with open(filepath, 'r') as fhandle:
-                results = tools.get_data_from_output(fhandle, calc.code.name)
+                results = parsers.get_data_from_output(fhandle, calc.code.name)
         elif compressed == 'bz2':
             with bz2.open(filepath, mode='rt') as fhandle:
-                results = tools.get_data_from_output(fhandle, calc.code.name)
+                results = parsers.get_data_from_output(fhandle, calc.code.name)
         else:
             logger.error("unsupported compression scheme found: %s", compressed)
             return False
