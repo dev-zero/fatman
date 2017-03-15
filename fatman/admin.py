@@ -204,6 +204,7 @@ class CodeView(BaseDataView):
 
 class MachineView(BaseDataView):
     column_list = ('id', 'shortname', 'name', )
+    form_columns = ('shortname', 'name', 'settings', 'commands', )
     inline_models = [
         (TaskRuntimeSettings, dict(form_columns=['id', 'code', 'test', 'settings'])),
         ]
