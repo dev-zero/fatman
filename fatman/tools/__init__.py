@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import numpy as np
+import re
+import datetime as dt
+
 from ase.utils.eos import EquationOfState
 from ase.units import kJ
 
@@ -1102,6 +1105,19 @@ def deltatest_ev_curve(volumes, energies):
         return "fail", "fail", "fail", "fail", "fail"
     else:
         return v, e, B0/kJ * 1.0e24, B1, R[0]
+
+def nodehours_from_job_data(jobdata):
+    """Get the number of node hours as timedelta based on JSON-ified data from sacct.
+
+    alloctres='cpu=576,mem=488000M,node=8'
+    """
+
+    try:
+        nodes = int(re.search(r"node=(\d+)", jobdata['alloctres']).group(1))
+        times = [int(i) for i in jobdata['elapsed'].split(':')]
+        return nodes * dt.timedelta(hours=times[0], minutes=times[1], seconds=times[2])
+    except (KeyError, AttributeError):
+        return None
 
 
 def test1():

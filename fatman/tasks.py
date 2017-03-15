@@ -2,6 +2,7 @@
 import bz2
 from collections import OrderedDict
 from urllib.parse import urlsplit
+import datetime as dt
 
 from ase.units import kcal, mol
 
@@ -34,6 +35,7 @@ from .tools import (
     gmtkn_coefficients,
     parsers,
     checks,
+    nodehours_from_job_data,
     )
 
 logger = get_task_logger(__name__)
@@ -525,6 +527,11 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
     energies = []
     volumes = []
     natom = 0
+    nodehours = {
+        'no_current_tasks': 0,
+        'no_current_tasks_accounted': 0,
+        'current_total': dt.timedelta(),
+        }
 
     for calc in calcs:
         struct = Json2Atoms(calc.structure.ase_structure)
@@ -532,6 +539,21 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
 
         energies.append(calc.results['total_energy']/natom)
         volumes.append(struct.get_volume()/natom)
+
+        nodehours['no_current_tasks'] += 1
+        try:
+            print("HERE")
+            jobname = 'fatman.%s' % calc.current_task.id
+            print(jobname, calc.current_task.data['runner']['commands'][jobname])
+            nodehours['current_total'] += nodehours_from_job_data(calc.current_task.data['runner']['commands'][jobname])
+            nodehours['no_current_tasks_accounted'] += 1
+        except (KeyError, AttributeError):
+            pass
+
+    # convert timedelta to a fraction of hours
+    nodehours['current_total'] = nodehours['current_total'].total_seconds() / 3600
+
+    result_data['nodehours'] = nodehours
 
     # sort the values by increasing volume
     volumes, energies = (list(t) for t in zip(*sorted(zip(volumes, energies))))
