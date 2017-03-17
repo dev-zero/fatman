@@ -15,7 +15,7 @@ from os import path
 
 from flask_security import UserMixin, RoleMixin
 
-from sqlalchemy import text, or_
+from sqlalchemy import text, and_, or_, select, func
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, CheckConstraint, Index
 from sqlalchemy import Integer, String, Boolean, DateTime, Text, Enum
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ExcludeConstraint
@@ -663,6 +663,14 @@ class TestResult2Collection(Base):
 
     def __str__(self):
         return self.name
+
+
+TestResult2Collection.testresult_count = column_property(
+        select([func.count(TestResult2.id)], and_(
+            TestResult2TestResult2Collection.c.test_id==TestResult2.id,
+            TestResult2TestResult2Collection.c.collection_id==TestResult2Collection.id))
+        .where(TestResult2.collections.any(id=TestResult2Collection.id))
+        .correlate_except(TestResult2))
 
 
 class TaskRuntimeSettings(Base):

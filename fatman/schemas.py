@@ -137,7 +137,8 @@ class TestResultCollectionSchema(ma.ModelSchema):
         'self': ma.AbsoluteURLFor('testresultcollectionresource', trcid='<id>'),
         })
 
-    testresults = fields.Nested('TestResultSchema', many=True, exclude=('data', 'calculations', ))
+    testresults = fields.Nested('TestResultSchema', many=True, exclude=('calculations', ))
+    testresult_count = fields.Integer()
 
     class Meta:
         model = TestResult2Collection
