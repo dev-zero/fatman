@@ -200,6 +200,7 @@ class TestResult2CollectionView(BaseDataView):
 
 class CodeView(BaseDataView):
     column_list = ('id', 'name', 'pseudo_format', )
+    form_columns = ('id', 'name', 'pseudo_format', )
 
 
 class MachineView(BaseDataView):
