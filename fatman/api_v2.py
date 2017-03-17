@@ -1084,9 +1084,15 @@ class StructureSetCalculationsListResource(Resource):
                               .filter(StructureSet.name == name)
                               .all())
 
+    bulk_calculation_args = {
+        k: v for k, v in CalculationListResource.calculation_args.items()
+        if k != 'structure'
+        }
+    bulk_calculation_args['ignore_failed'] = fields.Boolean(required=False, default=False)
+
     @apiauth.login_required
-    @use_kwargs({k: v for k, v in CalculationListResource.calculation_args.items() if k != 'structure'})
-    def post(self, name, **kwargs):
+    @use_kwargs(bulk_calculation_args)
+    def post(self, name, ignore_failed, **kwargs):
 
         # validate the name
         sset = StructureSet.query.filter_by(name=name).one()
@@ -1126,7 +1132,7 @@ class StructureSetCalculationsListResource(Resource):
                 app.logger.exception("Creating calculation for structure %s failed", structure)
                 errors[structure] = exc
 
-        if errors:
+        if errors and not ignore_failed:
             # get an original Flask exception and augment it with data
             try:
                 flask.abort(422)
