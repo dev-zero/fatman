@@ -576,6 +576,7 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
     # make some additional checks to tag bad values
     result_data['checks'] = {
         'min_at_V0': all(e > energies[2] for e in energies[:2] + energies[3:]),
+        'all_converged': all(c.results.get('checks', {}).get('converged', False) for c in calcs),
         }
 
     if tr_id:
