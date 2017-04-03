@@ -194,6 +194,7 @@ class Task2ListSchema(ma.ModelSchema):
         'self': ma.AbsoluteURLFor('task2resource', tid='<id>'),
         'collection': ma.AbsoluteURLFor('task2listresource'),
         'uploads': ma.AbsoluteURLFor('task2uploadresource', tid='<id>'),
+        'calculation': ma.AbsoluteURLFor('calculationresource', cid='<calculation_id>'),
         })
 
 
