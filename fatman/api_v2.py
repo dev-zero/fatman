@@ -5,6 +5,7 @@ from os.path import basename
 from io import TextIOWrapper, BytesIO
 import copy
 import collections
+import itertools
 
 import flask
 from flask import make_response, request
@@ -48,10 +49,11 @@ from .models import (
     TestResult2,
     TestResult2Collection,
     )
-from .tools import Json2Atoms, Atoms2Json
+from .tools import Json2Atoms, Atoms2Json, calcDelta
 from .tools.cp2k import dict2cp2k, mergedicts
 from .tools.slurm import generate_slurm_batch_script
 from .tools.webargs import nested_parser
+from .tools.deltatest import ATOMIC_ELEMENTS
 
 from .tasks import (
     generate_calculation_results,
@@ -78,6 +80,7 @@ from .schemas import (
     CodeCommandListSchema,
     CodeCommandSchema,
     CodeSchema,
+    DeltatestComparisonSchema,
 
     BoolValuedDict,
     )
@@ -1345,6 +1348,75 @@ class CodeCommandResource(Resource):
         db.session.commit()
 
 
+class ComparisonListResource(Resource):
+    comparison_args = {
+        'metric': fields.String(validate=lambda m: m in ['deltatest']),
+        'testresult_collections': fields.DelimitedList(
+            fields.UUID(validate=must_exist_in_db(TestResult2Collection)), required=True),
+        }
+    @use_kwargs(comparison_args)
+    def post(self, metric, testresult_collections):
+
+        trcollections = (TestResult2Collection.query
+                .filter(TestResult2Collection.id.in_(testresult_collections))
+                .options(joinedload("testresults"))
+                .all())
+
+        data = {
+            "metric": metric,
+            "testresult_collections": trcollections,
+            }
+
+        if metric == 'deltatest':
+            # We are assuming here that the element per collection is unique, which may not be the case
+            results = {trc.id: {tr.data['element']: tr for tr in trc.testresults} for trc in trcollections}
+
+            # all elements for which at least one testresult is available in at least one collection
+            data['elements'] = list(set(el for r in results.values() for el in r))
+
+            # sort by atomic number
+            data['elements'].sort(key=lambda el: ATOMIC_ELEMENTS[el]['num'])
+
+            data['values'] = []
+
+            # Generate a list of tuples of the form:
+            #  (AtomicSymbol, CollectionA.id, CollectionB.id, delta)
+            # with delta being None/null, if the element is missing in either CollectionA and/or CollectionB
+            # This means that we may generate one delta multiple times of the same testresult is part of multiple
+            # collections. Since the testresults are yielded as part of the TestResultCollections, the user
+            # should be able to interprete the data himself.
+            for element in data['elements']:
+                for colla, collb in itertools.combinations(results.keys(), 2):
+                    delta = None
+
+                    # Ignore if an element is missing from one or both collections:
+                    try:
+                        trA = results[colla][element]
+                        trB = results[collb][element]
+                    except KeyError:
+                        continue
+
+                    try:
+                        coeffs = ['V', 'B0', 'B1']
+                        deltaValuesA = [trA.data['coefficients'][c] for c in coeffs]
+                        deltaValuesB = [trB.data['coefficients'][c] for c in coeffs]
+                        delta = calcDelta(deltaValuesA, deltaValuesB)
+                    except KeyError:
+                        pass
+
+                    data['values'].append(
+                        {"element": element,
+                         "collectionA": colla,
+                         "collectionB": collb,
+                         "testresultA": trA.id,
+                         "testresultB": trB.id,
+                         "delta": delta
+                         })
+
+        schema = DeltatestComparisonSchema()
+        return schema.jsonify(data)
+
+
 # This error handler is necessary for usage with Flask-RESTful
 @parser.error_handler
 def handle_request_parsing_error(err):
@@ -1383,6 +1455,7 @@ api.add_resource(TestResultResource, '/testresults/<uuid:trid>')
 api.add_resource(TestResultListActionResource, '/testresults/action')
 api.add_resource(TestResultCollectionListResource, '/testresultcollections')
 api.add_resource(TestResultCollectionResource, '/testresultcollections/<uuid:trcid>')
+api.add_resource(ComparisonListResource, '/comparisons')
 api.add_resource(ActionResource, '/actions/<uuid:aid>')
 api.add_resource(CodeListResource, '/codes')
 api.add_resource(CodeResource, '/codes/<uuid:cid>')

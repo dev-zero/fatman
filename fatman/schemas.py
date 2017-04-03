@@ -125,7 +125,7 @@ class TestResultSchema(ma.ModelSchema):
 
     test = fields.Str(attribute='test.name')
     calculations = fields.Nested(CalculationListSchema, many=True)
-    collections = fields.Str(attribute='collections.name')
+    collections = fields.Nested('TestResultCollectionSchema', exclude=('testresults', ), many=True)
 
     class Meta:
         model = TestResult2
@@ -137,7 +137,7 @@ class TestResultCollectionSchema(ma.ModelSchema):
         'self': ma.AbsoluteURLFor('testresultcollectionresource', trcid='<id>'),
         })
 
-    testresults = fields.Nested('TestResultSchema', many=True, exclude=('calculations', ))
+    testresults = fields.Nested('TestResultSchema', many=True, exclude=('calculations', 'collections', ))
     testresult_count = fields.Integer()
 
     class Meta:
@@ -297,3 +297,17 @@ class CodeSchema(ma.ModelSchema):
         model = Code
 
         exclude = ('calculations', 'default_settings', 'task_runtime_settings', )
+
+
+class ComparisonSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'collection': ma.AbsoluteURLFor('comparisonlistresource'),
+        })
+
+    testresult_collections = fields.Nested(TestResultCollectionSchema, many=True)
+    metric = fields.String()
+
+
+class DeltatestComparisonSchema(ComparisonSchema):
+    elements = fields.List(fields.String())
+    values = fields.Dict(many=True)
