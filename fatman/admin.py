@@ -178,7 +178,7 @@ class CalculationView(BaseDataView):
 
 class CalculationCollectionView(BaseDataView):
     column_list = ('id', 'name', 'desc', )
-    form_columns = ('id', 'name', 'desc', )
+    form_columns = ('name', 'desc', )
 
 
 class CalculationDefaultSettingsView(BaseDataView):
