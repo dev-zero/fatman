@@ -481,6 +481,7 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
              .filter_by(collection=calc.collection)
              .filter(Calculation.results_available)  # ignore calculations with no test results
              .options(joinedload('structure'))
+             .options(joinedload('code'))
              .join(Calculation.pseudos)
              .filter(Pseudopotential.element == element)
              .limit(6)  # limit to one more than we can actually use, to catch errors
@@ -554,6 +555,13 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
     nodehours['current_total'] = nodehours['current_total'].total_seconds() / 3600
 
     result_data['nodehours'] = nodehours
+
+    # If the energy was calculated using CP2K, we have to convert from a.u. to eV,
+    # since the reference results are in eV
+    if calc.code.name == "CP2K":
+        energies = [e*27.2113860217 for e in energies]
+    else:
+        raise RuntimeError("Unknown unit of energy for code {}, unsave to continue generating results", calc.code.name)
 
     # sort the values by increasing volume
     volumes, energies = (list(t) for t in zip(*sorted(zip(volumes, energies))))
