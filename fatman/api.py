@@ -798,6 +798,8 @@ class Plot(Resource):
 
         test1 = Test.query.filter_by(name=args['test']).one()
 
+        import matplotlib
+        matplotlib.use('AGG')
         from matplotlib.backends.backend_agg import FigureCanvasAgg \
             as FigureCanvas
         import matplotlib.pyplot as plt
