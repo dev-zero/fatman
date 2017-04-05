@@ -4,7 +4,7 @@ import numpy as np
 import re
 import datetime as dt
 
-from ase.utils.eos import EquationOfState
+from ase.eos import EquationOfState
 from ase.units import kJ
 
 gmtkn_coefficients = {
