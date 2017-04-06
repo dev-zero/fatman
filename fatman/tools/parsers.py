@@ -183,24 +183,24 @@ def parse_cp2k_output(fhandle):
         captures = match.groupdict()
         data['overlap_matrix_condition_number'] = {
             '1-norm (estimate)': {
-              '|A|': captures['norm1_estimate_A'],
-              '|A^-1|': captures['norm1_estimate_Ainv'],
-              'CN': captures['norm1_estimate'],
-              'Log(CN)': captures['norm1_estimate_log'],
+              '|A|': float(captures['norm1_estimate_A']),
+              '|A^-1|': float(captures['norm1_estimate_Ainv']),
+              'CN': float(captures['norm1_estimate']),
+              'Log(CN)': float(captures['norm1_estimate_log']),
               },
 
             '1-norm (using diagonalization)': {
-              '|A|': captures['norm1_diag_A'],
-              '|A^-1|': captures['norm1_diag_Ainv'],
-              'CN': captures['norm1_diag'],
-              'Log(CN)': captures['norm1_diag_log'],
+              '|A|': float(captures['norm1_diag_A']),
+              '|A^-1|': float(captures['norm1_diag_Ainv']),
+              'CN': float(captures['norm1_diag']),
+              'Log(CN)': float(captures['norm1_diag_log']),
               },
 
             '2-norm (using diagonalization)': {
-              'max EV': captures['norm2_diag_max_ev'],
-              'min EV': captures['norm2_diag_min_ev'],
-              'CN': captures['norm2_diag'],
-              'Log(CN)': captures['norm2_diag_log'],
+              'max EV': float(captures['norm2_diag_max_ev']),
+              'min EV': float(captures['norm2_diag_min_ev']),
+              'CN': float(captures['norm2_diag']),
+              'Log(CN)': float(captures['norm2_diag_log']),
               },
             }
 
