@@ -551,6 +551,9 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
         except (KeyError, AttributeError):
             pass
 
+        if calc.structure.name.endswith('1.00') and 'overlap_matrix_condition_number' in calc.results:
+            result_data['overlap_matrix_condition_number@V0'] = calc.results['overlap_matrix_condition_number']
+
     # convert timedelta to a fraction of hours
     nodehours['current_total'] = nodehours['current_total'].total_seconds() / 3600
 

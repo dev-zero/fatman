@@ -66,6 +66,44 @@ CP2K_MULLIKEN_MATCH = re.compile(r'''
 ''', re.VERSION1 | re.MULTILINE | re.VERBOSE)
 
 
+CP2K_CONDITION_NUMBER_MATCH = re.compile(r'''
+# anchor to indicate beginning the overlap matrix condition number section
+^[ \t]* OVERLAP\ MATRIX\ CONDITION\ NUMBER\ AT\ GAMMA\ POINT [ \t]* \n
+ [ \t]* 1-Norm\ Condition\ Number\ \(Estimate\) [ \t]* \n
+ [ \t]* CN\ :\ \|A\|\*\|A\^-1\|:
+   [ \t]* (?P<norm1_estimate_A>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* \*
+   [ \t]* (?P<norm1_estimate_Ainv>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* =
+   [ \t]* (?P<norm1_estimate>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* Log\(1-CN\):
+   [ \t]* (?P<norm1_estimate_log>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* \n
+
+ [ \t]* 1-Norm\ and\ 2-Norm\ Condition\ Numbers\ using\ Diagonalization [ \t]* \n
+
+ [ \t]* CN\ :\ \|A\|\*\|A\^-1\|:
+   [ \t]* (?P<norm1_diag_A>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* \*
+   [ \t]* (?P<norm1_diag_Ainv>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* =
+   [ \t]* (?P<norm1_diag>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* Log\(1-CN\):
+   [ \t]* (?P<norm1_diag_log>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* \n
+
+ [ \t]* CN\ :\ max/min\ ev:
+   [ \t]* (?P<norm2_diag_max_ev>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* /
+   [ \t]* (?P<norm2_diag_min_ev>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* =
+   [ \t]* (?P<norm2_diag>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* Log\(2-CN\):
+   [ \t]* (?P<norm2_diag_log>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* \n
+''', re.MULTILINE | re.VERBOSE)
+
+
 def parse_cp2k_output(fhandle):
     """
     Parse output from CP2K.
@@ -138,6 +176,32 @@ def parse_cp2k_output(fhandle):
                 'population': float(match.group('total_population')),
                 'charge': float(match.group('total_charge')),
                 },
+            }
+
+    match = CP2K_CONDITION_NUMBER_MATCH.search(content)
+    if match:
+        captures = match.groupdict()
+        data['overlap_matrix_condition_number'] = {
+            '1-norm (estimate)': {
+              '|A|': captures['norm1_estimate_A'],
+              '|A^-1|': captures['norm1_estimate_Ainv'],
+              'CN': captures['norm1_estimate'],
+              'Log(CN)': captures['norm1_estimate_log'],
+              },
+
+            '1-norm (using diagonalization)': {
+              '|A|': captures['norm1_diag_A'],
+              '|A^-1|': captures['norm1_diag_Ainv'],
+              'CN': captures['norm1_diag'],
+              'Log(CN)': captures['norm1_diag_log'],
+              },
+
+            '2-norm (using diagonalization)': {
+              'max EV': captures['norm2_diag_max_ev'],
+              'min EV': captures['norm2_diag_min_ev'],
+              'CN': captures['norm2_diag'],
+              'Log(CN)': captures['norm2_diag_log'],
+              },
             }
 
     return data
