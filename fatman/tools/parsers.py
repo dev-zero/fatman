@@ -123,18 +123,23 @@ def parse_cp2k_output(fhandle):
         if value_type == float:
             value = r'[\+\-]?((\d*[\.]\d+)|(\d+[\.]?\d*))([Ee][\+\-]?\d+)?'
         elif value_type == int:
-            value = r'[\+\-]?\d+'
+            value = r'[\+\-]?\d+' # for ints we don't allow scientific notation since python doesn't accept it
         else:
-            value = r'.+'
+            value = r'.+' # this will match everthing except a newline
 
+        # value now contains the regex corresponding to a type
+
+        # complete the parametrized regex and search for the given key
+        # and specified value format, capture the value
         match = re.search(r'^[ \t]*{key}[ \t]+(?P<value>{value})$'.format(
-            key=re.escape(key),
-            value=value  # match any number
+            key=re.escape(key), # make sure we match key as it is (no regex interpretation)
+            value=value
             ), content, re.MULTILINE)
 
         if not match:
             return None
 
+        # convert the captured value string to the requested python type
         return value_type(match.group('value'))
 
     data = {
@@ -158,6 +163,7 @@ def parse_cp2k_output(fhandle):
         data.update(match.groupdict())
 
     match = CP2K_MULLIKEN_MATCH.search(content)
+    # for this one we needed the extended regex library https://pypi.python.org/pypi/regex
     if match:
         captures = match.capturesdict()
         per_atom = []
