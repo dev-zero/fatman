@@ -188,6 +188,17 @@ class CalculationCollectionListResource(Resource):
         schema = CalculationCollectionSchema(many=True)
         return schema.jsonify(CalculationCollection.query.all())
 
+    @apiauth.login_required
+    @use_kwargs({'name': fields.Str(required=True), 'desc': fields.Str(required=True)})
+    def post(self, name, desc):
+        coll = CalculationCollection(name=name, desc=desc)
+
+        db.session.add(coll)
+        db.session.commit()
+
+        schema = CalculationCollectionSchema()
+        return schema.jsonify(coll)
+
 
 class CalculationCollectionResource(Resource):
     def get(self, ccid):
