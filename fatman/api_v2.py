@@ -669,11 +669,9 @@ class Task2Resource(Resource):
                 # TODO: simplify the following:
                 struct = Json2Atoms(calc.structure.ase_structure)
 
-                if any(struct.get_pbc()) and not all(struct.get_pbc()):
-                    app.logger.error("mixed-periodic not (yet) supported")
-                    abort(500)
-
-                periodic = "XYZ" if any(struct.get_pbc()) else "NONE"
+                periodic = "".join(axis*enabled for axis, enabled in zip("XYZ", struct.get_pbc()))
+                if periodic == "":
+                    periodic = "NONE"
 
                 generated_input['force_eval']['dft']['poisson']['periodic'] \
                     = periodic
