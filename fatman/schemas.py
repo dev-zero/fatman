@@ -227,7 +227,13 @@ class StructureSchema(ma.ModelSchema):
     class Meta:
         model = Structure
         # tests is an old table
-        exclude = ('tests', 'replaced_by_id', 'calculations', 'replaced', )
+        exclude = (
+            'tests',
+            'replaced_by_id',
+            'calculations',
+            'replaced',
+            'default_settings',
+            )
 
 
 class StructureSetSchema(ma.ModelSchema):
