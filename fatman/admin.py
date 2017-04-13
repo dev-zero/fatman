@@ -159,11 +159,12 @@ class TestStructureView(BaseDataView):
 class TaskView(BaseDataView):
     column_list = ('id', 'status', 'test', 'structure', 'method',
                    'machine', 'priority', 'ctime', 'mtime',)
-    column_filters = ('status',)
+    column_filters = ('status', 'test', 'structure', )
 
 
 class ResultView(BaseDataView):
     column_list = ('id', 'task', 'filename', 'data',)
+    column_filters = ('task',)
 
 
 class TestResultView(BaseDataView):
