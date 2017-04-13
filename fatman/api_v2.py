@@ -2,13 +2,13 @@
 import bz2
 from urllib.parse import urlsplit
 from os.path import basename
-from io import TextIOWrapper, BytesIO
+from io import TextIOWrapper, BytesIO, StringIO
 import copy
 import collections
 import itertools
 
 import flask
-from flask import make_response, request
+from flask import make_response, request, send_file
 from flask_restful import Api, Resource
 from webargs import fields, ValidationError
 from webargs.flaskparser import (
@@ -1065,7 +1065,7 @@ class StructureListResource_v2(Resource):
 class StructureResource_v2(Resource):
     def get(self, sid):
         schema = StructureSchema()
-        return schema.jsonify((Structure.query.get_or_404(sid)))
+        return schema.jsonify(Structure.query.get_or_404(sid))
 
     @apiauth.login_required
     def delete(self, sid):
@@ -1076,6 +1076,45 @@ class StructureResource_v2(Resource):
         db.session.delete(structure)
         db.session.commit()
         return Response(status=204)  # return completely empty
+
+
+class StructureDownloadResource(Resource):
+
+    SUPPORTED_MIMETYPES = collections.OrderedDict([
+            ("chemical/x-xyz", "xyz"),
+            ("chemical/x-cif", "cif"),
+            ])
+
+    def get(self, sid):
+        if not any(mt in request.accept_mimetypes for mt in self.SUPPORTED_MIMETYPES):
+            abort(406)
+
+        # this will return XYZ if the client sends */* due to the OrderedDict
+        selected_mimetype = request.accept_mimetypes.best_match(self.SUPPORTED_MIMETYPES.keys())
+        selected_format = self.SUPPORTED_MIMETYPES[selected_mimetype]
+
+        structure = Structure.query.get_or_404(sid)
+        asestruct = Json2Atoms(structure.ase_structure)
+
+        if 'key_value_pairs' in asestruct.info:
+            # it seems Python ASE is unable to handle nested dicts in
+            # the Atoms.info attribute when writing XYZ, even though it
+            # creates it in the first place
+            # see https://gitlab.com/ase/ase/issues/60
+            asestruct.info = dict(mergedicts(
+                {k: v for k, v in asestruct.info.items()
+                 if k != 'key_value_pairs'},
+                asestruct.info['key_value_pairs']))
+
+        stringbuf = StringIO()
+
+        ase_io.write(stringbuf, asestruct, format=selected_format)
+
+        return send_file(
+            BytesIO(stringbuf.getvalue().encode('utf-8')),
+            as_attachment=True,
+            attachment_filename="{}.{}".format(structure.name, selected_format),
+            mimetype=selected_mimetype)
 
 
 class StructureSetListResource(Resource):
@@ -1457,6 +1496,7 @@ api.add_resource(StructureSetResource, '/structuresets/<string:name>')
 api.add_resource(StructureSetCalculationsListResource, '/structuresets/<string:name>/calculations')
 api.add_resource(StructureListResource_v2, '/structures')
 api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')
+api.add_resource(StructureDownloadResource, '/structures/<uuid:sid>/download')
 api.add_resource(BasisSetListResource, '/basissets')
 api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
 api.add_resource(TestResultListResource, '/testresults')

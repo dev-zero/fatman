@@ -217,6 +217,7 @@ class StructureSchema(ma.ModelSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('structureresource_v2', sid='<id>'),
         'collection': ma.AbsoluteURLFor('structurelistresource_v2'),
+        'download': ma.AbsoluteURLFor('structuredownloadresource', sid='<id>'),
         })
 
     replaced_by = fields.Nested(
