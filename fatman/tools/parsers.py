@@ -263,3 +263,18 @@ def get_data_from_output(fhandle, code):
         return data
 
     raise OutputParseError("Unknown code: %s" % code)
+
+
+if __name__ == '__main__':
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description='Parse the output for a number of electronic structure codes')
+    parser.add_argument('code', metavar='CODE', type=str,
+                        help="Use a parser for the given code (currently supported: CP2K, espress)")
+    parser.add_argument('finput', metavar='FILE', type=str,
+                        help="The output file to parse")
+    args = parser.parse_args()
+
+    with open(args.finput, 'r') as fhandle:
+        print(json.dumps(get_data_from_output(fhandle, args.code), sort_keys=True, indent=4))
