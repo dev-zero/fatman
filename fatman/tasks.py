@@ -527,7 +527,6 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
 
     energies = []
     volumes = []
-    natom = 0
     nodehours = {
         'no_current_tasks': 0,
         'no_current_tasks_accounted': 0,
@@ -536,16 +535,25 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
 
     for calc in calcs:
         struct = Json2Atoms(calc.structure.ase_structure)
-        natom = len(struct.get_atomic_numbers())
 
-        energies.append(calc.results['total_energy']/natom)
-        volumes.append(struct.get_volume()/natom)
+        natoms_struct = len(struct.get_atomic_numbers())
+        volumes.append(struct.get_volume()/natom_struct)
+
+        # When normalizing the energy, we have to take the effect of a MULTIPLE_UNIT_CELL into account:
+        # the parser extracts the final number of atoms per Kind from the ATOMIC KIND INFORMATION (AKI) section,
+        # since the deltatest has only one real kind, but may contain multiple pseudo-kinds to define
+        # broken symmetries, we sum here over all natoms in the atomic_kind_information entries
+        if 'atomic_kind_information' in calc.result:
+            natoms_sim = sum(e['natoms'] for e in calc.result['atomic_kind_information'])
+        else:
+            # as a fallback we use the natoms from the structure (for results generated prior to the AKI parsing)
+            natoms_sim = natoms_struct
+
+        energies.append(calc.results['total_energy']/natoms_sim)
 
         nodehours['no_current_tasks'] += 1
         try:
-            print("HERE")
             jobname = 'fatman.%s' % calc.current_task.id
-            print(jobname, calc.current_task.data['runner']['commands'][jobname])
             nodehours['current_total'] += nodehours_from_job_data(calc.current_task.data['runner']['commands'][jobname])
             nodehours['no_current_tasks_accounted'] += 1
         except (KeyError, AttributeError):
