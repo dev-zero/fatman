@@ -103,6 +103,11 @@ CP2K_CONDITION_NUMBER_MATCH = re.compile(r'''
    [ \t]* \n
 ''', re.MULTILINE | re.VERBOSE)
 
+CP2K_ATOMIC_KIND_NATOMS_MATCH = re.compile(r'''
+[ \t]* \d+\. [ \t]+  Atomic\ kind: [ \t]+ (?P<kind>\w+) [ \t]+ Number\ of\ atoms: [ \t]+ (?P<natoms>\d+) [ \t]* \n
+''', re.MULTILINE | re.VERBOSE)
+
+
 # the definition for the following is based on src/common/{termination,cp_error_handling}.F
 CP2K_WARNINGS_MATCH = re.compile(r'''
 ^[ \t] \*{3} [ \t]+ WARNING [ \t]+ (in [ \t]+ .+ [ \t]+ :: [ \t]+ .+) [ \t]+ \*{3} [ \t]* \n
@@ -168,6 +173,14 @@ def parse_cp2k_output(fhandle):
     match = CP2K_GW_MATCH.search(content)
     if match:
         data.update(match.groupdict())
+
+    data['atomic_kind_information'] = []
+
+    for atomic_kind_match in CP2K_ATOMIC_KIND_NATOMS_MATCH.finditer(content):
+        data['atomic_kind_information'].append({
+            'kind': atomic_kind_match.group('kind'),
+            'natoms': int(atomic_kind_match.group('natoms')),
+            })
 
     match = CP2K_MULLIKEN_MATCH.search(content)
     # for this one we needed the extended regex library https://pypi.python.org/pypi/regex
