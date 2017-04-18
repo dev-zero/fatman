@@ -543,8 +543,8 @@ def generate_test_result_deltatest(self, calc_id, update=False, force_new=False)
         # the parser extracts the final number of atoms per Kind from the ATOMIC KIND INFORMATION (AKI) section,
         # since the deltatest has only one real kind, but may contain multiple pseudo-kinds to define
         # broken symmetries, we sum here over all natoms in the atomic_kind_information entries
-        if 'atomic_kind_information' in calc.result:
-            natoms_sim = sum(e['natoms'] for e in calc.result['atomic_kind_information'])
+        if 'atomic_kind_information' in calc.results:
+            natoms_sim = sum(e['natoms'] for e in calc.results['atomic_kind_information'])
         else:
             # as a fallback we use the natoms from the structure (for results generated prior to the AKI parsing)
             natoms_sim = natoms_struct
