@@ -103,6 +103,14 @@ CP2K_CONDITION_NUMBER_MATCH = re.compile(r'''
    [ \t]* \n
 ''', re.MULTILINE | re.VERBOSE)
 
+# the definition for the following is based on src/common/{termination,cp_error_handling}.F
+CP2K_WARNINGS_MATCH = re.compile(r'''
+^[ \t] \*{3} [ \t]+ WARNING [ \t]+ (in [ \t]+ .+ [ \t]+ :: [ \t]+ .+) [ \t]+ \*{3} [ \t]* \n
+(?:
+  ^[ \t] \*{3} [ \t]+ (.+?) [ \t]+ \*{3} \n
+)*
+''', re.MULTILINE | re.VERBOSE)
+
 
 def parse_cp2k_output(fhandle):
     """
@@ -149,8 +157,7 @@ def parse_cp2k_output(fhandle):
         'username': key_value_match('**    ****   ******    PROGRAM STARTED BY'),
         'total_energy': key_value_match('ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):', float),
         'warnings_count': key_value_match('The number of warnings for this run is :', int),
-        # the definition for the following is based on src/common/{termination,cp_error_handling}.F
-        'warnings': re.findall(r'^[ \t]*\*{3} WARNING (in .+ :: .+) \*{3}', content, re.MULTILINE),
+        'warnings': [" ".join(warning_match.groups()) for warning_match in CP2K_WARNINGS_MATCH.finditer(content)],
         }
 
     # only when doing calculations with kpoints
