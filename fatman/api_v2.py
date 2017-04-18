@@ -1081,8 +1081,10 @@ class StructureResource_v2(Resource):
 class StructureDownloadResource(Resource):
 
     SUPPORTED_MIMETYPES = collections.OrderedDict([
-            ("chemical/x-xyz", "xyz"),
-            ("chemical/x-cif", "cif"),
+            # mimetype: (file ending, Python ASE formatter)
+            ("chemical/x-xyz", ("xyz", "xyz")),
+            ("chemical/x-cif", ("cif", "cif")),
+            ("chemical/x-pdb", ("pdb", "proteindatabank")),
             ])
 
     def get(self, sid):
@@ -1091,7 +1093,7 @@ class StructureDownloadResource(Resource):
 
         # this will return XYZ if the client sends */* due to the OrderedDict
         selected_mimetype = request.accept_mimetypes.best_match(self.SUPPORTED_MIMETYPES.keys())
-        selected_format = self.SUPPORTED_MIMETYPES[selected_mimetype]
+        fileending, formatter = self.SUPPORTED_MIMETYPES[selected_mimetype]
 
         structure = Structure.query.get_or_404(sid)
         asestruct = Json2Atoms(structure.ase_structure)
@@ -1108,12 +1110,12 @@ class StructureDownloadResource(Resource):
 
         stringbuf = StringIO()
 
-        ase_io.write(stringbuf, asestruct, format=selected_format)
+        ase_io.write(stringbuf, asestruct, format=formatter)
 
         return send_file(
             BytesIO(stringbuf.getvalue().encode('utf-8')),
             as_attachment=True,
-            attachment_filename="{}.{}".format(structure.name, selected_format),
+            attachment_filename="{}.{}".format(structure.name, fileending),
             mimetype=selected_mimetype)
 
 
