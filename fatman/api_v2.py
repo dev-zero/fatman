@@ -1331,12 +1331,44 @@ class TestResultCollectionListResource(Resource):
         return schema.jsonify(query.all())
 
 
+    creation_args = {
+        'name': fields.String(required=True),
+        'desc': fields.String(required=True),
+        'testresults': fields.List(fields.UUID(validate=must_exist_in_db(TestResult2)),
+                                   required=True),
+        }
+
+    @apiauth.login_required
+    @use_kwargs(creation_args)
+    def post(self, name, desc, testresults):
+        trcoll = TestResult2Collection(
+            name=name,
+            desc=desc,
+            # validation already happened, each testresult (id) yields a db model entry:
+            testresults=TestResult2.query.filter(TestResult2.id.in_(testresults)).all()
+            )
+
+        db.session.add(trcoll)
+        db.session.commit()
+
+        schema = TestResultCollectionSchema()
+        return schema.jsonify(trcoll)
+
+
 class TestResultCollectionResource(Resource):
     def get(self, trcid):
         trc = TestResult2Collection.query.get(trcid)
 
         schema = TestResultCollectionSchema()
         return schema.jsonify(trc)
+
+
+    @apiauth.login_required
+    def delete(self, trcid):
+        trcoll = TestResult2Collection.query.get_or_404(trcid)
+        db.session.delete(trcoll)
+        db.session.commit()
+        return Response(status=204)  # return completely empty
 
 
 class ActionResource(Resource):
