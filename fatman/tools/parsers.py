@@ -15,32 +15,19 @@ class OutputParseError(Exception):
 CP2K_GW_MATCH = re.compile(r'''
 # anchor to indicate beginning of the HOMO/LUMO GW energy table
 ^[ \t]* MO [ \t]* E_SCF [ \t]* Sigc [ \t]* Sigc_fit [ \t]* Sigx-vxc [ \t]* Z [ \t]* E_GW \n
-
 (
   ^
-  [ \t]+ \d+
-  [ \t]+ \(\ occ\ \)
-  [ \t]+ (?P<HOMO_energy_SCF>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ (?P<HOMO_energy_GW>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<MO_nr>\d+)
+  [ \t]+ \(\ (?P<MO_type> occ|vir) \ \)
+  [ \t]+ (?P<E_SCF> [\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<Sigc> [\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<Sigc_fit> [\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<Sigx_vxc> [\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<Z> [\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]+ (?P<E_GW> [\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
   \n
-)+  # the regex engine will only keep the last capture groups, effectively selecting the LUMO
-(
-  ^
-  [ \t]+ \d+
-  [ \t]+ \(\ vir\ \)
-  [ \t]+ (?P<LUMO_energy_SCF>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ ([\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]+ (?P<LUMO_energy_GW>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  \n
-)  # do not match more since we want only the HOMO
-''', re.MULTILINE | re.VERBOSE)
+)+
+''', re.VERSION1 | re.MULTILINE | re.VERBOSE)
 
 
 CP2K_MULLIKEN_MATCH = re.compile(r'''
@@ -172,7 +159,22 @@ def parse_cp2k_output(fhandle):
 
     match = CP2K_GW_MATCH.search(content)
     if match:
-        data.update(match.groupdict())
+        gw_raw_data = match.capturesdict()
+        gw_data = []
+
+        gw_data = [dict(zip(gw_raw_data.keys(), l)) for l in zip(*gw_raw_data.values())]
+
+        for entry in gw_data:
+            for kw in entry:
+                if kw == 'MO_type':
+                    continue
+
+                if kw == 'MO_nr':
+                    entry[kw] = int(entry[kw])
+                else:
+                    entry[kw] = float(entry[kw])
+
+        data['GW_quasiparticle_energies'] = gw_data
 
     data['atomic_kind_information'] = []
 
