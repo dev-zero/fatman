@@ -193,7 +193,8 @@ class Task2View(BaseDataView):
 
 
 class TestResult2View(BaseDataView):
-    column_list = ('id', 'test', 'calculations', 'data', )
+    column_list = ('id', 'test', 'calculations', 'collections', 'data', )
+    column_filters = ('test', )
 
 
 class TestResult2CollectionView(BaseDataView):
