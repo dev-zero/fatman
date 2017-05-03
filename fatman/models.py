@@ -624,7 +624,8 @@ class TestResult2(Base):
     test_id = Column(Integer, ForeignKey('test.id'), nullable=False)
     test = relationship("Test", lazy='joined')
     calculations = relationship("Calculation", secondary="test_result2_calculation",
-                                backref='testresults')
+                                backref='testresults',
+                                cascade="all", passive_deletes=True)
     data = Column(JSONB)
     collections = relationship('TestResult2Collection',
                                secondary="test_result2_test_result2_collection",
@@ -637,7 +638,7 @@ class TestResult2(Base):
 TestResult2Calculation = Table(
     'test_result2_calculation',
     Base.metadata,
-    Column('test_id', UUID(as_uuid=True), ForeignKey('test_result2.id'),
+    Column('test_id', UUID(as_uuid=True), ForeignKey('test_result2.id', ondelete='CASCADE'),
            primary_key=True),
     Column('calculation_id', UUID(as_uuid=True),
            ForeignKey('calculation.id'), primary_key=True))
