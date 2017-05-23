@@ -1124,6 +1124,28 @@ class StructureSetListResource(Resource):
         schema = StructureSetSchema(many=True)
         return schema.jsonify(StructureSet.query.all())
 
+    structure_set_args = {
+        'name': fields.String(required=True),
+        'description': fields.Str(required=False, missing=None),
+        'superset': fields.Str(required=False, missing=None)
+        }
+    @apiauth.login_required
+    @use_kwargs(structure_set_args)
+    def post(self, name, description, superset):
+
+        superset_id = None
+        if superset:
+            superset_id = db.session.query(StructureSet.id).filter_by(name=superset).scalar()
+            if not superset_id:
+                raise ValidationError("invalid superset '{}' specified".format(superset))
+
+        structureset = StructureSet(name=name, description=description, superset_id=superset_id)
+        db.session.add(structureset)
+        db.session.commit()
+
+        schema = StructureSetSchema()
+        return schema.jsonify(structureset)
+
 
 class StructureSetCalculationsListResource(Resource):
     def get(self, name):
