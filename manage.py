@@ -17,7 +17,7 @@ def createconfig():
 
     from os import urandom
 
-    with open('fatman.cfg', 'w') as cfg:
+    with open('fatman.cfg', 'a') as cfg:
         cfg.write("SECRET_KEY = {}\n".format(urandom(24)))
 
 # add commands from flask.security
