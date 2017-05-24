@@ -38,11 +38,6 @@ def Json2Atoms(jsonstring):
     return row.toatoms(attach_calculator=False, add_additional_information=True)
 
 
-def randomword(length=8):
-    import random, string
-    return ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(length))
-
-
 def nodehours_from_job_data(jobdata):
     """Get the number of node hours as timedelta based on JSON-ified data from sacct.
 

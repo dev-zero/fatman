@@ -72,6 +72,12 @@ def get_runtime_estimate(sess, url, code, machine, structure, fallback=86340, mi
 
     return max(minimum, estimated_rt)
 
+
+def randomword(length=8):
+    import random, string
+    return ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(length))
+
+
 @click.command()
 @click.option('--url', type=str, default='http://localhost:5000', show_default=True,
               help='The URL where FATMAN is running')
