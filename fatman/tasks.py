@@ -31,12 +31,12 @@ from .models import (
 
 from .tools import (
     Json2Atoms,
-    gmtkn_coefficients,
     parsers,
     checks,
     nodehours_from_job_data,
     )
 from .tools.deltatest import deltatest_ev_curve
+from .tools.gmtkn import GMTKN_COEFFICIENTS
 
 
 logger = get_task_logger(__name__)
@@ -216,7 +216,7 @@ def calculate_GMTKN(self, tid, rid, trid=None):
 
     sub_db = test.name[6:]
     all_structures = set([item[0]
-                          for sublist in gmtkn_coefficients[sub_db]
+                          for sublist in GMTKN_COEFFICIENTS[sub_db]
                           for item in sublist])
 
     results_count = results.count()
@@ -248,7 +248,7 @@ def calculate_GMTKN(self, tid, rid, trid=None):
         struct2energies = OrderedDict([(x.task.structure.name,
                                         x.data['total_energy'])
                                        for x in results])
-        for rxn in gmtkn_coefficients[sub_db]:
+        for rxn in GMTKN_COEFFICIENTS[sub_db]:
             etot = 0.
             for struct, coeff in rxn:
                 try:
