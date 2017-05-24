@@ -49,12 +49,12 @@ from .models import (
     TestResult2,
     TestResult2Collection,
     )
-from .tools import Json2Atoms, Atoms2Json, calcDelta
+from .tools import Json2Atoms, Atoms2Json
 from .tools.cp2k import mergedicts
 from .tools.generators import generate_CP2K_inputs
 from .tools.slurm import generate_slurm_batch_script
 from .tools.webargs import nested_parser
-from .tools.deltatest import ATOMIC_ELEMENTS
+from .tools.deltatest import calcDelta, ATOMIC_ELEMENTS
 
 from .tasks import (
     generate_calculation_results,

@@ -34,7 +34,8 @@ from .models import (
 )
 
 from .utils import route_from
-from .tools import calcDelta, eos, Json2Atoms, Atoms2Json
+from .tools import Json2Atoms, Atoms2Json
+from .tools.deltatest import calcDelta, eos
 from .tasks import (postprocess_result_file,
                     postprocess_result_files,
                     postprocess_result,

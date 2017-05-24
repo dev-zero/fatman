@@ -31,12 +31,13 @@ from .models import (
 
 from .tools import (
     Json2Atoms,
-    deltatest_ev_curve,
     gmtkn_coefficients,
     parsers,
     checks,
     nodehours_from_job_data,
     )
+from .tools.deltatest import deltatest_ev_curve
+
 
 logger = get_task_logger(__name__)
 

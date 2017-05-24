@@ -4,9 +4,6 @@ import numpy as np
 import re
 import datetime as dt
 
-from ase.eos import EquationOfState
-from ase.units import kJ
-
 gmtkn_coefficients = {
     "ADIM6":   [
         [        ("AM2",   2),        ("AD2",  -1), ],
@@ -881,6 +878,7 @@ gmtkn_coefficients = {
         [("H3OpH2O6OHm",   1),     ("H2O8s4",  -1),                      ], ],
 }
 
+
 def Atoms2Json(structure, additional_information={}):
     """Serialize an ASE Structure definition to JSON and return it as a string"""
 
@@ -913,83 +911,6 @@ def Json2Atoms(jsonstring):
     return row.toatoms(attach_calculator=False, add_additional_information=True)
 
 
-def calcDelta(data_f, data_w):
-    """
-    Calculate the Delta using the data in data_f, data_w on
-    element in eloverlap
-    This is taken from Delta_v3-0.zip from the Ghent website [23.11.2015]
-    """
-    import numpy as np
-
-    v0w = data_f[0]
-    b0w = data_f[1] * 10.**9. / 1.602176565e-19 / 10.**30.
-    b1w = data_f[2]
-
-    v0f = data_w[0]
-    b0f = data_w[1] * 10.**9. / 1.602176565e-19 / 10.**30.
-    b1f = data_w[2]
-
-    vref = 30.
-    bref = 100. * 10.**9. / 1.602176565e-19 / 10.**30.
-
-    Vi = 0.94 * (v0w + v0f) / 2.        #is this really correct? we are using smaller strain ranges
-    Vf = 1.06 * (v0w + v0f) / 2.        #probably okay, since we are supplying the fitted V, B0 and B1 here,
-                                        #and the integration range should not make a difference
-
-    a3f = 9. * v0f**3. * b0f / 16. * (b1f - 4.)
-    a2f = 9. * v0f**(7./3.) * b0f / 16. * (14. - 3. * b1f)
-    a1f = 9. * v0f**(5./3.) * b0f / 16. * (3. * b1f - 16.)
-    a0f = 9. * v0f * b0f / 16. * (6. - b1f)
-
-    a3w = 9. * v0w**3. * b0w / 16. * (b1w - 4.)
-    a2w = 9. * v0w**(7./3.) * b0w / 16. * (14. - 3. * b1w)
-    a1w = 9. * v0w**(5./3.) * b0w / 16. * (3. * b1w - 16.)
-    a0w = 9. * v0w * b0w / 16. * (6. - b1w)
-
-    x = [0, 0, 0, 0, 0, 0, 0]
-
-    x[0] = (a0f - a0w)**2
-    x[1] = 6. * (a1f - a1w) * (a0f - a0w)
-    x[2] = -3. * (2. * (a2f - a2w) * (a0f - a0w) + (a1f - a1w)**2.)
-    x[3] = -2. * (a3f - a3w) * (a0f - a0w) - 2. * (a2f - a2w) * (a1f - a1w)
-    x[4] = -3./5. * (2. * (a3f - a3w) * (a1f - a1w) + (a2f - a2w)**2.)
-    x[5] = -6./7. * (a3f - a3w) * (a2f - a2w)
-    x[6] = -1./3. * (a3f - a3w)**2.
-
-    y = [0, 0, 0, 0, 0, 0, 0]
-
-    y[0] = (a0f + a0w)**2 / 4.
-    y[1] = 3. * (a1f + a1w) * (a0f + a0w) / 2.
-    y[2] = -3. * (2. * (a2f + a2w) * (a0f + a0w) + (a1f + a1w)**2.) / 4.
-    y[3] = -(a3f + a3w) * (a0f + a0w) / 2. - (a2f + a2w) * (a1f + a1w) / 2.
-    y[4] = -3./20. * (2. * (a3f + a3w) * (a1f + a1w) + (a2f + a2w)**2.)
-    y[5] = -3./14. * (a3f + a3w) * (a2f + a2w)
-    y[6] = -1./12. * (a3f + a3w)**2.
-
-    Fi = 0.
-    Ff = 0.
-
-    Gi = 0.
-    Gf = 0.
-
-    for n in range(7):
-        Fi = Fi + x[n] * Vi**(-(2.*n-3.)/3.)
-        Ff = Ff + x[n] * Vf**(-(2.*n-3.)/3.)
-
-        Gi = Gi + y[n] * Vi**(-(2.*n-3.)/3.)
-        Gf = Gf + y[n] * Vf**(-(2.*n-3.)/3.)
-
-    Delta = 1000. * np.sqrt((Ff - Fi) / (Vf - Vi))
-   #Deltarel = 100. * np.sqrt((Ff - Fi) / (Gf - Gi))
-   #if useasymm:
-   #    Delta1 = 1000. * np.sqrt((Ff - Fi) / (Vf - Vi)) \
-   #             / v0w / b0w * vref * bref
-   #else: 
-   #    Delta1 = 1000. * np.sqrt((Ff - Fi) / (Vf - Vi)) \
-   #             / (v0w + v0f) / (b0w + b0f) * 4. * vref * bref
-
-    return Delta
-
 def randomword(length=8):
     import random, string
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(length))
@@ -1007,105 +928,6 @@ def energies_for_test(method, test):
     return np.array(V),np.array(E)
 
 
-def full_plot_data(method, test=None):
-    a = tresult(method, test)
-    V0 = a[test]['V']
-    B0 = a[test]['B0']
-    B1 = a[test]['B1']
-    
-        
-    xfit,yfit = eos(V0,B0,B1)
-    
-    x2,y2 = energies_for_test(method=method, test=test)
-    if 'E0' in a[test].keys():
-        E0 = a[test]['E0']
-        y2 -= E0
-    
-    return [xfit,yfit, x2,y2]
-
-def eos(V0,B0, B1, E0=0.):
-    import numpy as np
-
-    B0 = B0 * 1e9 / 1.602176565e-19 / 1e30
-    rng = np.linspace(0.93*V0, 1.07*V0, 40)
-    E = [ E0 + 9./16. * V0 * B0 *  ( ((V0/v)**(2./3.) -1)**3 * B1 +
-                                     ((V0/v)**(2./3.) -1)**2 * (6-4*(V0/v)**(2./3.)) ) for v in rng]
-    return rng, np.array(E)
-
-
-class FullEquationOfState(EquationOfState):
-
-    """Fit equation of state for bulk systems.
-
-    Salvaged from https://gitlab.com/ase/ase/blob/3.8.1/ase/test/tasks/dcdft.py
-    Based on eosfit.py from http://molmod.ugent.be/DeltaCodesDFT
-
-    """
-
-    def __init__(self, volumes, energies, eos='birch'):
-        assert eos == 'birch', eos + ' eos not available.'
-        self.v = np.array(volumes)
-        self.e = np.array(energies)
-        self.eos_string = 'birch'
-
-        self.v0 = None
-
-    def fit(self):
-        """Calculate volume (v0), energy (e0), bulk modulus (B0), and
-        bulk modulus pressure derivative (B1).
-
-        Returns v0, e0, B0, B1, fit residuals.
-
-        Notice that the ASE units for the bulk modulus is
-        eV/Angstrom^3 - to get the value in GPa, do this::
-
-          v0, e0, B0, B1, R = eos.fit()
-          print B0 / kJ * 1.0e24, 'GPa'
-
-        """
-
-        fitdata = np.polyfit(self.v**(-2./3.), self.e, 3, full=True)
-        ssr = fitdata[1]
-        sst = np.sum((self.e - np.average(self.e))**2.)
-        residuals0 = ssr/sst
-        deriv0 = np.poly1d(fitdata[0])
-        deriv1 = np.polyder(deriv0, 1)
-        deriv2 = np.polyder(deriv1, 1)
-        deriv3 = np.polyder(deriv2, 1)
-
-        self.v0 = None
-        for x in np.roots(deriv1):
-            if x > 0 and deriv2(x) > 0:
-                self.v0 = x**(-3./2.)
-                break
-
-        if self.v0 is None:
-            raise ValueError('No minimum!')
-
-        derivV2 = 4./9. * x**5. * deriv2(x)
-        derivV3 = (-20./9. * x**(13./2.) * deriv2(x) -
-                   8./27. * x**(15./2.) * deriv3(x))
-        bulk_modulus0 = derivV2 / x**(3./2.)
-        bulk_deriv0 = -1 - x**(-3./2.) * derivV3 / derivV2
-
-        self.e0 = deriv0(x)
-        self.B0 = bulk_modulus0
-        self.B1 = bulk_deriv0
-
-        return self.v0, self.e0, self.B0, self.B1, residuals0
-
-
-def deltatest_ev_curve(volumes, energies):
-    eos = FullEquationOfState(volumes, energies)
-
-    try:
-        v, e, B0, B1, R = eos.fit()
-    except ValueError:
-        print("failure")
-        return "fail", "fail", "fail", "fail", "fail"
-    else:
-        return v, e, B0/kJ * 1.0e24, B1, R[0]
-
 def nodehours_from_job_data(jobdata):
     """Get the number of node hours as timedelta based on JSON-ified data from sacct.
 
@@ -1120,7 +942,7 @@ def nodehours_from_job_data(jobdata):
         return None
 
 
-def test1():
+def test():
     from ase import Atoms
     teststructure = Atoms('N2',[(0,0,0),(0,0,1.1)])
 
@@ -1137,28 +959,8 @@ def test1():
     print("JSON Conversion in both directions: apparently no issue")
 
 
-def test2():
-    #testing the delta computation
-    #          X:  v       b0         b1      REF: v         b0       b1        REQ. VALUE
-    testdata = [[17.388,  10.284,  2.711,         17.388,  10.284,  2.711,      0.000 ],   #hydrogen wien2k vs. wien2k
-                [17.388,  10.284,  2.711,         17.422,  10.262,  2.683,      0.07 ],    #hydrogen abinit vs. wien2k
-                [36.817,  36.030,  4.637,         37.094,  34.150,  4.716,      2.10 ]]    #Sn abinit vs. wien2k
-
-    epsilon = 0.01   #tolerance of 0.01 meV
-
-    for line in testdata:
-        data_f = line[:3]
-        data_w = line[3:6]
-        ref = line[6]
-
-        delta = calcDelta(data_f, data_w)
-        assert abs(delta-ref)<epsilon
-
-    print("Accuracy of Delta-factor calculation: apparently no issue")
-
 if __name__=="__main__":
     #if called execute "unit" tests
-    test1()
-    test2()
+    test()
 
 #  vim: set ts=4 sw=4 tw=0 :
