@@ -18,7 +18,7 @@ from sys import argv
 
 import os
 
-from fatman.tools import Atoms2Json, Json2Atoms
+from fatman.tools import atoms2json, json2atoms
 
 from fatman import db
 from fatman.models import Structure, Test, TestStructure
@@ -62,7 +62,7 @@ def main():
                     
                     #serialize to json using a derivative of the native ASE methods.
                     #more elegantly one should probably extend the Atoms object with its own routine to output json.
-                    ase_structure = Atoms2Json(mystruc,
+                    ase_structure = atoms2json(mystruc,
                                                additional_information = {"dataset":"gmtkn30", "identifier":"gmtkn30_{}_{}".format(db_id,struct_id),"multiplicity":multiplicity, "charge":charge })
 
                     #assumes the ase_structure field to be of type STRING/VARCHAR/...

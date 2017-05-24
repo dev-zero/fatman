@@ -30,7 +30,7 @@ from .models import (
     )
 
 from .tools import (
-    Json2Atoms,
+    json2atoms,
     parsers,
     checks,
     nodehours_from_job_data,
@@ -158,7 +158,7 @@ def calculate_deltatest(self, tid, rid, trid=None):
         natom = 0
 
         for result in results:
-            struct = Json2Atoms(result.task.structure.ase_structure)
+            struct = json2atoms(result.task.structure.ase_structure)
             natom = len(struct.get_atomic_numbers())
 
             energies.append(result.data['total_energy']/natom)
@@ -519,7 +519,7 @@ def generate_test_result_deltatest(self, calc_id, update=False):
             }
 
         for calc in calcs:
-            struct = Json2Atoms(calc.structure.ase_structure)
+            struct = json2atoms(calc.structure.ase_structure)
 
             natoms_struct = len(struct.get_atomic_numbers())
             volumes.append(struct.get_volume()/natoms_struct)

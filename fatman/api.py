@@ -34,7 +34,7 @@ from .models import (
 )
 
 from .utils import route_from
-from .tools import Json2Atoms, Atoms2Json
+from .tools import json2atoms, atoms2json
 from .tools.deltatest import calcDelta, eos
 from .tasks import (postprocess_result_file,
                     postprocess_result_files,
@@ -860,7 +860,7 @@ class Plot(Resource):
             E = []
             V = []
             for x in q:
-                atoms = Json2Atoms(x.task.structure.ase_structure)
+                atoms = json2atoms(x.task.structure.ase_structure)
                 natom = len(atoms.get_masses())
                 V.append(atoms.get_volume()/natom)
                 E.append(x.data['total_energy']/natom)
@@ -919,7 +919,7 @@ class StructureResource(Resource):
         else:
             raise ParameterError("exactly one of id or test parameter is required")
 
-        atoms = Json2Atoms(s.ase_structure)
+        atoms = json2atoms(s.ase_structure)
 
         if args['viewer']:
             from ase.io import cif
@@ -951,7 +951,7 @@ class StructureResource(Resource):
 
         if args['format'] == 'json':
             atoms_rep = atoms.repeat(args['repeat'])
-            return Atoms2Json(atoms_rep)
+            return atoms2json(atoms_rep)
 
         atoms_rep = atoms.repeat(args['repeat'])
         xyz_output = ""

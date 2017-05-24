@@ -18,7 +18,7 @@ import subprocess
 import requests
 import click
 
-from fatman.tools import Json2Atoms, randomword
+from fatman.tools import json2atoms, randomword
 from codehandling import HandlerFactory
 
 TASKS_URL           = '{}/tasks'
@@ -176,7 +176,7 @@ def run(url, workdir, hpc_mode, calc, update, upload, submit, maxtask, exit_on_e
         try:
             # get structure and convert to ASE object
             struct_json = task['structure']['ase_structure']
-            struct = Json2Atoms(struct_json)
+            struct = json2atoms(struct_json)
 
             # which code to use with which settings?
             mymethod = task['method']

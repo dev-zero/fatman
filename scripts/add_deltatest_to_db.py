@@ -24,7 +24,7 @@ from ase.test.tasks import dcdft
 
 from fatman import db
 from fatman.models import Structure, Test, TestStructure
-from fatman.tools import Atoms2Json
+from fatman.tools import atoms2json
 
 
 def main():
@@ -57,7 +57,7 @@ def main():
             struct = data.copy()
             struct.set_cell(eq_cell*strain, scale_atoms=True)
 
-            ase_structure = Atoms2Json(struct,
+            ase_structure = atoms2json(struct,
                                        additional_information={"dataset": "deltatest",
                                                                "identifier": "deltatest_{}_{:4.2f}".format(el, strain),
                                                                "kpoints": kpts[el]

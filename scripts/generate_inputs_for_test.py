@@ -10,7 +10,7 @@ import requests
 import sys
 import json
 
-from fatman.tools import Json2Atoms
+from fatman.tools import json2atoms
 from codehandling import HandlerFactory
 from time import sleep
 from datetime import datetime
@@ -48,7 +48,7 @@ def main(args):
         try:
             # get structure and convert to ASE object
             struct_json = t['structure']['ase_structure']
-            struct = Json2Atoms(struct_json)
+            struct = json2atoms(struct_json)
 
             if "kpoints" in struct.info["key_value_pairs"].keys() and "kpoints" not in mymethod['settings'].keys() and "max_kpoints" not in mymethod['settings'].keys():
                 # kindof a hack: kpoints are specified with each structure, but are in fact code parameters

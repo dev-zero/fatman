@@ -196,7 +196,7 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
 
 
 def test():
-    from . import Json2Atoms
+    from . import json2atoms
 
     settings = {
         "force_eval": {
@@ -241,7 +241,7 @@ def test():
      0.22095592    1    18.33745811
      0.21133247    0
 ''')]
-    struct = Json2Atoms('''
+    struct = json2atoms('''
         {
             "numbers": [8, 8, 8, 8],
             "positions": [[4.27100416, 2.48306235e-17, 0.615915813], [1.80729466, 1.44465234e-16, 3.58341475], [2.13518916, 2.13841, 0.615915813], [3.94310966, 2.13841, 3.58341475]],
