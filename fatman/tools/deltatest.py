@@ -4,8 +4,6 @@ import numpy as np
 from ase.eos import EquationOfState
 from ase.units import kJ  # pylint: disable=locally-disabled, no-name-in-module
 
-from . import energies_for_test
-
 ATOMIC_ELEMENTS = {
     "Cu": { "sym": "Cu", "name": "copper", "num": 29 },
     "Pt": { "sym": "Pt", "name": "platinum", "num": 78 },

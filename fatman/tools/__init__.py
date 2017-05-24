@@ -43,18 +43,6 @@ def randomword(length=8):
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(length))
 
 
-def energies_for_test(method, test):
-    V = []
-    E = []
-    r = result(method=method,test=test)
-    for x in r:
-        natom = len(Json2Atoms(x["task"]['structure']['ase_structure']).get_masses())
-        V.append(Json2Atoms(x["task"]['structure']['ase_structure']).get_volume()/natom)
-        E.append(x['energy']/natom)
-        
-    return np.array(V),np.array(E)
-
-
 def nodehours_from_job_data(jobdata):
     """Get the number of node hours as timedelta based on JSON-ified data from sacct.
 
