@@ -49,8 +49,7 @@ from .models import (
     TestResult2,
     TestResult2Collection,
     )
-from .tools import Json2Atoms, Atoms2Json
-from .tools.cp2k import mergedicts
+from .tools import Json2Atoms, Atoms2Json, mergedicts
 from .tools.generators import generate_CP2K_inputs
 from .tools.slurm import generate_slurm_batch_script
 from .tools.webargs import nested_parser

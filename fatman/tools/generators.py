@@ -5,7 +5,8 @@ from collections import OrderedDict
 import numpy as np
 from ase import io as ase_io
 
-from .cp2k import mergedicts, dict2cp2k
+from . import mergedicts
+from .cp2k import dict2cp2k
 
 def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrides=None):
     """
