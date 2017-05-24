@@ -171,8 +171,9 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
                 # sum over (the number of m's per l quantum number times
                 # the number of functions per m):
                 n_mos += np.dot([2*l+1 for l in range(econfig[1], econfig[2]+1)], econfig[4:])
+                # TODO: this only considers one set, need to extend it to parse basis sets with multiple coefficient sets
 
-            scf['added_mos'] = int(0.3*n_mos)
+            scf['added_mos'] = max(int(0.3*n_mos), 1)  # at least one MO must be added
     except KeyError:
         pass
 
@@ -228,13 +229,16 @@ def test():
             },
         "global": {"run_type": "ENERGY", "print_level": "MEDIUM"}
         }
-    basis_sets = [('default', 1, 'O', 'SZV-GTH', ''' 1
-     2  0  1  4  1  1
-       8.3043855492   0.1510165999  -0.0995679273
-       2.4579484191  -0.0393195364  -0.3011422449
-       0.7597373434  -0.6971724029  -0.4750857083
-       0.2136388632  -0.3841133622  -0.3798777957
-''')]
+    basis_sets = [('default', 1, 'O', 'DZVP-GTH', ''' 1
+2 0 2 7 2 2 1
+    12.015954705512 -0.060190841200  0.065738617900  0.036543638800 -0.034210557400  0.014807054400
+     5.108150287385 -0.129597923300  0.110885902200  0.120927648700 -0.120619770900  0.068186159300
+     2.048398039874  0.118175889400 -0.053732406400  0.251093670300 -0.213719464600  0.290576499200
+     0.832381575582  0.462964485000 -0.572670666200  0.352639910300 -0.473674858400  1.063344189500
+     0.352316246455  0.450353782600  0.186760006700  0.294708645200  0.484848376400  0.307656114200
+     0.142977330880  0.092715833600  0.387201458600  0.173039869300  0.717465919700  0.318346834400
+     0.046760918300 -0.000255945800  0.003825849600  0.009726110600  0.032498979400 -0.005771736600
+     ''')]
     pseudos = [(1, 'O', 'GTH-PBE', 6, ''' 2    4
      0.24455430    2   -16.66721480     2.48731132
     2

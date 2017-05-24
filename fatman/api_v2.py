@@ -637,8 +637,7 @@ class Task2Resource(Resource):
                 bsets = []
                 for basis_set_assoc in calc.basis_set_associations:
                     bsets.append((
-                        'ORB' if basis_set_assoc.btype == 'default'
-                        else basis_set_assoc.btype.upper(),
+                        basis_set_assoc.btype,
                         basis_set_assoc.basis_set.id,
                         basis_set_assoc.basis_set.element,
                         basis_set_assoc.basis_set.family.name,
