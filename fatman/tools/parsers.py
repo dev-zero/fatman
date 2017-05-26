@@ -186,14 +186,14 @@ def parse_cp2k_output(fhandle):
         gw_data = [dict(zip(gw_raw_data.keys(), l)) for l in zip(*gw_raw_data.values())]
 
         for entry in gw_data:
-            for kw in entry:
-                if kw == 'MO_type':
+            for keyword in entry:
+                if keyword == 'MO_type':
                     continue
 
-                if kw == 'MO_nr':
-                    entry[kw] = int(entry[kw])
+                if keyword == 'MO_nr':
+                    entry[keyword] = int(entry[keyword])
                 else:
-                    entry[kw] = float(entry[kw])
+                    entry[keyword] = float(entry[keyword])
 
         data['GW_quasiparticle_energies'] = gw_data
 
@@ -253,25 +253,25 @@ def parse_cp2k_output(fhandle):
         captures = match.groupdict()
         data['overlap_matrix_condition_number'] = {
             '1-norm (estimate)': {
-              '|A|': float(captures['norm1_estimate_A']),
-              '|A^-1|': float(captures['norm1_estimate_Ainv']),
-              'CN': float(captures['norm1_estimate']),
-              'Log(CN)': float(captures['norm1_estimate_log']),
-              },
+                '|A|': float(captures['norm1_estimate_A']),
+                '|A^-1|': float(captures['norm1_estimate_Ainv']),
+                'CN': float(captures['norm1_estimate']),
+                'Log(CN)': float(captures['norm1_estimate_log']),
+                },
 
             '1-norm (using diagonalization)': {
-              '|A|': float(captures['norm1_diag_A']),
-              '|A^-1|': float(captures['norm1_diag_Ainv']),
-              'CN': float(captures['norm1_diag']),
-              'Log(CN)': float(captures['norm1_diag_log']),
-              },
+                '|A|': float(captures['norm1_diag_A']),
+                '|A^-1|': float(captures['norm1_diag_Ainv']),
+                'CN': float(captures['norm1_diag']),
+                'Log(CN)': float(captures['norm1_diag_log']),
+                },
 
             '2-norm (using diagonalization)': {
-              'max EV': float(captures['norm2_diag_max_ev']),
-              'min EV': float(captures['norm2_diag_min_ev']),
-              'CN': float(captures['norm2_diag']),
-              'Log(CN)': float(captures['norm2_diag_log']),
-              },
+                'max EV': float(captures['norm2_diag_max_ev']),
+                'min EV': float(captures['norm2_diag_min_ev']),
+                'CN': float(captures['norm2_diag']),
+                'Log(CN)': float(captures['norm2_diag_log']),
+                },
             }
 
     return data
@@ -309,7 +309,8 @@ def get_data_from_output(fhandle, code):
     raise OutputParseError("Unknown code: %s" % code)
 
 
-if __name__ == '__main__':
+def main():
+    """Function to call the parsers contained here directly"""
     import argparse
     import json
 
@@ -322,3 +323,6 @@ if __name__ == '__main__':
 
     with open(args.finput, 'r') as fhandle:
         print(json.dumps(get_data_from_output(fhandle, args.code), sort_keys=True, indent=4))
+
+if __name__ == '__main__':
+    main()
