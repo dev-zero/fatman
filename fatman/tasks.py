@@ -21,7 +21,6 @@ from .models import (
     TestResult,
     Task2,
     Calculation,
-    Artifact,
     TaskStatus,
     TestResult2,
     TestResult2Collection,
@@ -393,7 +392,6 @@ def generate_calculation_results(calc_id, update=False):
             results['checks'] = checks.generate_checks_dict(results, calc.code.name, calc.test.name)
         except NotImplementedError:
             logger.error("no data checking implemented for code: %s", calc.code.name)
-            pass
 
     else:
         logger.error("unsupported storage scheme found: %s", scheme)
@@ -617,8 +615,8 @@ def generate_test_result_deltatest(self, calc_id, update=False):
     return updated
 
 
-@capp.task(bind=True)
-def generate_test_result_GW100(self, calc_id, update=False):
+@capp.task
+def generate_test_result_GW100(calc_id, update=False):
     """
     Creates or updates a GW100 test result (which is currently a copy of a part of the calculation results)
     for the given calculation id.
