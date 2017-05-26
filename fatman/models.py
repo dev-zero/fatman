@@ -548,17 +548,17 @@ class Task2(Base):
     ctime = Column(DateTime, nullable=False, default=dt.now)
     mtime = Column(DateTime, nullable=False, default=dt.now, onupdate=dt.now)
     machine_id = Column(UUID(as_uuid=True), ForeignKey('machine.id'))
-    machine = relationship("Machine", backref="tasks")
+    machine = relationship("Machine", backref="tasks", lazy='joined')
     priority = Column(Integer, default=0)
     data = Column(JSONB)  # task-related data like runtime, #(MPI nodes), etc.
     restrictions = Column(JSONB)
     settings = Column(JSONB)
     infiles = relationship("Artifact", secondary="task2_artifact",
-                           lazy='dynamic', cascade="all", passive_deletes=True,
+                           lazy='joined', cascade="all", passive_deletes=True,
                            primaryjoin=("(Task2.id==Task2Artifact.task_id) &"
                                         "(Task2Artifact.linktype=='input')"))
     outfiles = relationship("Artifact", secondary="task2_artifact",
-                            lazy='dynamic', cascade="all", passive_deletes=True,
+                            lazy='joined', cascade="all", passive_deletes=True,
                             primaryjoin=("(Task2.id==Task2Artifact.task_id) & "
                                          "(Task2Artifact.linktype=='output')"))
 
