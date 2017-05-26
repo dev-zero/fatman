@@ -361,11 +361,10 @@ def generate_calculation_results(calc_id, update=False):
                      calc.id, task.calculation.code.name)
         return False
 
-    artifact = (task.outfiles
-                .filter(Artifact.name == resultfile_name)
-                .one_or_none())
-
-    if artifact is None:
+    try:
+        # the artifacts are already loaded via lazy='joined', can't use task.outfiles for querying
+        artifact = [a for a in task.outfiles if a.name == resultfile_name][0]
+    except KeyError:
         logger.info("calculation %s: no artifact with name '%s' linked to task %s",
                     calc.id, resultfile_name, task.id)
         return False
