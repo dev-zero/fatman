@@ -34,22 +34,43 @@ CP2K_MULLIKEN_MATCH = re.compile(r'''
 # anchor to indicate beginning of the Mulliken Population Analysis
 ^[ \t]* Mulliken\ Population\ Analysis [ \t]* \n
  [ \t]* \n
- [ \t]* \#  [\w \t]+\n  # match the header
+ [ \t]* \#  [\w \t\,\(\)]+\n  # match the header
 (
   ^
-  [ \t]* (?P<atom>\d+)
-  [ \t]* (?P<element>\w+)
-  [ \t]* (?P<kind>\d+)
-  [ \t]* (?P<population>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]* (?P<charge>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  [ \t]*
+  (?P<atom>\d+) [ \t]+
+  (?P<element>\w+) [ \t]+
+  (?P<kind>\d+) [ \t]+
+  (
+    ( # spin unrestricted case:
+      (?P<population_alpha>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+ 
+      (?P<population_beta>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+
+      (?P<charge>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+
+      (?P<spin>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+    )
+    |
+    (
+      (?P<population>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+ 
+      (?P<charge>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+    )
+  ) [ \t]*
   \n
 )+
+^ [ \t]* \#\ Total\ charge (\ and\ spin)? [ \t]+
 (
-  ^
-  [ \t]* \#\ Total\ charge
-  [ \t]* (?P<total_population>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-  [ \t]* (?P<total_charge>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
-)
+  ( # spin unrestricted case:
+    (?P<total_population_alpha>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+
+    (?P<total_population_beta>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+
+    (?P<total_charge>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+
+    (?P<total_spin>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  )
+  |
+  (
+    (?P<total_population>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]+
+    (?P<total_charge>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+  )
+) [ \t]*
+\n
 ''', re.VERSION1 | re.MULTILINE | re.VERBOSE)
 
 
@@ -190,21 +211,42 @@ def parse_cp2k_output(fhandle):
         captures = match.capturesdict()
         per_atom = []
 
-        for idx in range(len(captures['atom'])):
-            per_atom.append({
-                'element': captures['element'][idx],
-                'kind': int(captures['kind'][idx]),
-                'population': float(captures['population'][idx]),
-                'charge': float(captures['charge'][idx]),
-                })
+        if captures.get('population_alpha'):
+            for idx in range(len(captures['atom'])):
+                per_atom.append({
+                    'element': captures['element'][idx],
+                    'kind': int(captures['kind'][idx]),
+                    'population_alpha': float(captures['population_alpha'][idx]),
+                    'population_beta': float(captures['population_beta'][idx]),
+                    'charge': float(captures['charge'][idx]),
+                    'spin': float(captures['spin'][idx]),
+                    })
 
-        data['mulliken_population_analysis'] = {
-            'per-atom': per_atom,
-            'total': {
-                'population': float(match.group('total_population')),
-                'charge': float(match.group('total_charge')),
-                },
-            }
+            data['mulliken_population_analysis'] = {
+                'per-atom': per_atom,
+                'total': {
+                    'population_alpha': float(match.group('total_population_alpha')),
+                    'population_beta': float(match.group('total_population_beta')),
+                    'charge': float(match.group('total_charge')),
+                    'spin': float(match.group('total_spin')),
+                    },
+                }
+        else:
+            for idx in range(len(captures['atom'])):
+                per_atom.append({
+                    'element': captures['element'][idx],
+                    'kind': int(captures['kind'][idx]),
+                    'population': float(captures['population'][idx]),
+                    'charge': float(captures['charge'][idx]),
+                    })
+
+            data['mulliken_population_analysis'] = {
+                'per-atom': per_atom,
+                'total': {
+                    'population': float(match.group('total_population')),
+                    'charge': float(match.group('total_charge')),
+                    },
+                }
 
     match = CP2K_CONDITION_NUMBER_MATCH.search(content)
     if match:
