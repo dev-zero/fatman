@@ -459,46 +459,50 @@ def generate_test_result_deltatest(self, calc_id, update=False):
 
     updated = False
 
+    # first get the specified calculation from the DB
     calc = (Calculation.query
             .options(joinedload('test'))
             .options(joinedload('collection'))
             .get(calc_id))
 
-    # fetch the only testresult if already available
+    # get the element from the first (and only) pseudo
+    element = calc.pseudos[0].element
+
+    # from the same calculation collection as the given calculation,
+    # get the calculations for the same elements (selected via pseudos)
+    calcs = (Calculation.query
+             # AND lock all calculations being part of this test result:
+             # This will prevent any changes to the calculation objects while we read them
+             # but will also make parallel executions of this function run serialized from here on
+             # for calculations going to be used in the same test result
+             # IMPORTANT: this has to come before checking for available results to ensure proper locking
+             .with_for_update(of=Calculation)
+             .filter_by(collection=calc.collection)
+             .filter(Calculation.results_available)  # ignore calculations with no test results
+             .options(joinedload('structure'))
+             .options(joinedload('code'))
+             .join(Calculation.pseudos)
+             .filter(Pseudopotential.element == element)
+             .limit(6)  # limit to one more than we can actually use, to catch errors
+             .all())
+
+    # exit early again in case we do not have enough or too many datapoints
+
+    if len(calcs) < 5:
+        logger.info("Not enough datapoints to calculate deltatest value using calculation %s", calc.id)
+        return False
+
+    if len(calcs) > 5:
+        logger.critical("More than 5 elements found to calculate deltatest value using calculation %s", calc.id)
+        return False
+
+    # now fetch the only testresult if already available
     tr = (calc.testresults_query
           # Limit the Test Results to the test the calculation was meant for (which should be the ∆-test)
           .filter(TestResult2.test == calc.test)
           .one_or_none())
 
     if tr is None or update:
-
-        # getting the element from the first (and only) pseudo
-        element = calc.pseudos[0].element
-
-        # from the same calculation collection as the given calculation,
-        # get the calculations for the same elements (selected via pseudos)
-        calcs = (Calculation.query
-                 # Lock all calculations being part of this test result:
-                 # This will prevent any changes to the calculation objects while we read them
-                 # but will also make parallel executions of this function run serialized from here on
-                 # for calculations going to be used in the same test result
-                 .with_for_update(of=Calculation)
-                 .filter_by(collection=calc.collection)
-                 .filter(Calculation.results_available)  # ignore calculations with no test results
-                 .options(joinedload('structure'))
-                 .options(joinedload('code'))
-                 .join(Calculation.pseudos)
-                 .filter(Pseudopotential.element == element)
-                 .limit(6)  # limit to one more than we can actually use, to catch errors
-                 .all())
-
-        if len(calcs) < 5:
-            logger.info("Not enough datapoints to calculate deltatest value using calculation %s", calc.id)
-            return False
-
-        if len(calcs) > 5:
-            logger.critical("More than 5 elements found to calculate deltatest value using calculation %s", calc.id)
-            return False
 
         result_data = {'element': element}
 
