@@ -217,10 +217,12 @@ class CalculationListResource(Resource):
             validate=must_exist_in_db(Code, 'name')),
         'status': fields.String(
             validate=must_exist_in_db(TaskStatus, 'name')),
+        'limit': fields.Integer(required=False, missing=100, validate=lambda l: l <= 200 and l >= 0),
+        'start': fields.Integer(required=False, missing=0, validate=lambda s: s >= 0),
         }
 
     @use_kwargs(calculation_list_args)
-    def get(self, collection, test, structure, code, status):
+    def get(self, collection, test, structure, code, status, limit, start):
         schema = CalculationListSchema(many=True)
 
         # The following join is inspired by http://stackoverflow.com/a/2111420/1400465
@@ -229,11 +231,11 @@ class CalculationListResource(Resource):
         # Alternatively we could exploit that the ORM is doing a de-dup and sort by mtime right away.
         t2 = aliased(Task2)
         calcs = (db.session.query(Calculation)
-                 .options(joinedload('structure'))
-                 .options(joinedload('code'))
-                 .options(joinedload('test'))
+                 .options(joinedload('structure', innerjoin=True))
+                 .options(joinedload('code', innerjoin=True))
+                 .options(joinedload('test', innerjoin=True))
                  .join(Task2)
-                 .options(contains_eager('tasks').joinedload('machine'))  # load selected Task together with Calculation
+                 .options(contains_eager('tasks').joinedload('machine', innerjoin=True))  # load selected Task together with Calculation
                  .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
                  .filter(t2.id == None))
 
@@ -254,7 +256,9 @@ class CalculationListResource(Resource):
 
         calcs = (calcs
                  .order_by(Task2.mtime.desc())
-                 .all())
+                 .limit(limit)
+                 .offset(start)
+                )
 
         return schema.jsonify(calcs)
 
