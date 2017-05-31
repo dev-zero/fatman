@@ -8,7 +8,7 @@ import collections
 import itertools
 
 import flask
-from flask import make_response, request, send_file
+from flask import make_response, request, send_file, url_for
 from flask_restful import Api, Resource
 from webargs import fields, ValidationError
 from webargs.flaskparser import (
@@ -217,12 +217,12 @@ class CalculationListResource(Resource):
             validate=must_exist_in_db(Code, 'name')),
         'status': fields.String(
             validate=must_exist_in_db(TaskStatus, 'name')),
-        'limit': fields.Integer(required=False, missing=100, validate=lambda l: l <= 200 and l >= 0),
-        'start': fields.Integer(required=False, missing=0, validate=lambda s: s >= 0),
+        'page': fields.Integer(required=False, missing=1, validate=lambda n: n > 0),
+        'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
         }
 
     @use_kwargs(calculation_list_args)
-    def get(self, collection, test, structure, code, status, limit, start):
+    def get(self, collection, test, structure, code, status, page, per_page):
         schema = CalculationListSchema(many=True)
 
         # The following join is inspired by http://stackoverflow.com/a/2111420/1400465
@@ -254,13 +254,35 @@ class CalculationListResource(Resource):
         if status:
             calcs = calcs.join(Task2.status).filter(TaskStatus.name == status)
 
-        calcs = (calcs
-                 .order_by(Task2.mtime.desc())
-                 .limit(limit)
-                 .offset(start)
-                )
+        # can't use Flask-Marshmallow's paginate() here since it will cause a refetch for the complete set
+        calc_total_count = calcs.count()
+        pages = int(np.ceil(calc_total_count / float(per_page)))
 
-        return schema.jsonify(calcs)
+        calcs = (calcs.order_by(Task2.mtime.desc())
+                 .limit(per_page)
+                 .offset((page - 1)*per_page))
+
+        response = schema.jsonify(calcs)
+
+        link_header = []
+
+        if page < pages:
+            link_header.append('<{}>; rel="next"'.format(url_for('calculationlistresource',
+                                                                 page=page+1, _external=True)))
+        link_header.append('<{}>; rel="last"'.format(url_for('calculationlistresource',
+                                                             page=pages, _external=True)))
+
+        if page > 1:
+            link_header.append('<{}>; rel="prev"'.format(url_for('calculationlistresource',
+                                                                 page=page-1, _external=True)))
+
+        link_header.append('<{}>; rel="first"'.format(url_for('calculationlistresource',
+                                                              page=1, _external=True)))
+
+        response.headers['Link'] = ", ".join(link_header)
+        response.headers['X-total-count'] = calc_total_count
+
+        return response
 
     calculation_args = {
         'collection': fields.Str(
