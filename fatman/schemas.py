@@ -11,6 +11,7 @@ from .models import (
     Structure,
     StructureSet,
     BasisSet,
+    Pseudopotential,
     Code,
     Task2,
     Artifact,
@@ -81,6 +82,23 @@ class BasisSetSchema(ma.ModelSchema):
     class Meta:
         model = BasisSet
         exclude = ('calculations', 'calculation_associations', )
+
+
+class PseudopotentialSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'self': ma.AbsoluteURLFor('pseudopotential2resource', pid='<id>'),
+        'collection': ma.AbsoluteURLFor('pseudopotential2listresource'),
+        })
+
+    family = fields.Str(attribute='family.name')
+
+    converted_from = fields.Nested(
+        'PseudopotentialSchema',
+        exclude=('pseudo', 'core_electrons', 'element', 'family'))
+
+    class Meta:
+        model = Pseudopotential
+        exclude = ('calculations', )
 
 
 class CalculationCollectionSchema(ma.ModelSchema):
@@ -163,6 +181,8 @@ class CalculationSchema(CalculationListSchema):
         CalculationBasisSetAssociationSchema,
         attribute='basis_set_associations',
         many=True)
+
+    pseudos = fields.Nested(PseudopotentialSchema, many=True, exclude=('pseudo', 'converted_from', ))
 
     class Meta:
         model = Calculation

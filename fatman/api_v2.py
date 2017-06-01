@@ -65,6 +65,7 @@ from .tasks import (
 from .schemas import (
     ArtifactSchema,
     BasisSetSchema,
+    PseudopotentialSchema,
     CalculationCollectionSchema,
     CalculationListSchema,
     TestResultSchema,
@@ -181,6 +182,18 @@ class BasisSetResource(Resource):
     def get(self, bid):
         schema = BasisSetSchema()
         return schema.jsonify((BasisSet.query.get_or_404(bid)))
+
+
+class Pseudopotential2ListResource(Resource):
+    def get(self):
+        schema = PseudopotentialSchema(exclude=('pseudo', ), many=True)
+        return schema.jsonify(Pseudopotential.query.all())
+
+
+class Pseudopotential2Resource(Resource):
+    def get(self, pid):
+        schema = PseudopotentialSchema()
+        return schema.jsonify((Pseudopotential.query.get_or_404(pid)))
 
 
 class CalculationCollectionListResource(Resource):
@@ -509,7 +522,7 @@ class CalculationResource(Resource):
                        .options(joinedload('tasks').joinedload('machine'))
                        .options(joinedload('basis_sets').load_only("id", "element"))
                        .options(joinedload('basis_set_associations'))
-                       .options(joinedload('pseudos').load_only("id", "element"))
+                       .options(joinedload('pseudos').defer('pseudo'))
                        .options(joinedload('collection'))
                        .options(joinedload('code'))
                        .options(joinedload('structure').load_only("id", "name"))
@@ -1429,6 +1442,8 @@ api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')
 api.add_resource(StructureDownloadResource, '/structures/<uuid:sid>/download')
 api.add_resource(BasisSetListResource, '/basissets')
 api.add_resource(BasisSetResource, '/basissets/<uuid:bid>')
+api.add_resource(Pseudopotential2ListResource, '/pseudopotentials')
+api.add_resource(Pseudopotential2Resource, '/pseudopotentials/<uuid:pid>')
 api.add_resource(TestResultListResource, '/testresults')
 api.add_resource(TestResultResource, '/testresults/<uuid:trid>')
 api.add_resource(TestResultListActionResource, '/testresults/action')
