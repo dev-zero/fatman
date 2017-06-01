@@ -554,11 +554,11 @@ class Task2(Base):
     restrictions = Column(JSONB)
     settings = Column(JSONB)
     infiles = relationship("Artifact", secondary="task2_artifact",
-                           lazy='joined', cascade="all", passive_deletes=True,
+                           cascade="all", passive_deletes=True,
                            primaryjoin=("(Task2.id==Task2Artifact.task_id) &"
                                         "(Task2Artifact.linktype=='input')"))
     outfiles = relationship("Artifact", secondary="task2_artifact",
-                            lazy='joined', cascade="all", passive_deletes=True,
+                            cascade="all", passive_deletes=True,
                             primaryjoin=("(Task2.id==Task2Artifact.task_id) & "
                                          "(Task2Artifact.linktype=='output')"))
 

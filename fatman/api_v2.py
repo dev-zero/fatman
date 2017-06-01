@@ -244,7 +244,7 @@ class CalculationListResource(Resource):
         # Alternatively we could exploit that the ORM is doing a de-dup and sort by mtime right away.
         t2 = aliased(Task2)
         calcs = (db.session.query(Calculation)
-                 .options(joinedload('structure', innerjoin=True))
+                 .options(joinedload('structure', innerjoin=True).load_only('id', 'name'))
                  .options(joinedload('code', innerjoin=True))
                  .options(joinedload('test', innerjoin=True))
                  .join(Task2)
@@ -520,7 +520,7 @@ class CalculationResource(Resource):
     def get(self, cid):
         calculation = (Calculation.query
                        .options(joinedload('tasks').joinedload('machine'))
-                       .options(joinedload('basis_sets').load_only("id", "element"))
+                       .options(joinedload('basis_sets').defer('basis'))
                        .options(joinedload('basis_set_associations'))
                        .options(joinedload('pseudos').defer('pseudo'))
                        .options(joinedload('collection'))
@@ -546,9 +546,8 @@ class Task2ListResource(Resource):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
                  .join(TaskStatus)
-                 .options(
-                     contains_eager('status'),
-                     ))
+                 .options(joinedload('machine').load_only('name'))
+                 .options(contains_eager('status')))
 
         if calculation is not None:
             query = query.filter(Task2.calculation == calculation)
@@ -622,7 +621,15 @@ def task_args_validate(input_dict):
 class Task2Resource(Resource):
     def get(self, tid):
         schema = Task2Schema()
-        return schema.jsonify((Task2.query.get_or_404(tid)))
+        return schema.jsonify(Task2.query
+                              .options(joinedload('infiles'))
+                              .options(joinedload('outfiles'))
+                              .options(joinedload('calculation').joinedload('code'))
+                              .options(joinedload('calculation').joinedload('test'))
+                              .options(joinedload('calculation')
+                                       .joinedload('structure')
+                                       .load_only('id', 'name'))
+                              .get_or_404(tid))
 
     @apiauth.login_required
     @use_kwargs({
