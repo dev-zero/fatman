@@ -64,6 +64,7 @@ class ArtifactSchema(ma.Schema):
         'self': ma.AbsoluteURLFor('artifactresource', aid='<id>'),
         'collection': ma.AbsoluteURLFor('artifactlistresource'),
         'download': ma.AbsoluteURLFor('artifactdownloadresource', aid='<id>'),
+        'view': ma.AbsoluteURLFor('artifactviewresource', aid='<id>'),
         })
 
     class Meta:

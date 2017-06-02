@@ -109,6 +109,9 @@ class ArtifactResource(Resource):
 
 
 class ArtifactDownloadResource(Resource):
+    def __init__(self, mode='download'):
+        self._content_dispo = 'attachment' if mode == 'download' else 'inline'
+
     def get(self, aid):
         artifact = Artifact.query.get_or_404(aid)
 
@@ -122,21 +125,19 @@ class ArtifactDownloadResource(Resource):
             if compressed == 'bz2':
                 with bz2.BZ2File(resultfiles.path(path[1:])) as infile:
                     response = make_response(infile.read())
-                    response.headers["Content-Disposition"] = \
-                        "attachment; filename={:}".format(filename)
+                    response.headers["Content-Disposition"] = "{}; filename={}".format(
+                        self._content_dispo, filename)
                     response.headers["Content-Type"] = "text/plain"
                     return response
 
             elif compressed is None:
                 with open(resultfiles.path(path[1:]), 'rb') as infile:
                     response = make_response(infile.read())
-                    response.headers["Content-Disposition"] = \
-                        "attachment; filename={:}".format(filename)
+                    response.headers["Content-Disposition"] = "{}; filename={}".format(self._content_dispo, filename)
                     response.headers["Content-Type"] = "text/plain"
                     return response
             else:
-                app.logger.error("unknown compression scheme found: %s",
-                                 compressed)
+                app.logger.error("unknown compression scheme found: %s", compressed)
                 abort(500)
 
         app.logger.warning("{} contains unknown path '{path}'".format(
@@ -1440,7 +1441,8 @@ api.add_resource(Task2Resource, '/tasks/<uuid:tid>')
 api.add_resource(Task2UploadResource, '/tasks/<uuid:tid>/uploads')
 api.add_resource(ArtifactListResource, '/artifacts')
 api.add_resource(ArtifactResource, '/artifacts/<uuid:aid>')
-api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/download')
+api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/download', resource_class_kwargs={'mode': 'download'})
+api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/view', endpoint='artifactviewresource', resource_class_kwargs={'mode': 'view'})
 api.add_resource(StructureSetListResource, '/structuresets')
 api.add_resource(StructureSetResource, '/structuresets/<string:name>')
 api.add_resource(StructureSetCalculationsListResource, '/structuresets/<string:name>/calculations')
