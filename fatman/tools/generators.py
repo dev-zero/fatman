@@ -149,6 +149,13 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
     if struct.get_initial_charges().any():
         generated_input['force_eval']['dft']['charge'] = int(sum(struct.get_initial_charges()))
 
+    if 'key_value_pairs' in struct.info:
+        # some older structures contain additional settings in the key_value_pairs dict, use that
+        if 'multiplicity' in struct.info['key_value_pairs']:
+            generated_input['force_eval']['dft']['multiplicity'] = struct.info['key_value_pairs']['multiplicity']
+        if 'charge' in struct.info['key_value_pairs']:
+            generated_input['force_eval']['dft']['charge'] = struct.info['key_value_pairs']['charge']
+
     # in the CP2K Python dict struct the kinds are stored as list
     generated_input['force_eval']['subsys']['kind'] = list(kind.values())
 
