@@ -235,7 +235,7 @@ class CalculationListResource(Resource):
         'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
         }
 
-    @use_kwargs(calculation_list_args)
+    @use_kwargs(calculation_list_args, locations=('querystring',))
     def get(self, collection, test, structure, code, status, page, per_page):
         schema = CalculationListSchema(many=True)
 
@@ -542,7 +542,7 @@ class Task2ListResource(Resource):
         'status': fields.DelimitedList(
             fields.Str(validate=must_exist_in_db(TaskStatus, 'name'),
                        missing=None)),
-        })
+        }, locations=('querystring',))
     def get(self, limit, machine, status, calculation=None):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
@@ -850,7 +850,7 @@ class StructureListResource_v2(Resource):
         query = (Structure.query
                  .join(Structure.sets)
                  .options(contains_eager(Structure.sets))
-                 )
+                )
 
         if not include_replaced:
             query = query.filter(Structure.replaced_by_id == None)
