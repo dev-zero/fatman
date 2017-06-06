@@ -864,13 +864,15 @@ class StructureListResource_v2(Resource):
 
     structure_args = {
         'name': fields.Str(required=True),
-        'sets': fields.DelimitedList(fields.Str(
-            required=True,
-            validate=must_exist_in_db(StructureSet, 'name'))),
-        'pbc': fields.Boolean(required=False, default=True),
+        'sets': fields.DelimitedList(fields.Str(required=True, validate=must_exist_in_db(StructureSet, 'name'))),
+        'pbc': fields.Boolean(required=False, missing=None),  # assumed to be true when autogenerating cell
+        'charges': fields.DelimitedList(fields.Float(), required=False, missing=None),
+        'cell': fields.DelimitedList(fields.Float(), required=False, missing=None),
+        'magmoms': fields.DelimitedList(fields.Float(), required=False, missing=None),
         'gformat': fields.Str(required=True, load_from='format'),
-        'cubic_cell': fields.Boolean(required=False, default=False),  # whether to generate a cubic cell
-        'replace_existing': fields.Boolean(required=False, default=False),  # whether to replace an existing structure
+        'cubic_cell': fields.Boolean(required=False, missing=False),  # whether to generate a cubic cell
+        'center': fields.Boolean(required=False, missing=False),  # center coords in the cell (True if cell autogen)
+        'replace_existing': fields.Boolean(required=False, missing=False),  # whether to replace an existing structure
         }
     file_args = {
         'geometry': fields.Field(required=True)
@@ -879,7 +881,9 @@ class StructureListResource_v2(Resource):
     @apiauth.login_required
     @use_kwargs(structure_args)
     @use_kwargs(file_args, locations=('files', ))
-    def post(self, name, sets, pbc, gformat, geometry, cubic_cell, replace_existing):
+    def post(self, name, sets,
+             pbc, charges, cell, magmoms, gformat, geometry, cubic_cell, center,
+             replace_existing):
         sets = (StructureSet.query
                 .filter(StructureSet.name.in_(sets))
                 .all())
@@ -899,48 +903,67 @@ class StructureListResource_v2(Resource):
                     }
                 raise exc
 
-        struct = ase_io.read(TextIOWrapper(geometry),
-                             format=gformat)
+        struct = ase_io.read(TextIOWrapper(geometry), format=gformat)
 
-        struct.set_pbc(pbc)
+        if pbc is not None:
+            struct.set_pbc(pbc)
 
-        # if the structure is passed in XYZ-format, we generate a cell based on the moleculare boundary box,
-        # where the molecule boundary box is defined as the minimal/maximal coordinates
-        # over all atoms minus/plus their respective VdW radii plus a buffer of 2.5 Å,
-        # resp. 5 for non-pbc on each side
-        # So, for the periodic case the buffers "overlap" between images compared to the non-periodic case.
-        # This results in each side of the box being > 5 Å for the periodic,
-        # respectively > 10 Å for the non-periodic case
-        buf_size = 5. if pbc else 10.
+        if cell is not None:
+            struct.set_cell(cell)
 
-        # The VdW radius if available, otherwise the covalent radius
-        radii = [ase_data.vdw_radii[n]
-                 if not np.isnan(ase_data.vdw_radii[n])
-                 else ase_data.covalent_radii[n]
-                 for n in struct.get_atomic_numbers()]
+        if charges is not None:
+            struct.set_initial_charges(charges)
 
-        radii_pos = list(zip(radii, struct.get_positions()))
+        if magmoms is not None:
+            struct.set_initial_magnetic_moments(magmoms)
 
-        cell = [
-            max(pos[i] + rad for rad, pos in radii_pos) -
-            min(pos[i] - rad for rad, pos in radii_pos) +
-            buf_size
-            for i in range(3)
-            ]
+        if not struct.get_cell().any():
+            # if no cell is defined until here (either inside the format or by an explicit cell argument),
+            # we generate a cell based on the moleculare boundary box,
+            # where the molecule boundary box is defined as the minimal/maximal coordinates
+            # over all atoms minus/plus their respective VdW radii plus a buffer of 2.5 Å,
+            # resp. 5 for non-pbc on each side
+            # So, for the periodic case the buffers "overlap" between images compared to the non-periodic case.
+            # This results in each side of the box being > 5 Å for the periodic,
+            # respectively > 10 Å for the non-periodic case
 
-        # and round up to nearest full Angstrom
-        cell = np.ceil(cell)
+            if (pbc is None) or pbc:
+                buf_size = 5.
+            else:
+                buf_size = 10.
 
-        # if a cubic box is requested, use the largest coordinate
-        if cubic_cell:
-            cell = [max(cell)] * 3
+            # The VdW radius if available, otherwise the covalent radius
+            radii = [ase_data.vdw_radii[n]
+                     if not np.isnan(ase_data.vdw_radii[n])
+                     else ase_data.covalent_radii[n]
+                     for n in struct.get_atomic_numbers()]
 
-        struct.set_cell(cell, scale_atoms=False)
+            radii_pos = list(zip(radii, struct.get_positions()))
 
-        # Finally, we center the atom in the cell (with the cell starting at 0/0/0)
-        # to also accomodate for non-periodic calculations and cases where we do not want
-        # the code to auto-center the coordinates in the box.
-        struct.center()
+            cell = [
+                max(pos[i] + rad for rad, pos in radii_pos)
+                - min(pos[i] - rad for rad, pos in radii_pos)
+                + buf_size
+                for i in range(3)
+                ]
+
+            # and round up to nearest full Angstrom
+            cell = np.ceil(cell)
+
+            # if a cubic box is requested, use the largest coordinate
+            if cubic_cell:
+                cell = [max(cell)] * 3
+
+            struct.set_cell(cell, scale_atoms=False)
+
+            # Finally, we center the atom in the cell (with the cell starting at 0/0/0)
+            # to also accomodate for non-periodic calculations and cases where we do not want
+            # the code to auto-center the coordinates in the box.
+            struct.center()
+
+        # also center if explictly requested by the user
+        if center:
+            struct.center()
 
         ase_structure = atoms2json(struct)
 
