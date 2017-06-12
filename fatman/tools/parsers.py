@@ -125,6 +125,24 @@ CP2K_WARNINGS_MATCH = re.compile(r'''
 ''', re.MULTILINE | re.VERBOSE)
 
 
+CP2K_HEADER_MATCH = re.compile(r'''
+\ \ \*\*\*\*\ \*\*\*\*\ \*\*\*\*\*\*\ \ \*\*\ \ PROGRAM\ STARTED\ AT [ \t]+ (?P<started_at>[\d\-]{10}\ [\d\:\.]{12}) [ \t]* \n
+\ \*\*\*\*\*\ \*\*\ \*\*\*\ \ \*\*\*\ \*\*\ \ \ PROGRAM\ STARTED\ ON [ \t]+ (?P<machine>\w+) [ \t]* \n
+\ \*\*\ \ \ \ \*\*\*\*\ \ \ \*\*\*\*\*\*\ \ \ \ PROGRAM\ STARTED\ BY [ \t]+ (?P<started_by>\w+) [ \t]* \n
+\ \*\*\*\*\*\ \*\*\ \ \ \ \*\*\ \*\*\ \*\*\ \ \ PROGRAM\ PROCESS\ ID [ \t]+ (?P<pid>\d+) [ \t]* \n
+\ \ \*\*\*\*\ \*\*\ \ \*\*\*\*\*\*\*\ \ \*\*\ \ PROGRAM\ STARTED\ IN [ \t]+ .* \n
+''', re.MULTILINE | re.VERBOSE)
+
+
+CP2K_FOOTER_MATCH = re.compile(r'''
+\ \ \*\*\*\*\ \*\*\*\*\ \*\*\*\*\*\*\ \ \*\*\ \ PROGRAM\ ENDED\ AT   [ \t]+ (?P<ended_at>[\d\-]{10}\ [\d\:\.]{12}) [ \t]* \n
+\ \*\*\*\*\*\ \*\*\ \*\*\*\ \ \*\*\*\ \*\*\ \ \ PROGRAM\ RAN\ ON     [ \t]+ (?P<machine>\w+) [ \t]* \n
+\ \*\*\ \ \ \ \*\*\*\*\ \ \ \*\*\*\*\*\*\ \ \ \ PROGRAM\ RAN\ BY     [ \t]+ (?P<started_by>\w+) [ \t]* \n
+\ \*\*\*\*\*\ \*\*\ \ \ \ \*\*\ \*\*\ \*\*\ \ \ PROGRAM\ PROCESS\ ID [ \t]+ (?P<pid>\d+) [ \t]* \n
+\ \ \*\*\*\*\ \*\*\ \ \*\*\*\*\*\*\*\ \ \*\*\ \ PROGRAM\ STOPPED\ IN [ \t]+ .* \n
+''', re.MULTILINE | re.VERBOSE)
+
+
 def parse_cp2k_output(fhandle):
     """
     Parse output from CP2K.
@@ -134,6 +152,7 @@ def parse_cp2k_output(fhandle):
     """
 
     content = fhandle.read()
+    data = {}
 
     def key_value_match(key, value_type=str):
         """
@@ -163,7 +182,17 @@ def parse_cp2k_output(fhandle):
         # convert the captured value string to the requested python type
         return value_type(match.group('value'))
 
-    data = {
+    match = CP2K_HEADER_MATCH.search(content)
+    if not match:
+        raise OutputParseError("Invalid CP2K output file, header not found")
+    data.update(match.groupdict())
+
+    match = CP2K_FOOTER_MATCH.search(content)
+    if not match:
+        raise OutputParseError("Invalid CP2K output file, footer not found")
+    data.update(match.groupdict())
+
+    data.update({
         'version': key_value_match('CP2K| source code revision number:'),
         'mpiranks': key_value_match('GLOBAL| Total number of message passing processes', int),
         'threads': key_value_match('GLOBAL| Number of threads for this process', int),
@@ -171,7 +200,7 @@ def parse_cp2k_output(fhandle):
         'total_energy': key_value_match('ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):', float),
         'warnings_count': key_value_match('The number of warnings for this run is :', int),
         'warnings': [" ".join(warning_match.groups()) for warning_match in CP2K_WARNINGS_MATCH.finditer(content)],
-        }
+        })
 
     # only when doing calculations with kpoints
     nkpoints = key_value_match('BRILLOUIN| List of Kpoints [2 Pi/Bohr]', int)
