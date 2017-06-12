@@ -199,7 +199,8 @@ def parse_cp2k_output(fhandle):
         'username': key_value_match('**    ****   ******    PROGRAM STARTED BY'),
         'total_energy': key_value_match('ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):', float),
         'warnings_count': key_value_match('The number of warnings for this run is :', int),
-        'warnings': [" ".join(warning_match.groups()) for warning_match in CP2K_WARNINGS_MATCH.finditer(content)],
+        'warnings': [" ".join(g for g in warning_match.groups() if g is not None)
+                     for warning_match in CP2K_WARNINGS_MATCH.finditer(content)],
         })
 
     # only when doing calculations with kpoints
