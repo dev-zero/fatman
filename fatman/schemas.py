@@ -340,3 +340,12 @@ class ComparisonSchema(ma.ModelSchema):
 class DeltatestComparisonSchema(ComparisonSchema):
     elements = fields.List(fields.String())
     values = fields.Dict(many=True)
+
+
+class TestListSchema(ma.ModelSchema):
+    _links = ma.Hyperlinks({
+        'collection': ma.AbsoluteURLFor('testlistresource'),
+        })
+
+    id = fields.UUID()
+    name = fields.Str()

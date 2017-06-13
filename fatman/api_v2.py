@@ -82,6 +82,7 @@ from .schemas import (
     CodeCommandSchema,
     CodeSchema,
     DeltatestComparisonSchema,
+    TestListSchema,
 
     BoolValuedDict,
     )
@@ -1439,6 +1440,12 @@ class ComparisonListResource(Resource):
         return schema.jsonify(data)
 
 
+class TestListResource(Resource):
+    def get(self):
+        schema = TestListSchema(many=True)
+        return schema.jsonify(Test.query.all())
+
+
 # This error handler is necessary for usage with Flask-RESTful
 @parser.error_handler
 def handle_request_parsing_error(err):
@@ -1487,3 +1494,4 @@ api.add_resource(CodeListResource, '/codes')
 api.add_resource(CodeResource, '/codes/<uuid:cid>')
 api.add_resource(CodeCommandListResource, '/codes/<uuid:cid>/commands')
 api.add_resource(CodeCommandResource, '/codes/<uuid:cid>/commands/<uuid:mid>')
+api.add_resource(TestListResource, '/tests')
