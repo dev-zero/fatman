@@ -55,17 +55,21 @@ def nodehours_from_job_data(jobdata):
         return None
 
 
-def mergedicts(dict1, dict2):
+def mergedicts(dict1, dict2, array_merge_strategy=None):
     """
     Original version from http://stackoverflow.com/a/7205672/1400465
     """
     for k in set(dict1.keys()).union(dict2.keys()):
         if k in dict1 and k in dict2:
             if isinstance(dict1[k], dict) and isinstance(dict2[k], dict):
-                yield (k, dict(mergedicts(dict1[k], dict2[k])))
+                yield (k, dict(mergedicts(dict1[k], dict2[k], array_merge_strategy)))
             elif dict2[k] is None:
                 # blank-out values in dict1 if their value in dict2 is None
                 pass
+            elif isinstance(dict1[k], list) and isinstance(dict2[k], list):
+                if array_merge_strategy is None:
+                    raise RuntimeError("merging of arrays requires an array merge strategy")
+                yield (k, array_merge_strategy(k, dict1[k], dict2[k]))
             else:
                 # If one of the values is not a dict, you can't continue merging it.
                 # Value from second dict overrides one in first and we move on.
