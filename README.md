@@ -20,14 +20,17 @@ source venv/bin/activate
 # Install required packages
 pip install -r requirements.txt
 
+# Set the Flask application name
+export FLASK_APP=fatman
+
 # Create an initial configuration (including a custom secret key for the session cookies, will overwrite an existing `fatman.cfg` in your current directory)
-./manage.py createconfig
+flask createconfig
 
 # Initialize the database (this is idempotent)
-./manage.py initdb
+flask initdb
 
 # Run the (development) server
-FATMAN_SETTINGS=$PWD/fatman.cfg ./manage.py runserver
+FATMAN_SETTINGS=$PWD/fatman.cfg flask run
 
 # Open the interface
 xdg-open http://localhost:5000/admin/

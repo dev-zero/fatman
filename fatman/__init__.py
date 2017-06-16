@@ -98,4 +98,4 @@ def verify_password(username, password):
 # The imports are deliberately at this place.
 # They import this file itself, but need all other global objects to be ready.
 # On the other hand we import them here to hook them up into Flask.
-from . import models, views, admin, api, api_v2
+from . import models, views, admin, api, api_v2, cli
