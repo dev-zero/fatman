@@ -137,13 +137,23 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
                                    .encode('utf-8'))
         inputs['POTENTIALS'].seek(0)
 
+    # some older structures contain additional settings in the key_value_pairs dict,
+    # add them to the generate settings
+    if 'key_value_pairs' in struct.info:
+        if 'multiplicity' in struct.info['key_value_pairs']:
+            generated_input['force_eval']['dft']['multiplicity'] = struct.info['key_value_pairs']['multiplicity']
+
+        if 'charge' in struct.info['key_value_pairs']:
+            generated_input['force_eval']['dft']['charge'] = struct.info['key_value_pairs']['charge']
+
     # if we have any initial magnetic moment defined in the structure,
     # we need unrestricted KS + setting the magnetic moment and calculate the multiplicity
     if struct.get_initial_magnetic_moments().any():
         generated_input['force_eval']['dft']['uks'] = True
-        # calculate the total magnetic moment,
-        # the total magnetization gives the difference in # of electrons between α and β spin, so 0.5*2*tmom=tmom
-        generated_input['force_eval']['dft']['multiplicity'] = int(sum(struct.get_initial_magnetic_moments())) + 1
+        # calculate the total magnetic moment, if not already set (for example by the structure above)
+        if 'multiplicity' not in generated_input['force_eval']['dft']:
+            # the total magnetization gives the difference in # of electrons between α and β spin, so 0.5*2*tmom=tmom
+            generated_input['force_eval']['dft']['multiplicity'] = int(sum(struct.get_initial_magnetic_moments())) + 1
 
         # enumerate the different element+magmoms
         symmagmom = list(zip(struct.get_chemical_symbols(), struct.get_initial_magnetic_moments()))
@@ -165,29 +175,16 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
         # if no magnetic moments are required, simply copy the chemical symbols
         struct.new_array('cp2k_labels', struct.get_chemical_symbols())
 
-    # we can't use TextIOWrapper here since this will close the underlying BytesIO
-    # on destruction, resulting in a close BytesIO when leaving the scope
-    stringbuf = StringIO()
-    ase_io.write(stringbuf, struct, format='xyz', columns=['cp2k_labels', 'positions'])
-    inputs['struct.xyz'] = BytesIO(stringbuf.getvalue().encode("utf-8"))
-    inputs['struct.xyz'].seek(0)
-
-    # if charges are defined, set the charges keyword to be the total charge
-    if struct.get_initial_charges().any():
+    # if charges are defined, set the charges keyword to be the total charge if nothing is set yet
+    if struct.get_initial_charges().any() and 'charge' not in generated_input['force_eval']['dft']:
         generated_input['force_eval']['dft']['charge'] = int(sum(struct.get_initial_charges()))
-
-    if 'key_value_pairs' in struct.info:
-        # some older structures contain additional settings in the key_value_pairs dict, use that
-        if 'multiplicity' in struct.info['key_value_pairs']:
-            generated_input['force_eval']['dft']['multiplicity'] = struct.info['key_value_pairs']['multiplicity']
-        if 'charge' in struct.info['key_value_pairs']:
-            generated_input['force_eval']['dft']['charge'] = struct.info['key_value_pairs']['charge']
 
     # in the CP2K Python dict struct the kinds are stored as list
     generated_input['force_eval']['subsys']['kind'] = list(kind.values())
 
-    # merge the generated input over the basic settings
-    combined_input = dict(mergedicts(settings, generated_input))
+    # merge the provided settings over the enerated input, giving the user the possibility
+    # to override even auto-generated values
+    combined_input = dict(mergedicts(generated_input, settings, cp2k_array_merge_strategy))
 
     # make some last adjustments which depend on a merged input structure
 
@@ -218,7 +215,7 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
     except KeyError:
         pass
 
-    # merge any override settings on top if not None or empty
+    # merge any additional settings on top if not None or empty
     if overrides:
         combined_input = dict(mergedicts(combined_input, overrides, cp2k_array_merge_strategy))
 
@@ -226,6 +223,15 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
     inputs['calc.inp'].write("# calc.inp: {}\n".format(tagline).encode('utf-8'))
     dict2cp2k(combined_input, inputs['calc.inp'], parameters=struct.info)
     inputs['calc.inp'].seek(0)
+
+    # write the structure after the input since we relabel the atoms for magmoms
+
+    # we can't use TextIOWrapper here since this will close the underlying BytesIO
+    # on destruction, resulting in a close BytesIO when leaving the scope
+    stringbuf = StringIO()
+    ase_io.write(stringbuf, struct, format='xyz', columns=['cp2k_labels', 'positions'])
+    inputs['struct.xyz'] = BytesIO(stringbuf.getvalue().encode("utf-8"))
+    inputs['struct.xyz'].seek(0)
 
     return inputs
 
@@ -237,6 +243,7 @@ def test():
         "force_eval": {
             "method": "Quickstep",
             "dft": {
+                "multiplicity": 3,
                 "scf": {
                     "eps_scf": 1e-08,
                     "smear": {
@@ -259,7 +266,13 @@ def test():
                     "parallel_group_size": -1,
                     "scheme": "MONKHORST-PACK {kpoints[0]} {kpoints[1]} {kpoints[2]}"
                     }
-                }
+                },
+            "subsys": {
+                "kind": [
+                    {"_": "O1", "magnetization": 2},
+                    {"_": "O2", "magnetization": -2},
+                    ]
+                },
             },
         "global": {"run_type": "ENERGY", "print_level": "MEDIUM"}
         }
@@ -292,16 +305,7 @@ def test():
         ''')
     tagline = "Generated by generator test"
 
-    overrides = {
-        "force_eval": {
-            "dft": {"multiplicity": 3},
-            "subsys": {
-                "kind": [
-                    {"_": "O1", "magnetization": 50},
-                    ]
-                },
-            }
-        }
+    overrides = None
 
     inputs = generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrides=overrides)
 
