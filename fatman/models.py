@@ -419,6 +419,8 @@ class Calculation(Base):
     restrictions = Column(JSONB)
     results = Column(JSONB)
 
+    mdata = Column('metadata', JSONB, default={}, nullable=False)
+
     results_available = column_property(results.isnot(None))
 
     @property
@@ -631,6 +633,8 @@ class TestResult2(Base):
     collections = relationship('TestResult2Collection',
                                secondary="test_result2_test_result2_collection",
                                backref='testresults', lazy='joined')
+
+    mdata = Column('metadata', JSONB, default={}, nullable=False)
 
     def __repr__(self):
         return "<TestResult(id='{}')>".format(self.id)
