@@ -419,7 +419,7 @@ class Calculation(Base):
     restrictions = Column(JSONB)
     results = Column(JSONB)
 
-    mdata = Column('metadata', JSONB, default={}, nullable=False)
+    mdata = Column('metadata', JSONB, server_default=text("'{}'::json"), nullable=False)
 
     results_available = column_property(results.isnot(None))
 
@@ -634,7 +634,7 @@ class TestResult2(Base):
                                secondary="test_result2_test_result2_collection",
                                backref='testresults', lazy='joined')
 
-    mdata = Column('metadata', JSONB, default={}, nullable=False)
+    mdata = Column('metadata', JSONB, server_default=text("'{}'::json"), nullable=False)
 
     def __repr__(self):
         return "<TestResult(id='{}')>".format(self.id)
