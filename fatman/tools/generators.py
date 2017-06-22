@@ -135,7 +135,7 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
                                     "{4}\n")
                                    .format(*pseudo)
                                    .encode('utf-8'))
-        inputs['POTENTIALS'].seek(0)
+    inputs['POTENTIALS'].seek(0)
 
     # some older structures contain additional settings in the key_value_pairs dict,
     # add them to the generate settings
