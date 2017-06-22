@@ -173,7 +173,7 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
         struct.new_array('cp2k_labels', np.array([symmagmom2key[sm] for sm in symmagmom]))
     else:
         # if no magnetic moments are required, simply copy the chemical symbols
-        struct.new_array('cp2k_labels', struct.get_chemical_symbols())
+        struct.new_array('cp2k_labels', np.array(struct.get_chemical_symbols()))
 
     # if charges are defined, set the charges keyword to be the total charge if nothing is set yet
     if struct.get_initial_charges().any() and 'charge' not in generated_input['force_eval']['dft']:
