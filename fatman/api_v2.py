@@ -580,15 +580,15 @@ class Task2ListResource(Resource):
             fields.Str(validate=must_exist_in_db(TaskStatus, 'name'),
                        missing=None)),
         }, locations=('querystring',))
-    def get(self, limit, machine, status, calculation=None):
+    def get(self, limit, machine, status, cid=None):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
                  .join(TaskStatus)
                  .options(joinedload('machine').load_only('name'))
                  .options(contains_eager('status')))
 
-        if calculation is not None:
-            query = query.filter(Task2.calculation == calculation)
+        if cid is not None:
+            query = query.join(Task2.calculation).filter(Calculation.id == cid)
 
         if status:
             query = query.filter(TaskStatus.name.in_(status))
@@ -603,20 +603,22 @@ class Task2ListResource(Resource):
 
     @apiauth.login_required
     @use_kwargs({
-        'calculation': fields.UUID(required=True,
+        'calculation': fields.UUID(required=False,
                                    validate=must_exist_in_db(Calculation)),
+        'status': fields.String(required=False, missing=None,
+                                validate=must_exist_in_db(TaskStatus, 'name')),
         })
-    def post(self, calculation):
-        task = Task2(calculation)
-        db.session.add(task)
-        db.session.commit()
-        return Task2Schema().jsonify(task)
+    def post(self, calculation, status, cid=None):
+        if calculation:
+            cid = calculation
 
+        if not cid:  # an invalid calculation id will be caught by the DB
+            app.logger.error("neither cid nor calculation defined for creating a task")
+            flask.abort(500)  # raise an ISE since this should not happen
 
-class CalculationTask2ListResource(Task2ListResource):
-    @apiauth.login_required
-    def post(self, cid):
-        task = Task2(cid)
+        # TODO: implement status filtering here
+
+        task = Task2(cid, status)
         db.session.add(task)
         db.session.commit()
         return Task2Schema().jsonify(task)
@@ -627,7 +629,7 @@ TASK_STATES = {
     'new': ['pending', 'cancelled', 'deferred'],
     'pending': ['running', 'error'],
     'cancelled': [],
-    'deferred': ['new', 'cancelled'],
+    'deferred': ['new', 'cancelled', 'done'],  # setting a task to done from deferred is for manual upload
     'running': ['done', 'error'],
     'done': [],
     'error': [],
@@ -1501,8 +1503,7 @@ api.add_resource(CalculationListActionResource, '/calculations/action')
 api.add_resource(CalculationResource, '/calculations/<uuid:cid>')
 api.add_resource(CalculationActionResource, '/calculations/<uuid:cid>/action')
 api.add_resource(CalculationPreviewResource, '/calculations/<uuid:cid>/preview')
-api.add_resource(CalculationTask2ListResource,
-                 '/calculations/<uuid:cid>/tasks')
+api.add_resource(Task2ListResource, '/calculations/<uuid:cid>/tasks', endpoint='calculationtask2listresource')
 api.add_resource(Task2ListResource, '/tasks')
 api.add_resource(Task2Resource, '/tasks/<uuid:tid>')
 api.add_resource(Task2UploadResource, '/tasks/<uuid:tid>/uploads')
