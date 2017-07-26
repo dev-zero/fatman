@@ -6,6 +6,8 @@ from collections import OrderedDict
 import numpy as np
 from ase import io as ase_io
 
+import click
+
 from . import mergedicts
 from .cp2k import dict2cp2k
 
@@ -314,5 +316,22 @@ def test():
         print(content.read().decode("utf-8"))
         print("=== END: {}\n".format(filename))
 
+@click.command()
+@click.argument("settings", type=click.File("r"))
+@click.argument("struct", type=click.File("r"))
+@click.argument("basisset", type=str)
+@click.argument("pseudo", type=str)
+def cli(settings, struct, basisset, pseudo):
+
+    inputs = generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrides=overrides)
+
+    for filename, content in inputs.items():
+        print("=== BEGIN: {}".format(filename))
+        print(content.read().decode("utf-8"))
+        print("=== END: {}\n".format(filename))
+
+
+
+
 if __name__ == '__main__':
-    test()
+    cli()
