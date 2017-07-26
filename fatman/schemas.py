@@ -67,9 +67,11 @@ class ArtifactSchema(ma.Schema):
         'view': ma.AbsoluteURLFor('artifactviewresource', aid='<id>'),
         })
 
+    metadata = fields.Dict(attribute='mdata')
+
     class Meta:
         model = Artifact
-        fields = ('id', 'name', '_links')
+        fields = ('id', 'name', '_links', 'metadata')
 
 
 class BasisSetSchema(ma.ModelSchema):
@@ -145,9 +147,11 @@ class TestResultSchema(ma.ModelSchema):
     test = fields.Str(attribute='test.name')
     calculations = fields.Nested(CalculationListSchema, many=True)
     collections = fields.Nested('TestResultCollectionSchema', exclude=('testresults', ), many=True)
+    metadata = fields.Dict(attribute='mdata')
 
     class Meta:
         model = TestResult2
+        exclude = ('mdata',)
 
 
 class TestResultCollectionSchema(ma.ModelSchema):
