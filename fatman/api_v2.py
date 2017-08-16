@@ -18,7 +18,7 @@ from webargs.flaskparser import (
     )
 from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException
-from sqlalchemy import and_, cast, distinct
+from sqlalchemy import and_, or_, cast, distinct, literal
 from sqlalchemy.orm import contains_eager, joinedload, aliased
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -580,7 +580,10 @@ class Task2ListResource(Resource):
             fields.Str(validate=must_exist_in_db(TaskStatus, 'name'),
                        missing=None)),
         }, locations=('querystring',))
-    def get(self, limit, machine, status, cid=None):
+    @use_kwargs({
+        'worker_machine': fields.Str(load_from='x-fatman-worker-machine', missing=None),
+        }, locations=('headers',))
+    def get(self, limit, machine, status, worker_machine, cid=None):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
                  .join(TaskStatus)
@@ -595,6 +598,12 @@ class Task2ListResource(Resource):
 
         if machine is not None:
             query = query.filter(Task2.machine.has(shortname=machine))
+
+        if worker_machine is not None:  # if we don't know the workers name, assume a browser and don't filter
+            query = query.filter(or_(
+                Task2.restrictions['machine'] == None,  # unrestricted tasks, or...
+                literal(worker_machine).op("~")(Task2.restrictions['machine'].astext) # tasks with matching regex
+                ))
 
         if limit is not None:
             query = query.limit(limit)
