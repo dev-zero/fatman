@@ -3,6 +3,7 @@ import collections
 
 from flask_marshmallow import Marshmallow
 from webargs import fields
+from marshmallow import pre_dump
 
 from . import app
 from .models import (
@@ -20,6 +21,7 @@ from .models import (
     TestResult2Collection,
     )
 
+from .tools import json2atoms
 
 ma = Marshmallow(app)
 
@@ -236,7 +238,7 @@ class Task2Schema(Task2ListSchema):
         exclude = ('artifacts', )
 
 
-class StructureSchema(ma.ModelSchema):
+class BaseStructureSchema(ma.ModelSchema):
     calculations = fields.Nested(CalculationListSchema, many=True,
                                  exclude=('structure', ))
 
@@ -259,6 +261,44 @@ class StructureSchema(ma.ModelSchema):
             'replaced_by_id',
             'calculations',
             'replaced',
+            'default_settings',
+            )
+
+
+class StructureSchema(BaseStructureSchema):
+    @pre_dump
+    def parse_ase_struct(self, obj):
+        # we can't assign to obj since it is a SQLA model
+        self._atoms = json2atoms(obj.ase_structure)
+        return obj
+
+    def get_chemical_formula(self, _):
+        return self._atoms.get_chemical_formula()
+
+    def get_chemical_symbols(self, _):
+        return self._atoms.get_chemical_symbols()
+
+    def get_initial_charges(self, _):
+        return self._atoms.get_initial_charges().tolist()
+
+    def get_net_initial_charge(self, _):
+        return sum(self._atoms.get_initial_charges().tolist())
+
+    def get_atomic_numbers(self, _):
+        return self._atoms.get_atomic_numbers().tolist()
+
+    chemical_formula = fields.Method('get_chemical_formula')
+    chemical_symbols = fields.Method('get_chemical_symbols')
+    initial_charges = fields.Method('get_initial_charges')
+    net_initial_charge = fields.Method('get_net_initial_charge')
+    atomic_numbers = fields.Method('get_atomic_numbers')
+
+
+class StructureListSchema(BaseStructureSchema):
+    class Meta:
+        exclude = (
+            'calculations',
+            'ase_structure',
             'default_settings',
             )
 
