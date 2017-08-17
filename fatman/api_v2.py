@@ -75,6 +75,7 @@ from .schemas import (
     Task2ListSchema,
     Task2Schema,
     StructureSchema,
+    StructureListSchema,
     StructureSetSchema,
     TestResultListActionSchema,
     CodeListSchema,
@@ -906,8 +907,7 @@ class StructureListResource_v2(Resource):
         if limit > 0:
             query = query.limit(limit)
 
-        schema = StructureSchema(many=True,
-                                 exclude=('calculations', 'ase_structure', 'default_settings', ))
+        schema = StructureListSchema(many=True)
         return schema.jsonify(query.all())
 
     structure_args = {
@@ -1111,6 +1111,21 @@ class StructureSetListResource(Resource):
 
         schema = StructureSetSchema()
         return schema.jsonify(structureset)
+
+
+class StructureSetStructureListResource(Resource):
+    def get(self, name):
+        # validate the name
+        StructureSet.query.filter_by(name=name).one()
+
+        query = (Structure.query
+                 .join(Structure.sets)
+                 .options(contains_eager(Structure.sets))
+                 .filter(StructureSet.name == name)
+                 .filter(Structure.replaced_by_id == None))
+
+        schema = StructureListSchema(many=True)
+        return schema.jsonify(query.all())
 
 
 class StructureSetCalculationsListResource(Resource):
@@ -1522,6 +1537,7 @@ api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/download', res
 api.add_resource(ArtifactDownloadResource, '/artifacts/<uuid:aid>/view', endpoint='artifactviewresource', resource_class_kwargs={'mode': 'view'})
 api.add_resource(StructureSetListResource, '/structuresets')
 api.add_resource(StructureSetResource, '/structuresets/<string:name>')
+api.add_resource(StructureSetStructureListResource, '/structuresets/<string:name>/structures')
 api.add_resource(StructureSetCalculationsListResource, '/structuresets/<string:name>/calculations')
 api.add_resource(StructureListResource_v2, '/structures')
 api.add_resource(StructureResource_v2, '/structures/<uuid:sid>')

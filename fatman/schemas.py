@@ -308,6 +308,7 @@ class StructureSetSchema(ma.ModelSchema):
         'self': ma.AbsoluteURLFor('structuresetresource', name='<name>'),
         'collection': ma.AbsoluteURLFor('structuresetlistresource'),
         'calculations': ma.AbsoluteURLFor('structuresetcalculationslistresource', name='<name>'),
+        'structures': ma.AbsoluteURLFor('structuresetstructurelistresource', name='<name>'),
         })
 
     superset = fields.Str(attribute='superset.name')
