@@ -617,8 +617,9 @@ class Task2ListResource(Resource):
                                    validate=must_exist_in_db(Calculation)),
         'status': fields.String(required=False, missing=None,
                                 validate=must_exist_in_db(TaskStatus, 'name')),
+        'restrictions': fields.Dict(required=False, missing=None),
         })
-    def post(self, calculation, status, cid=None):
+    def post(self, calculation, status, restrictions, cid=None):
         if calculation:
             cid = calculation
 
@@ -626,9 +627,18 @@ class Task2ListResource(Resource):
             app.logger.error("neither cid nor calculation defined for creating a task")
             flask.abort(500)  # raise an ISE since this should not happen
 
-        # TODO: implement status filtering here
+        if status not in ['new', 'deferred']:
+            raise ValidationError("can create task only as new or deferred")
 
-        task = Task2(cid, status)
+        calc = Calculation.query.get_or_404(cid)
+
+        if calc.restrictions:
+            if restrictions:  # if both the calc restrictions and additional restrictions are not empty, merge them
+                restrictions = dict(mergedicts(calc.restrictions, restrictions))
+            else:  # otherwise overwrite them
+                restrictions = calc.restrictions
+
+        task = Task2(cid, status, restrictions)
         db.session.add(task)
         db.session.commit()
         return Task2Schema().jsonify(task)

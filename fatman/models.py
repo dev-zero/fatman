@@ -568,9 +568,10 @@ class Task2(Base):
     def __repr__(self):
         return "<Task2(id='{}', status='{}')>".format(self.id, self.status)
 
-    def __init__(self, calculation_id, status=None, priority=0):
+    def __init__(self, calculation_id, status=None, priority=0, restrictions=None):
         self.calculation_id = calculation_id
         self.status = TaskStatus.query.filter_by(name='new' if status is None else status).one()
+        self.restrictions = restrictions
 
 
 class Task2Artifact(Base):
