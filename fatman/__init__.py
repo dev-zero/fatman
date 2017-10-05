@@ -10,6 +10,7 @@ from flask_caching import Cache
 from flask_httpauth import HTTPBasicAuth
 from flask_security.utils import verify_password as fs_verify_password
 from celery import Celery
+from blinker import Namespace  # Flask already implements signals using blinker
 
 app = Flask(__name__)
 app.config.from_object('fatman.default_settings')
@@ -31,6 +32,9 @@ def configure_db_logger():
 if app.config.get('DATABASE_LOG_QUERIES', False):
     configure_db_logger()
 
+
+signals = Namespace()
+calculation_finished = signals.signal('calculation-finished')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -98,4 +102,4 @@ def verify_password(username, password):
 # The imports are deliberately at this place.
 # They import this file itself, but need all other global objects to be ready.
 # On the other hand we import them here to hook them up into Flask.
-from . import models, views, admin, api, api_v2, cli
+from . import models, views, admin, api, api_v2, cli, notifications

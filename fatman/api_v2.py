@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from ase import io as ase_io, data as ase_data
 import numpy as np
 
-from . import app, db, resultfiles, apiauth, capp
+from . import app, db, resultfiles, apiauth, capp, calculation_finished
 from .models import (
     Calculation,
     CalculationCollection,
@@ -859,6 +859,9 @@ class Task2Resource(Resource):
 
         task.status = TaskStatus.query.filter_by(name=status).one()
         db.session.commit()
+
+        if status in ['error', 'done']:
+            calculation_finished.send(self, task=task, calculation=task.calculation)
 
         if status == 'done':
             # start generating results and then test results if succeeded
