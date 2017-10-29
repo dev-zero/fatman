@@ -1499,6 +1499,9 @@ class ComparisonListResource(Resource):
                         deltaValuesA = [trA.data['coefficients'][c] for c in coeffs]
                         deltaValuesB = [trB.data['coefficients'][c] for c in coeffs]
                         delta = calcDelta(deltaValuesA, deltaValuesB)
+
+                        # the volume is already supposed to be per-atom
+                        coeffDeltas = dict(zip(coeffs, np.abs(np.array(deltaValuesA) - np.array(deltaValuesB))))
                     except KeyError:
                         pass
 
@@ -1508,7 +1511,8 @@ class ComparisonListResource(Resource):
                          "collectionB": collb,
                          "testresultA": trA.id,
                          "testresultB": trB.id,
-                         "delta": delta
+                         "delta": delta,
+                         "coefficientDeltas": coeffDeltas,
                          })
 
         schema = DeltatestComparisonSchema()
