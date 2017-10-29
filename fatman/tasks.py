@@ -523,7 +523,7 @@ def generate_test_result_deltatest(self, calc_id, update=False):
             struct = json2atoms(calc.structure.ase_structure)
 
             natoms_struct = len(struct.get_atomic_numbers())
-            volumes.append(struct.get_volume()/natoms_struct)
+            volumes.append(struct.get_volume()/natoms_struct)  # the per-atom volume is independant of a MULTIPLE_UNIT_CELL
 
             # When normalizing the energy, we have to take the effect of a MULTIPLE_UNIT_CELL into account:
             # the parser extracts the final number of atoms per Kind from the ATOMIC KIND INFORMATION (AKI) section,
