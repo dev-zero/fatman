@@ -364,7 +364,7 @@ class CalculationListResource(Resource):
         if len(pseudos) != len(kinds):
             raise ValidationError(("Pseudo Family {}"
                                    " does not cover all kinds required"
-                                   ).format(pseudos.family.name))
+                                   ).format(pseudo_family))
 
         all_basis_sets = {}
         for btype, family_name in basis_set_family.items():
