@@ -148,9 +148,18 @@ class ArtifactDownloadResource(Resource):
 
 
 class BasisSetListResource(Resource):
-    def get(self):
+    @use_kwargs({'element': fields.String(), 'family': fields.Str(validate=must_exist_in_db(BasisSetFamily, 'name'))})
+    def get(self, element, family):
+        basis_sets = BasisSet.query.options(joinedload('family', innerjoin=True))
+
+        if element:
+            basis_sets = basis_sets.filter_by(element=element)
+
+        if family:
+            basis_sets = basis_sets.join(BasisSetFamily).filter(BasisSetFamily.name == family)
+
         schema = BasisSetSchema(exclude=('basis', ), many=True)
-        return schema.jsonify(BasisSet.query.all())
+        return schema.jsonify(basis_sets)
 
     basisset_args = {
         'element': fields.String(required=True),
@@ -161,7 +170,6 @@ class BasisSetListResource(Resource):
     file_args = {
         'basis': fields.Field(required=True)
         }
-
     @apiauth.login_required
     @use_kwargs(basisset_args)
     @use_kwargs(file_args, locations=('files', ))
