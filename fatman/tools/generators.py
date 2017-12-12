@@ -198,13 +198,17 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
             # type of basis sets since we don't want to count the AUX/RI/.. sets as well
             n_mos = 0
             for basis in [b[-1] for b in basis_sets if b[0] == 'default']:
-                # the number of MOs depends on the basis set
-                econfig_string = basis.split('\n')[1]
-                econfig = [int(n) for n in econfig_string.split()]
-                # sum over (the number of m's per l quantum number times
-                # the number of functions per m):
-                n_mos += np.dot([2*l+1 for l in range(econfig[1], econfig[2]+1)], econfig[4:])
-                # TODO: this only considers one set, need to extend it to parse basis sets with multiple coefficient sets
+                basis_lines = basis.split('\n')
+                nsets = int(basis_lines[0])
+                lineno = 1  # start at the first set
+                for _ in range(nsets):
+                    # the number of MOs depends on the basis set
+                    econfig_string = basis_lines[lineno]
+                    econfig = [int(n) for n in econfig_string.split()]
+                    # sum over (the number of m's per l quantum number times
+                    # the number of functions per m):
+                    n_mos += np.dot([2*l+1 for l in range(econfig[1], econfig[2]+1)], econfig[4:])
+                    lineno += int(econfig[3]) + 1  # skip the actual block of coefficients and go to the next set
 
             scf['added_mos'] = max(int(0.3*n_mos), 1)  # at least one MO must be added
     except KeyError:
