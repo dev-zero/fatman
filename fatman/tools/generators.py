@@ -193,11 +193,12 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
     try:
         # if scf is itself a dict we get a reference here
         scf = combined_input['force_eval']['dft']['scf']
+        syms = struct.get_chemical_symbols()
         if 'smear' in scf.keys() and 'added_mos' not in scf.keys():
+            n_mos = 0
             # when calculating the number of MOs on the other hand, we only want the default (for CP2K the "ORB")
             # type of basis sets since we don't want to count the AUX/RI/.. sets as well
-            n_mos = 0
-            for basis in [b[-1] for b in basis_sets if b[0] == 'default']:
+            for _, _, element, _, basis in [b for b in basis_sets if b[0] == 'default']:
                 basis_lines = basis.split('\n')
                 nsets = int(basis_lines[0])
                 lineno = 1  # start at the first set
@@ -206,9 +207,9 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
                     econfig_string = basis_lines[lineno]
                     econfig = [int(n) for n in econfig_string.split()]
                     # sum over (the number of m's per l quantum number times
-                    # the number of functions per m):
-                    n_mos += np.dot([2*l+1 for l in range(econfig[1], econfig[2]+1)], econfig[4:])
-                    lineno += int(econfig[3]) + 1  # skip the actual block of coefficients and go to the next set
+                    # the number of functions per m) times the number of atoms of this kind:
+                    n_mos += syms.count(element)*np.dot([2*l+1 for l in range(econfig[1], econfig[2]+1)], econfig[4:])
+                    lineno += int(econfig[3]) + 1  # skip the block of coefficients and go to the next set
 
             scf['added_mos'] = max(int(0.3*n_mos), 1)  # at least one MO must be added
     except KeyError:
@@ -320,6 +321,7 @@ def test():
         print(content.read().decode("utf-8"))
         print("=== END: {}\n".format(filename))
 
+
 @click.command()
 @click.argument("settings", type=click.File("r"))
 @click.argument("struct", type=click.File("r"))
@@ -327,14 +329,12 @@ def test():
 @click.argument("pseudo", type=str)
 def cli(settings, struct, basisset, pseudo):
 
-    inputs = generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrides=overrides)
+    inputs = generate_CP2K_inputs(settings, basisset, pseudo, struct, tagline, overrides=overrides)
 
     for filename, content in inputs.items():
         print("=== BEGIN: {}".format(filename))
         print(content.read().decode("utf-8"))
         print("=== END: {}\n".format(filename))
-
-
 
 
 if __name__ == '__main__':
