@@ -584,16 +584,17 @@ class CalculationResource(Resource):
 class Task2ListResource(Resource):
     # calculation is set when called as subcollection of a calculation
     @use_kwargs({
-        'limit': fields.Int(missing=None),
         'machine': fields.Str(missing=None),
         'status': fields.DelimitedList(
             fields.Str(validate=must_exist_in_db(TaskStatus, 'name'),
                        missing=None)),
+        'page': fields.Integer(required=False, missing=1, validate=lambda n: n > 0),
+        'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
         }, locations=('querystring',))
     @use_kwargs({
         'worker_machine': fields.Str(load_from='x-fatman-worker-machine', missing=None),
         }, locations=('headers',))
-    def get(self, limit, machine, status, worker_machine, cid=None):
+    def get(self, page, per_page, worker_machine, cid=None, **filter_args):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
                  .join(TaskStatus)
@@ -603,11 +604,11 @@ class Task2ListResource(Resource):
         if cid is not None:
             query = query.join(Task2.calculation).filter(Calculation.id == cid)
 
-        if status:
-            query = query.filter(TaskStatus.name.in_(status))
+        if filter_args['status']:
+            query = query.filter(TaskStatus.name.in_(filter_args['status']))
 
-        if machine is not None:
-            query = query.filter(Task2.machine.has(shortname=machine))
+        if filter_args['machine'] is not None:
+            query = query.filter(Task2.machine.has(shortname=filter_args['machine']))
 
         if worker_machine is not None:  # if we don't know the workers name, assume a browser and don't filter
             query = query.filter(or_(
@@ -615,10 +616,38 @@ class Task2ListResource(Resource):
                 literal(worker_machine).op("~")(Task2.restrictions['machine'].astext) # tasks with matching regex
                 ))
 
-        if limit is not None:
-            query = query.limit(limit)
+        if cid is None:
+            # if cid is actually None, we got called as a sub-resource of a calculation,
+            # in which case we do not (yet) support paging
+            total_count = query.count()
+            pages = int(np.ceil(total_count / float(per_page)))
 
-        return schema.jsonify(query.all())
+            query = (query.order_by(Task2.mtime.desc())
+                     .limit(per_page)
+                     .offset((page - 1)*per_page))
+
+            response = schema.jsonify(query)
+
+            # filter unspecified filter arguments before passing them along for the URL generation
+            filter_args = {k: v for k, v in filter_args.items() if v is not None}
+
+            link_header = []
+
+            link_header.append('<{}>; rel="first"'.format(url_for('task2listresource', page=1,
+                                                                  _external=True, **filter_args)))
+            link_header.append('<{}>; rel="last"'.format(url_for('task2listresource', page=pages,
+                                                                 _external=True, **filter_args)))
+            if page > 1:
+                link_header.append('<{}>; rel="prev"'.format(url_for('task2listresource', page=page-1,
+                                                                     _external=True, **filter_args)))
+            if page < pages:
+                link_header.append('<{}>; rel="next"'.format(url_for('task2listresource', page=page+1,
+                                                                     _external=True, **filter_args)))
+
+            response.headers['Link'] = ", ".join(link_header)
+            response.headers['X-total-count'] = total_count
+
+        return response
 
     @apiauth.login_required
     @use_kwargs({
