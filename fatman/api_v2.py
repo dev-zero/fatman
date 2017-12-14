@@ -232,21 +232,21 @@ class CalculationCollectionResource(Resource):
 
 class CalculationListResource(Resource):
     calculation_list_args = {
-        'collection': fields.Str(
-            validate=must_exist_in_db(CalculationCollection, 'name')),
-        'test': fields.String(
-            validate=must_exist_in_db(Test, 'name')),
-        'structure': fields.Str(),  # not validating here since we have a "contains" match for this
-        'code': fields.String(
-            validate=must_exist_in_db(Code, 'name')),
-        'status': fields.String(
-            validate=must_exist_in_db(TaskStatus, 'name')),
+        'collection': fields.Str(validate=must_exist_in_db(CalculationCollection, 'name'),
+                                 missing=None),
+        'test': fields.String(validate=must_exist_in_db(Test, 'name'),
+                              missing=None),
+        'structure': fields.Str(missing=None),  # not validating here since we have a "contains" match for this
+        'code': fields.String(validate=must_exist_in_db(Code, 'name'),
+                              missing=None),
+        'status': fields.String(validate=must_exist_in_db(TaskStatus, 'name'),
+                                missing=None),
         'page': fields.Integer(required=False, missing=1, validate=lambda n: n > 0),
         'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
         }
 
     @use_kwargs(calculation_list_args, locations=('querystring',))
-    def get(self, collection, test, structure, code, status, page, per_page):
+    def get(self, page, per_page, **filter_args):
         schema = CalculationListSchema(many=True)
 
         # The following join is inspired by http://stackoverflow.com/a/2111420/1400465
@@ -263,20 +263,20 @@ class CalculationListResource(Resource):
                  .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
                  .filter(t2.id == None))
 
-        if collection:
-            calcs = calcs.join(Calculation.collection).filter(CalculationCollection.name == collection)
+        if filter_args['collection']:
+            calcs = calcs.join(Calculation.collection).filter(CalculationCollection.name == filter_args['collection'])
 
-        if test:
-            calcs = calcs.join(Calculation.test).filter(Test.name == test)
+        if filter_args['test']:
+            calcs = calcs.join(Calculation.test).filter(Test.name == filter_args['test'])
 
-        if structure:
-            calcs = calcs.join(Calculation.structure).filter(Structure.name.contains(structure))
+        if filter_args['structure']:
+            calcs = calcs.join(Calculation.structure).filter(Structure.name.contains(filter_args['structure']))
 
-        if code:
-            calcs = calcs.join(Calculation.code).filter(Code.name == code)
+        if filter_args['code']:
+            calcs = calcs.join(Calculation.code).filter(Code.name == filter_args['code'])
 
-        if status:
-            calcs = calcs.join(Task2.status).filter(TaskStatus.name == status)
+        if filter_args['status']:
+            calcs = calcs.join(Task2.status).filter(TaskStatus.name == filter_args['status'])
 
         # can't use Flask-Marshmallow's paginate() here since it will cause a refetch for the complete set
         calc_total_count = calcs.count()
@@ -288,20 +288,21 @@ class CalculationListResource(Resource):
 
         response = schema.jsonify(calcs)
 
+        # filter unspecified filter arguments before passing them along for the URL generation
+        filter_args = {k: v for k, v in filter_args.items() if v is not None}
+
         link_header = []
 
+        link_header.append('<{}>; rel="first"'.format(url_for('calculationlistresource', page=1,
+                                                              _external=True, **filter_args)))
+        link_header.append('<{}>; rel="last"'.format(url_for('calculationlistresource', page=pages,
+                                                             _external=True, **filter_args)))
         if page < pages:
-            link_header.append('<{}>; rel="next"'.format(url_for('calculationlistresource',
-                                                                 page=page+1, _external=True)))
-        link_header.append('<{}>; rel="last"'.format(url_for('calculationlistresource',
-                                                             page=pages, _external=True)))
-
+            link_header.append('<{}>; rel="next"'.format(url_for('calculationlistresource', page=page+1,
+                                                                 _external=True, **filter_args)))
         if page > 1:
-            link_header.append('<{}>; rel="prev"'.format(url_for('calculationlistresource',
-                                                                 page=page-1, _external=True)))
-
-        link_header.append('<{}>; rel="first"'.format(url_for('calculationlistresource',
-                                                              page=1, _external=True)))
+            link_header.append('<{}>; rel="prev"'.format(url_for('calculationlistresource', page=page-1,
+                                                                 _external=True, **filter_args)))
 
         response.headers['Link'] = ", ".join(link_header)
         response.headers['X-total-count'] = calc_total_count
