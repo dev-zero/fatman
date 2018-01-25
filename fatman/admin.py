@@ -183,7 +183,20 @@ class CalculationCollectionView(BaseDataView):
 
 
 class CalculationDefaultSettingsView(BaseDataView):
-    column_list = ('code', 'test', 'structure', 'structure_set', )
+    column_list = (
+        'priority', 'code', 'test',
+        'structure', 'structure_set',
+        'basis_set', 'basis_set_family',
+        'pseudopotential', 'pseudopotential_family',
+        )
+    column_filters = (
+        'code',
+        'test',
+        'structure_set',
+        'basis_set_family',
+        'pseudopotential_family',
+        )
+    column_default_sort = 'priority'
 
 
 class Task2View(BaseDataView):

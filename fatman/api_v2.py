@@ -416,67 +416,50 @@ class CalculationListResource(Resource):
                     structure.name)
                 all_basis_sets[btype] += fallback_basis_sets
 
-        default_settings = None
+        def walk_ssets(sset, depth=0):
+            if depth > 100:
+                raise RuntimeError(
+                    "possible circular reference detected in structure super sets for set {}".format(sset.name))
 
-        if test and code:
+            yield sset.id
+
+            if sset.superset:
+                yield from walk_ssets(sset.superset, depth+1)
+
+        # for each structure set there may be a path of nested sets,
+        # follow all of them and collect all structure set ids
+        ssets = set()
+        for sset in structure.sets:
+            ssets = ssets.union(walk_ssets(sset))
+
+        default_settings = {}
+
+        if code and test:
+            cds = CalculationDefaultSettings # get us an alias
+
             # get the general per-code and -test settings first
-            default_settings = (db.session
-                                .query(CalculationDefaultSettings.settings)
-                                .filter_by(code=code, test=test, structure=None, structure_set=None)
-                                .scalar())
+            all_dsettings = (CalculationDefaultSettings.query
+                .filter_by(code=code, test=test)
+                .filter(
+                    or_(cds.structure == None, cds.structure == structure),
+                    or_(cds.structure_set == None, cds.structure_set_id.in_(ssets)),
+                    or_(cds.basis_set == None, cds.basis_set_id.in_(tuple(b.id for bs in all_basis_sets.values() for b in bs))),
+                    or_(cds.basis_set_family == None, cds.basis_set_family_id.in_(tuple(b.family.id for bs in all_basis_sets.values() for b in bs))),
+                    or_(cds.pseudopotential == None, cds.pseudopotential_id.in_(p.id for p in pseudos)),
+                    or_(cds.pseudopotential_family == None, cds.pseudopotential_family_id.in_(p.family_id for p in pseudos)))
+                .order_by(cds.priority)
+                )
 
-            if not default_settings:
-                default_settings = {}
-            else:
-                app.logger.info("found base default settings for code '%s' and test '%s'", code.name, test.name)
-
-            def walk_ssets(sset, depth=0):
-                if depth > 100:
-                    raise RuntimeError(
-                        "possible circular reference detected in structure super sets for set {}".format(sset.name))
-
-                yield sset.id
-
-                if sset.superset:
-                    yield from walk_ssets(sset.superset, depth+1)
-
-            # for each structure set there may be a path of nested sets, follow it upwards
-            sset_paths = []
-            for sset in structure.sets:
-                sset_paths.append([ss for ss in walk_ssets(sset)])
-
-            # for each path, apply per-structure-set settings from top to bottom
-            for sset_path in sset_paths:
-                for sset_id in reversed(sset_path):
-                    additional_settings = (db.session
-                                           .query(CalculationDefaultSettings.settings)
-                                           .filter_by(code=code, test=test, structure=None, structure_set_id=sset_id)
-                                           .scalar())
-
-                    if additional_settings:
-                        app.logger.info(("found additional default settings for"
-                                         " code '%s', test '%s' and structure set id '%i'"),
-                                        code.name, test.name, sset_id)
-
-                        default_settings = dict(mergedicts(default_settings, additional_settings))
-
-            # finally check whether we have structure-specific settings
-            additional_settings = (db.session
-                                   .query(CalculationDefaultSettings.settings)
-                                   .filter_by(code=code, test=test, structure=structure, structure_set=None)
-                                   .scalar())
-
-            if additional_settings:
-                app.logger.info(("found additional default settings for"
-                                 " code '%s', test '%s' and structure '%s'"),
-                                code.name, test.name, structure)
-
-                default_settings = dict(mergedicts(default_settings, additional_settings))
+            for dsettings in all_dsettings.all():
+                app.logger.info("Using settings from {} for submitted calculation".format(dsettings))
+                default_settings = dict(mergedicts(default_settings, dsettings.settings))
 
         if default_settings:
             # merge the settings specified by the user over the default_settings
             # to give the user the possibility to overwrite them, settings is at least an empty dict
             settings = dict(mergedicts(default_settings, settings))
+        else:
+            app.logger.info("no default settings found, proceeding with explicitly supplied settings only")
 
         calculation = Calculation(collection=collection, test=test,
                                   structure=structure, code=code,

@@ -159,7 +159,7 @@ class BasisSet(Base):
                 self.id, self.element, self.family_id)
 
     def __str__(self):
-        return "{} ({})".format(self.element, self.id)
+        return "{}/{} ({})".format(self.element, self.family.name, self.id)
 
 
 class BasisSetFamily(Base):
@@ -201,7 +201,7 @@ class Pseudopotential(Base):
                 self.id, self.element, self.family_id, self.format)
 
     def __str__(self):
-        return "{} ({})".format(self.element, self.id)
+        return "{}/{} ({})".format(self.element, self.family.name, self.id)
 
 
 class PseudopotentialFamily(Base):
@@ -479,10 +479,8 @@ class CalculationDefaultSettings(Base):
     """Default settings for calculations.
 
     The settings are hard-linked to code and test and
-    optionally linked to a structure or a structure set.
-
-    Since the structure and the structure set are optional,
-    we can not form a PK out of (code, test, structure, structure set).
+    optionally linked to other objects of a calculation,
+    acting as conditions for which to use the respective setting.
 
     Since NULL is not comparable (NULL == NULL = False), we coalesce NULL values in
     the structure and structure set columns to a 0 UUID, a 0 respectively before the
@@ -491,6 +489,8 @@ class CalculationDefaultSettings(Base):
     """
 
     id = UUIDPKColumn()
+
+    priority = Column(Integer, nullable=False, server_default='0')
 
     code_id = Column(UUID(as_uuid=True), ForeignKey('code.id'), nullable=False)
     code = relationship("Code", backref="default_settings")
@@ -504,25 +504,56 @@ class CalculationDefaultSettings(Base):
     structure_set_id = Column(Integer, ForeignKey('structure_set.id'))
     structure_set = relationship("StructureSet", backref="default_settings")
 
+    basis_set_id = Column(UUID(as_uuid=True), ForeignKey('basis_set.id'))
+    basis_set = relationship("BasisSet", backref="default_settings")
+
+    basis_set_family_id = Column(Integer, ForeignKey('basis_set_family.id'))
+    basis_set_family = relationship("BasisSetFamily", backref="default_settings")
+
+    pseudopotential_id = Column(UUID(as_uuid=True), ForeignKey('pseudopotential.id'))
+    pseudopotential = relationship("Pseudopotential", backref="default_settings")
+
+    pseudopotential_family_id = Column(Integer, ForeignKey('pseudopotential_family.id'))
+    pseudopotential_family = relationship("PseudopotentialFamily", backref="default_settings")
+
     settings = Column(JSONB)
+
+    constraint_attrs = [
+        "code", "test",
+        "structure", "structure_set",
+        "basis_set", "basis_set_family",
+        "pseudopotential", "pseudopotential_family",
+        ]
 
     __table_args__ = (
         Index('unique_calculation_default_settings_idx',
+              priority,
               code_id,
               test_id,
               coalesce(structure_id, str(uuid.UUID(int=0))),
               coalesce(structure_set_id, 0),
+              coalesce(basis_set_id, str(uuid.UUID(int=0))),
+              coalesce(basis_set_family_id, 0),
+              coalesce(pseudopotential_id, str(uuid.UUID(int=0))),
+              coalesce(pseudopotential_family_id, 0),
               unique=True),
         CheckConstraint(structure_id != str(uuid.UUID(int=0))),
         CheckConstraint(structure_set_id != 0),
+        CheckConstraint(basis_set_id != str(uuid.UUID(int=0))),
+        CheckConstraint(basis_set_family_id != 0),
+        CheckConstraint(pseudopotential_id != str(uuid.UUID(int=0))),
+        CheckConstraint(pseudopotential_family_id != 0),
         # ensure that a setting is not restricted to both a structure and a structure set:
         CheckConstraint(or_(structure_set_id == None, structure_id == None)),
     )
 
     def __repr__(self):
-        return ("<CalculationDefaultSettings("
-                "code='{}', test='{}'"
-                ")>").format(self.code_id, self.test_id)
+        args = ["id={}, priority={}".format(self.id, self.priority)]
+        for attr in self.constraint_attrs:
+            if getattr(self, attr) is not None:
+                args.append("{}='{}'".format(attr, getattr(self, attr + '_id')))
+
+        return "<CalculationDefaultSettings({})>".format(", ".join(args))
 
 
 class CalculationCollection(Base):
@@ -570,6 +601,7 @@ class Task2(Base):
 
     def __init__(self, calculation_id, status=None, priority=0, restrictions=None):
         self.calculation_id = calculation_id
+        self.priority = priority
         self.status = TaskStatus.query.filter_by(name='new' if status is None else status).one()
         self.restrictions = restrictions
 
