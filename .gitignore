@@ -8,3 +8,4 @@ fatman/static/*map
 fatman/static/*.bundle.js
 fatman.cfg
 __pycache__
+tags
