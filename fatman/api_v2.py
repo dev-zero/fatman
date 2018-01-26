@@ -170,6 +170,7 @@ class BasisSetListResource(Resource):
     file_args = {
         'basis': fields.Field(required=True)
         }
+
     @apiauth.login_required
     @use_kwargs(basisset_args)
     @use_kwargs(file_args, locations=('files', ))
@@ -178,9 +179,16 @@ class BasisSetListResource(Resource):
                   .filter_by(name=family)
                   .one())
 
+        augmented_bs = None
+        if family.augmented_family:
+            augmented_bs = (BasisSet.query
+                            .join(BasisSetFamily)
+                            .filter(BasisSet.element == element, BasisSet.family == family.augmented_family)
+                            .one())
         basisset = BasisSet(
             element=element,
             family=family,
+            augmented_basis_set=augmented_bs,
             basis=TextIOWrapper(basis, encoding='utf-8').read())
 
         db.session.add(basisset)
@@ -415,6 +423,9 @@ class CalculationListResource(Resource):
                     "found basis sets for %s for structure %s in fallback family", ', '.join(missing_kinds),
                     structure.name)
                 all_basis_sets[btype] += fallback_basis_sets
+
+            # resolving augmentation basis sets (only one level for now)
+            all_basis_sets[btype] += [bs.augmented_basis_set for bs in all_basis_sets[btype] if bs.augmented_basis_set]
 
         def walk_ssets(sset, depth=0):
             if depth > 100:

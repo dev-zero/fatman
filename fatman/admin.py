@@ -131,7 +131,7 @@ class BasisSetView(BaseDataView):
 
 class BasisSetFamilyView(BaseDataView):
     column_display_pk = False
-    column_list = ('name',)
+    column_list = ('name', 'description', )
 
 
 class PseudopotentialView(BaseDataView):
@@ -143,7 +143,7 @@ class PseudopotentialView(BaseDataView):
 
 class PseudopotentialFamilyView(BaseDataView):
     column_display_pk = False
-    column_list = ('name',)
+    column_list = ('name', 'description', )
 
 
 class TestView(BaseDataView):

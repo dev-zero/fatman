@@ -152,7 +152,10 @@ class BasisSet(Base):
     family_id = Column(Integer, ForeignKey("basis_set_family.id"))
     family = relationship("BasisSetFamily", lazy='joined',
                           backref=backref('basissets', lazy='dynamic'))
-    basis = Column(Text, nullable=False)
+    basis = Column(Text, nullable=False)  # might be better to use a BLOB instead
+
+    augmented_basis_set_id = Column(UUID(as_uuid=True), ForeignKey("basis_set.id"))
+    augmented_basis_set = relationship("BasisSet", remote_side=[id], backref="augmented_by")
 
     def __repr__(self):
         return "<BasisSet(id='{}', element='{}', family_id={})>".format(
@@ -165,6 +168,10 @@ class BasisSet(Base):
 class BasisSetFamily(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
+    description = Column(Text)
+
+    augmented_family_id = Column(Integer, ForeignKey("basis_set_family.id"))
+    augmented_family = relationship("BasisSetFamily", remote_side=[id], backref="augmented_by")
 
     __mapper_args__ = {
         "order_by": name,
@@ -174,6 +181,9 @@ class BasisSetFamily(Base):
         return "<BasisSetFamily(name='{}')>".format(self.name)
 
     def __str__(self):
+        if self.description:
+            return "{} ({})".format(self.name, self.description)
+
         return self.name
 
 
@@ -187,7 +197,6 @@ class Pseudopotential(Base):
 
     format = Column(String(255), nullable=False)
     core_electrons = Column(Integer, nullable=False)
-    description = Column(Text)
 
     converted_from_id = Column(UUID(as_uuid=True), ForeignKey('pseudopotential.id'))
     converted_from = relationship("Pseudopotential", remote_side=[id])
@@ -207,11 +216,15 @@ class Pseudopotential(Base):
 class PseudopotentialFamily(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
+    description = Column(Text)
 
     def __repr__(self):
         return "<PseudopotentialFamily(name='{}')>".format(self.name)
 
     def __str__(self):
+        if self.description:
+            return "{} ({})".format(self.name, self.description)
+
         return self.name
 
 
