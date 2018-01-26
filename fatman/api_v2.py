@@ -2,10 +2,11 @@
 import bz2
 from urllib.parse import urlsplit
 from os.path import basename
-from io import TextIOWrapper, BytesIO, StringIO
+from io import BytesIO, StringIO
 import copy
 import collections
 import itertools
+import codecs
 
 import flask
 from flask import make_response, request, send_file, url_for
@@ -189,7 +190,7 @@ class BasisSetListResource(Resource):
             element=element,
             family=family,
             augmented_basis_set=augmented_bs,
-            basis=TextIOWrapper(basis, encoding='utf-8').read())
+            basis=basis.read().decode('utf-8'))
 
         db.session.add(basisset)
         db.session.commit()
@@ -996,7 +997,7 @@ class StructureListResource_v2(Resource):
                     }
                 raise exc
 
-        struct = ase_io.read(TextIOWrapper(geometry), format=gformat)
+        struct = ase_io.read(codecs.getreader('utf-8')(geometry), format=gformat)
 
         if pbc is not None:
             struct.set_pbc(pbc)
