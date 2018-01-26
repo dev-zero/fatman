@@ -135,6 +135,7 @@ class CalculationListSchema(ma.ModelSchema):
     current_task = fields.Nested('Task2ListSchema')
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
+        'preview': ma.AbsoluteURLFor('calculationpreviewresource', cid='<id>'),
         'collection': ma.AbsoluteURLFor('calculationlistresource'),
         'tasks': ma.AbsoluteURLFor('calculationtask2listresource', cid='<id>'),
         })
@@ -182,6 +183,7 @@ class CalculationSchema(CalculationListSchema):
 
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
+        'preview': ma.AbsoluteURLFor('calculationpreviewresource', cid='<id>'),
         'collection': ma.AbsoluteURLFor('calculationlistresource'),
         'tasks': ma.AbsoluteURLFor('calculationtask2listresource', cid='<id>'),
         })
