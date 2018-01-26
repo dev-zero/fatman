@@ -109,8 +109,7 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
     inputs['BASIS_SETS'] = BytesIO()
     inputs['BASIS_SETS'].write("# BASIS_SETS: {}\n".format(tagline).encode('utf-8'))
 
-    # for the basis sets we have to be able to
-    # lookup the entry by element
+    # for the basis sets we have to be able to lookup the entry by element
     kind = {s: {'_': s, 'element': s, 'basis_set': [], 'potential': None} for s in struct.get_chemical_symbols()}
 
     for btype, _, element, family, _ in basis_sets:
