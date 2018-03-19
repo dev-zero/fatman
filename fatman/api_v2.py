@@ -268,7 +268,7 @@ class CalculationListResource(Resource):
                  .options(joinedload('code', innerjoin=True))
                  .options(joinedload('test', innerjoin=True))
                  .join(Task2)
-                 .options(contains_eager('tasks').joinedload('machine', innerjoin="unnested"))  # load selected Task together with Calculation
+                 .options(contains_eager('tasks').joinedload('machine'))  # load selected Task together with Calculation
                  .outerjoin(t2, and_(Calculation.id == t2.calculation_id, Task2.ctime < t2.ctime))
                  .filter(t2.id == None))
 
