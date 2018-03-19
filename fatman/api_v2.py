@@ -527,14 +527,19 @@ class CalculationPreviewResource(Resource):
     def get(self, cid):
         calc = Calculation.query.get_or_404(cid)
 
+        def basis_set_sort_func(basis_assoc):
+            # sort base basis functions before others
+            return (basis_assoc.augmented_basis_set_id is None)
+
         bsets = []
-        for basis_set_assoc in calc.basis_set_associations:
+        for basis_set_assoc in sorted(calc.basis_set_associations, key=basis_set_sort_func):
             bsets.append((
                 basis_set_assoc.btype,
                 basis_set_assoc.basis_set.id,
                 basis_set_assoc.basis_set.element,
                 basis_set_assoc.basis_set.family.name,
-                basis_set_assoc.basis_set.basis))
+                basis_set_assoc.basis_set.basis,
+                ))
 
         if calc.code.name == "CP2K":
             inputs = generate_CP2K_inputs(
