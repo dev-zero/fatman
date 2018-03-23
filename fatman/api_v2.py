@@ -250,6 +250,8 @@ class CalculationListResource(Resource):
                               missing=None),
         'status': fields.String(validate=must_exist_in_db(TaskStatus, 'name'),
                                 missing=None),
+        'basis_set_family': fields.String(validate=must_exist_in_db(BasisSetFamily, 'name'),
+                                          missing=None),
         'page': fields.Integer(required=False, missing=1, validate=lambda n: n > 0),
         'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
         }
@@ -286,6 +288,13 @@ class CalculationListResource(Resource):
 
         if filter_args['status']:
             calcs = calcs.join(Task2.status).filter(TaskStatus.name == filter_args['status'])
+
+        if filter_args['basis_set_family']:
+            calcs = (calcs
+                     .join(Calculation.basis_set_associations)
+                     .join(BasisSet)
+                     .join(BasisSetFamily)
+                     .filter(BasisSetFamily.name == filter_args['basis_set_family']))
 
         # can't use Flask-Marshmallow's paginate() here since it will cause a refetch for the complete set
         calc_total_count = calcs.count()
