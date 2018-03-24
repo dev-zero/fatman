@@ -11,7 +11,7 @@ import codecs
 import flask
 from flask import make_response, request, send_file, url_for
 from flask_restful import Api, Resource
-from webargs import fields, ValidationError
+from webargs import fields, missing, ValidationError
 from webargs.flaskparser import (
     use_kwargs,
     parser,
@@ -21,7 +21,8 @@ from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException
 from sqlalchemy import and_, or_, cast, distinct, literal
 from sqlalchemy.orm import contains_eager, joinedload, aliased
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.dialects.postgresql import JSONB, array
 
 from ase import io as ase_io, data as ase_data
 import numpy as np
@@ -89,6 +90,13 @@ from .schemas import (
     BoolValuedDict,
     )
 
+
+# Default tags for calculations to hide in general search
+DEFAULT_HIDE_TAGS = [
+    'faulty',
+    'broken',
+    'superseded',
+    ]
 
 def must_exist_in_db(model, field='id'):
     def check(model_id):
@@ -254,6 +262,7 @@ class CalculationListResource(Resource):
                                           missing=None),
         'page': fields.Integer(required=False, missing=1, validate=lambda n: n > 0),
         'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
+        'hide_tags': fields.DelimitedList(fields.String, required=False, missing=DEFAULT_HIDE_TAGS),
         }
 
     @use_kwargs(calculation_list_args, locations=('querystring',))
@@ -295,6 +304,11 @@ class CalculationListResource(Resource):
                      .join(BasisSet)
                      .join(BasisSetFamily)
                      .filter(BasisSetFamily.name == filter_args['basis_set_family']))
+
+        if filter_args['hide_tags']:
+            calcs = calcs.filter(~and_(
+                Calculation.mdata.has_key('tags'),
+                Calculation.mdata['tags'].has_any(array(filter_args['hide_tags']))))
 
         # can't use Flask-Marshmallow's paginate() here since it will cause a refetch for the complete set
         calc_total_count = calcs.count()
@@ -588,6 +602,26 @@ class CalculationResource(Resource):
                        .get_or_404(cid))
         schema = CalculationSchema()
         return schema.jsonify(calculation)
+
+    @apiauth.login_required
+    @use_kwargs({
+        'metadata': fields.Nested({
+            'tags': fields.DelimitedList(fields.Str),
+            }),
+        })
+    def patch(self, cid, metadata):
+        calc = (Calculation.query
+                .with_for_update(of=Calculation, nowait=True)
+                .get_or_404(cid))
+
+        if metadata is not missing and 'tags' in metadata:
+            calc.mdata['tags'] = metadata['tags']
+            flag_modified(calc, 'mdata')  # SQLA can't track nested JSON/dict attributes
+
+        db.session.commit()
+
+        schema = CalculationSchema()
+        return schema.jsonify(calc)
 
 
 class Task2ListResource(Resource):
