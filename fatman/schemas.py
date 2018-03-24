@@ -180,6 +180,7 @@ class CalculationSchema(CalculationListSchema):
     test = fields.Str(attribute='test.name')
     tasks = fields.Nested('Task2ListSchema', many=True)
     testresults = fields.Nested('TestResultSchema', many=True, exclude=('calculations',))
+    metadata = fields.Dict(attribute='mdata')
 
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('calculationresource', cid='<id>'),
@@ -201,6 +202,7 @@ class CalculationSchema(CalculationListSchema):
             'basis_set_associations',
             'tasks_query',
             'testresults_query',
+            'mdata',
             )
 
 
