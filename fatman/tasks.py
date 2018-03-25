@@ -467,6 +467,10 @@ def generate_test_result_deltatest(self, calc_id, update=False):
 
     # get the element from the first (and only) pseudo
     element = calc.pseudos[0].element
+    # get the basis set family ID for the first (and only) default basis set
+    basis_set_family_id = next(
+        b.basis_set.family_id for b in calc.basis_set_associations
+        if b.btype == 'default' and b.basis_set.element == element)
 
     # from the same calculation collection as the given calculation,
     # get the calculations for the same elements (selected via pseudos)
@@ -483,6 +487,8 @@ def generate_test_result_deltatest(self, calc_id, update=False):
              .options(joinedload('code'))
              .join(Calculation.pseudos)
              .filter(Pseudopotential.element == element)
+             .join(Calculation.basis_sets)
+             .filter(BasisSet.family_id == basis_set_family_id)  # only match calcs with the same ORB basis set
              .limit(6)  # limit to one more than we can actually use, to catch errors
              .all())
 
