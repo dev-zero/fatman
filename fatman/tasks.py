@@ -25,6 +25,7 @@ from .models import (
     TestResult2,
     TestResult2Collection,
     TestResult2Calculation,
+    BasisSet,
     Pseudopotential,
     )
 
