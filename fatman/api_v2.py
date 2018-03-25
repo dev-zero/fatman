@@ -300,8 +300,7 @@ class CalculationListResource(Resource):
 
         if filter_args['basis_set_family']:
             calcs = (calcs
-                     .join(Calculation.basis_set_associations)
-                     .join(BasisSet)
+                     .join(Calculation.basis_sets)
                      .join(BasisSetFamily)
                      .filter(BasisSetFamily.name == filter_args['basis_set_family']))
 
