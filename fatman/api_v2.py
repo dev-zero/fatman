@@ -1309,6 +1309,8 @@ class TestResultListResource(Resource):
     filter_args = {
         'test': fields.String(required=False),
         'structure': fields.String(required=False),
+        'collection': fields.Str(validate=must_exist_in_db(TestResult2Collection, 'name'), missing=None),
+        'hide_tags': fields.DelimitedList(fields.String, required=False, missing=DEFAULT_HIDE_TAGS),
         # the nested parser unpacks data.foo=10 to data: { 'foo': 10 },
         # TODO: validate checks to be a dict of (str, bool)
         'data': fields.Nested({
@@ -1320,7 +1322,7 @@ class TestResultListResource(Resource):
         }
 
     @nested_parser.use_kwargs(filter_args, locations=('query',))
-    def get(self, test, structure, data):
+    def get(self, test, structure, collection, data, hide_tags):
         schema_excluded_columns = ['data', ]
 
         # optimize the query by eager_loading calculations, structure and task
@@ -1347,6 +1349,14 @@ class TestResultListResource(Resource):
                      .join(TestResult2.calculations)
                      .join(Calculation.structure)
                      .filter(Structure.name.contains(structure)))
+
+        if collection:
+            query = query.join(TestResult2.collections).filter(TestResult2Collection.name == collection)
+
+        if hide_tags:
+            query = query.filter(~and_(
+                TestResult2.mdata.has_key('tags'),
+                TestResult2.mdata['tags'].has_any(array(hide_tags))))
 
         if data:
             # show the data when filtering by data
@@ -1405,6 +1415,26 @@ class TestResultResource(Resource):
                     .get_or_404(trid))
 
         return schema.jsonify(tresult)
+
+    @apiauth.login_required
+    @use_kwargs({
+        'metadata': fields.Nested({
+            'tags': fields.DelimitedList(fields.Str),
+            }),
+        })
+    def patch(self, trid, metadata):
+        testresult = (TestResult2.query
+                      .with_for_update(of=TestResult2, nowait=True)
+                      .get_or_404(trid))
+
+        if metadata is not missing and 'tags' in metadata:
+            testresult.mdata['tags'] = metadata['tags']
+            flag_modified(testresult, 'mdata')  # SQLA can't track nested JSON/dict attributes
+
+        db.session.commit()
+
+        schema = TestResultSchema()
+        return schema.jsonify(testresult)
 
 
 class TestResultListActionResource(Resource):
