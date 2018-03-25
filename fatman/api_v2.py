@@ -1309,6 +1309,8 @@ class TestResultListResource(Resource):
     filter_args = {
         'test': fields.String(required=False),
         'structure': fields.String(required=False),
+        'basis_set_family': fields.String(validate=must_exist_in_db(BasisSetFamily, 'name'),
+                                          missing=None),
         'collection': fields.Str(validate=must_exist_in_db(TestResult2Collection, 'name'), missing=None),
         'hide_tags': fields.DelimitedList(fields.String, required=False, missing=DEFAULT_HIDE_TAGS),
         # the nested parser unpacks data.foo=10 to data: { 'foo': 10 },
@@ -1322,11 +1324,12 @@ class TestResultListResource(Resource):
         }
 
     @nested_parser.use_kwargs(filter_args, locations=('query',))
-    def get(self, test, structure, collection, data, hide_tags):
+    def get(self, test, structure, basis_set_family, collection, data, hide_tags):
         schema_excluded_columns = ['data', ]
 
         # optimize the query by eager_loading calculations, structure and task
         query = (TestResult2.query
+                 .join(TestResult2.calculations)
                  .options(
                      joinedload('calculations').
                          joinedload('structure')
@@ -1346,9 +1349,14 @@ class TestResultListResource(Resource):
 
         if structure:
             query = (query
-                     .join(TestResult2.calculations)
                      .join(Calculation.structure)
                      .filter(Structure.name.contains(structure)))
+
+        if basis_set_family:
+            query = (query
+                     .join(Calculation.basis_sets)
+                     .join(BasisSet.family)
+                     .filter(BasisSetFamily.name == basis_set_family))
 
         if collection:
             query = query.join(TestResult2.collections).filter(TestResult2Collection.name == collection)
