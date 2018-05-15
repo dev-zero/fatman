@@ -1444,6 +1444,43 @@ class TestResultResource(Resource):
         return schema.jsonify(testresult)
 
 
+class TestResultActionResource(Resource):
+    @apiauth.login_required
+    @use_kwargs(TestResultListActionSchema)
+    def post(self, trid, generate):
+        if generate:
+            testresult = TestResult2.query.get(trid)
+
+            if len(testresult.calculations) == 0:
+                # for testresults without calculations (e.g. reference results),
+                # directly redirect again to their result (so, it's a noop)
+                return Response(status=302, headers={
+                    'Location': api.url_for(TestResultResource, trid=trid, _external=True)})
+
+            # for all others, pick the first calculation to trigger the result regeneration
+            # TODO: if this result is a secondary test result (the calculation was initially planned for a different test)
+            #       then currently only the default test is updated, but not the actually selected test result
+            async_result = generate_test_result.delay(testresult.calculations[0].id, generate['update'])
+
+            return Response(status=202, headers={
+                'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
+
+        abort(400)
+
+
+class CalculationActionResource(Resource):
+    @apiauth.login_required
+    @use_kwargs(CalculationListActionSchema)
+    def post(self, cid, generateResults):
+        if generateResults:
+            async_result = generate_calculation_results.delay(cid, generateResults['update'])
+
+            return Response(status=202, headers={
+                'Location': api.url_for(ActionResource, aid=async_result.id, _external=True)})
+
+        abort(400)
+
+
 class TestResultListActionResource(Resource):
     @apiauth.login_required
     @use_kwargs(TestResultListActionSchema)
@@ -1683,6 +1720,7 @@ api.add_resource(Pseudopotential2ListResource, '/pseudopotentials')
 api.add_resource(Pseudopotential2Resource, '/pseudopotentials/<uuid:pid>')
 api.add_resource(TestResultListResource, '/testresults')
 api.add_resource(TestResultResource, '/testresults/<uuid:trid>')
+api.add_resource(TestResultActionResource, '/testresults/<uuid:trid>/action')
 api.add_resource(TestResultListActionResource, '/testresults/action')
 api.add_resource(TestResultCollectionListResource, '/testresultcollections')
 api.add_resource(TestResultCollectionResource, '/testresultcollections/<uuid:trcid>')
