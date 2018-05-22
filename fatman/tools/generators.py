@@ -147,6 +147,10 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
         if 'charge' in struct.info['key_value_pairs']:
             generated_input['force_eval']['dft']['charge'] = struct.info['key_value_pairs']['charge']
 
+    # force enable LSD for systems with odd number of electrons
+    if int(sum(struct.get_atomic_numbers() + struct.get_initial_charges())) % 2:
+        generated_input['force_eval']['dft']['uks'] = True
+
     # if we have any initial magnetic moment defined in the structure,
     # we need unrestricted KS + setting the magnetic moment and calculate the multiplicity
     if struct.get_initial_magnetic_moments().any():
@@ -172,9 +176,6 @@ def generate_CP2K_inputs(settings, basis_sets, pseudos, struct, tagline, overrid
 
         # and add a new column to the atoms struct containing those labels
         struct.new_array('cp2k_labels', np.array([symmagmom2key[sm] for sm in symmagmom]))
-
-    elif int(sum(struct.get_atomic_numbers() + struct.get_initial_charges())) % 2:
-        generated_input['force_eval']['dft']['uks'] = True  # force enable LSD for systems with odd number of electrons
 
     else:
         # if no magnetic moments are required, simply copy the chemical symbols
