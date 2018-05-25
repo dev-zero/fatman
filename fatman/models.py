@@ -102,9 +102,12 @@ class Structure(Base):
     replaced = relationship("Structure", remote_side=[replaced_by_id], lazy='noload')
 
     def __repr__(self):
-        return "<Structure(name='{}')>".format(self.name)
+        return "<Structure(id='{}', name='{}')>".format(self.id, self.name)
 
     def __str__(self):
+        if self.replaced_by:
+            return "{} (replaced)".format(self.name)
+
         return self.name
 
     __table_args__ = (
