@@ -98,6 +98,20 @@ DEFAULT_HIDE_TAGS = [
     'superseded',
     ]
 
+
+# dict of possible calculation task state transitions:
+TASK_STATES = {
+    'new': ['pending', 'cancelled', 'deferred'],
+    'pending': ['running', 'error'],
+    'cancelled': [],
+    'deferred': ['new', 'cancelled', 'done'],  # setting a task to done from deferred is for manual upload
+    'running': ['done', 'error'],
+    'done': [],
+    'error': [],
+    }
+
+END_TASK_STATES = [k for k, v in TASK_STATES.items() if not v]
+
 def must_exist_in_db(model, field='id'):
     def check(model_id):
         if not model.query.filter_by(**{field: model_id}).first():
@@ -622,6 +636,25 @@ class CalculationResource(Resource):
         schema = CalculationSchema()
         return schema.jsonify(calc)
 
+    def delete(self, cid):
+        calc = (Calculation.query
+                .options(joinedload('testresults'))
+                .get_or_404(cid))
+
+        if calc.testresults:
+            app.logger.error("cannot delete calculation %s: testresults available", calc.id)
+            abort(500)
+
+        if not calc.current_task.status.name in END_TASK_STATES:
+            app.logger.error(
+                "cannot delete calculation %s: state '%s' of current_task is not an end state",
+                calc.id, calc.current_task.status.name)
+            abort(500)
+
+        db.session.delete(calc)
+
+        return Response(status=204)  # return completely empty if everything worked
+
 
 class Task2ListResource(Resource):
     # calculation is set when called as subcollection of a calculation
@@ -722,18 +755,6 @@ class Task2ListResource(Resource):
         db.session.add(task)
         db.session.commit()
         return Task2Schema().jsonify(task)
-
-
-# dict of possible task state transitions:
-TASK_STATES = {
-    'new': ['pending', 'cancelled', 'deferred'],
-    'pending': ['running', 'error'],
-    'cancelled': [],
-    'deferred': ['new', 'cancelled', 'done'],  # setting a task to done from deferred is for manual upload
-    'running': ['done', 'error'],
-    'done': [],
-    'error': [],
-    }
 
 
 def task_args_validate(input_dict):
