@@ -652,6 +652,7 @@ class CalculationResource(Resource):
             abort(500)
 
         db.session.delete(calc)
+        db.session.commit()
 
         return Response(status=204)  # return completely empty if everything worked
 
