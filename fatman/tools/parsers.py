@@ -115,6 +115,22 @@ CP2K_ATOMIC_KIND_NATOMS_MATCH = re.compile(r'''
 [ \t]* \d+\. [ \t]+  Atomic\ kind: [ \t]+ (?P<kind>\w+) [ \t]+ Number\ of\ atoms: [ \t]+ (?P<natoms>\d+) [ \t]* \n
 ''', re.MULTILINE | re.VERBOSE)
 
+# TODO: matches only non-periodic and only up to Dipole, see cp2k/src/qs_moments.F
+CP2K_MOMENTS_MATCH = re.compile(r'''
+# anchor to indicate beginning of the MOMENTS output
+^[ \t]* ELECTRIC/MAGNETIC\ MOMENTS [ \t]* \n
+ [ \t]* Reference\ Point\ \[(?P<ref_point_unit>[^\]]+)\]
+   ([ \t]+ (?P<ref_point>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)){3} [ \t]* \n
+ [ \t]* Charges [ \t]* \n
+   [ \t]* Electronic= [ \t]* (?P<charge_electronic>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* Core=       [ \t]* (?P<charge_core>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* Total=      [ \t]* (?P<charge_total>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)
+   [ \t]* \n
+ [ \t]* Dipoles\ are\ based\ on\ the\ traditional\ operator\. \n
+ [ \t]* Dipole\ moment\ \[(?P<dipole_moment_unit>[^\]]+)\] [ \t]* \n
+   ([ \t]+ [XYZ]= [ \t]* (?P<dipole_moment>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?)){3}
+   [ \t]+ Total= [ \t]* (?P<dipole_moment_total>[\+\-]?(\d*[\.]\d+|\d+[\.]?\d*)([Ee][\+\-]?\d+)?) [ \t]* \n
+''', re.VERSION1 | re.MULTILINE | re.VERBOSE)
 
 # the definition for the following is based on src/common/{termination,cp_error_handling}.F
 CP2K_WARNINGS_MATCH = re.compile(r'''
@@ -277,6 +293,23 @@ def parse_cp2k_output(fhandle):
                     'charge': float(match.group('total_charge')),
                     },
                 }
+
+    match = CP2K_MOMENTS_MATCH.search(content)
+    if match:
+        captures = match.capturesdict()
+        print(captures)
+        data['electric_magnetic_moments'] = {
+            'reference_point_unit': captures['ref_point_unit'][0],
+            'reference_point': [float(c) for c in captures['ref_point']],
+            'charges': {
+              'electronic': float(captures['charge_electronic'][0]),
+              'core': float(captures['charge_core'][0]),
+              'total': float(captures['charge_total'][0]),
+              },
+            'dipole_moment_unit': captures['dipole_moment_unit'][0],
+            'dipole_moment': [float(c) for c in captures['dipole_moment']],
+            'dipole_moment_total': float(captures['dipole_moment_total'][0]),
+            }
 
     match = CP2K_CONDITION_NUMBER_MATCH.search(content)
     if match:
