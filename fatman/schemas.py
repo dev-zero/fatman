@@ -1,11 +1,10 @@
 
 import collections
 
-from flask_marshmallow import Marshmallow
 from webargs import fields
 from marshmallow import pre_dump
 
-from . import app
+from . import ma
 from .models import (
     Calculation,
     CalculationCollection,
@@ -22,8 +21,6 @@ from .models import (
     )
 
 from .tools import json2atoms
-
-ma = Marshmallow(app)
 
 
 # Custom fields:
@@ -61,7 +58,7 @@ class BoolValuedDict(fields.Field):
 
 # The schemas:
 
-class ArtifactSchema(ma.Schema):
+class ArtifactSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('artifactresource', aid='<id>'),
         'collection': ma.AbsoluteURLFor('artifactlistresource'),
@@ -76,7 +73,7 @@ class ArtifactSchema(ma.Schema):
         fields = ('id', 'name', '_links', 'metadata')
 
 
-class BasisSetSchema(ma.ModelSchema):
+class BasisSetSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('basissetresource', bid='<id>'),
         'collection': ma.AbsoluteURLFor('basissetlistresource'),
@@ -89,7 +86,7 @@ class BasisSetSchema(ma.ModelSchema):
         exclude = ('calculations', 'calculation_associations', )
 
 
-class PseudopotentialSchema(ma.ModelSchema):
+class PseudopotentialSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('pseudopotential2resource', pid='<id>'),
         'collection': ma.AbsoluteURLFor('pseudopotential2listresource'),
@@ -106,7 +103,7 @@ class PseudopotentialSchema(ma.ModelSchema):
         exclude = ('calculations', )
 
 
-class CalculationCollectionSchema(ma.ModelSchema):
+class CalculationCollectionSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('calculationcollectionresource', ccid='<id>'),
         'collection': ma.AbsoluteURLFor('calculationcollectionlistresource'),
@@ -118,14 +115,14 @@ class CalculationCollectionSchema(ma.ModelSchema):
         fields = ('_links', 'id', 'name', 'desc', )
 
 
-class CalculationBasisSetAssociationSchema(ma.ModelSchema):
+class CalculationBasisSetAssociationSchema(ma.Schema):
     basis_set = fields.Nested(
         BasisSetSchema(exclude=('basis', ))
         )
     type = fields.Str(attribute='btype')
 
 
-class CalculationListSchema(ma.ModelSchema):
+class CalculationListSchema(ma.Schema):
     id = fields.UUID()
     collection = fields.Str(attribute='collection.name')
     code = fields.Str(attribute='code.name')
@@ -141,7 +138,7 @@ class CalculationListSchema(ma.ModelSchema):
         })
 
 
-class TestResultSchema(ma.ModelSchema):
+class TestResultSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'collection': ma.AbsoluteURLFor('testresultlistresource'),
         'self': ma.AbsoluteURLFor('testresultresource', trid='<id>'),
@@ -157,7 +154,7 @@ class TestResultSchema(ma.ModelSchema):
         exclude = ('mdata',)
 
 
-class TestResultCollectionSchema(ma.ModelSchema):
+class TestResultCollectionSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'collection': ma.AbsoluteURLFor('testresultcollectionlistresource'),
         'self': ma.AbsoluteURLFor('testresultcollectionresource', trcid='<id>'),
@@ -215,7 +212,7 @@ class CalculationListActionSchema(ma.Schema):
         strict = True
 
 
-class Task2ListSchema(ma.ModelSchema):
+class Task2ListSchema(ma.Schema):
     id = fields.UUID()
     status = fields.Str(attribute='status.name')
     ctime = fields.DateTime()
@@ -231,7 +228,7 @@ class Task2ListSchema(ma.ModelSchema):
         })
 
 
-class Task2Schema(Task2ListSchema):
+class Task2Schema(Task2ListSchema, ma.SQLAlchemyAutoSchema):
     calculation = fields.Nested(CalculationListSchema)
     infiles = fields.Nested(ArtifactSchema, many=True)
     outfiles = fields.Nested(ArtifactSchema, many=True)
@@ -239,14 +236,13 @@ class Task2Schema(Task2ListSchema):
 
     class Meta:
         model = Task2
-        exclude = ('artifacts', )
 
 
-class BaseStructureSchema(ma.ModelSchema):
+class BaseStructureSchema(ma.SQLAlchemyAutoSchema):
     calculations = fields.Nested(CalculationListSchema, many=True,
                                  exclude=('structure', ))
 
-    sets = fields.DelimitedList(fields.Str())
+    sets = fields.List(fields.Str())
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('structureresource_v2', sid='<id>'),
         'collection': ma.AbsoluteURLFor('structurelistresource_v2'),
@@ -300,6 +296,7 @@ class StructureSchema(BaseStructureSchema):
 
 class StructureListSchema(BaseStructureSchema):
     class Meta:
+        model = Structure
         exclude = (
             'calculations',
             'ase_structure',
@@ -307,7 +304,7 @@ class StructureListSchema(BaseStructureSchema):
             )
 
 
-class StructureSetSchema(ma.ModelSchema):
+class StructureSetSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('structuresetresource', name='<name>'),
         'collection': ma.AbsoluteURLFor('structuresetlistresource'),
@@ -322,7 +319,7 @@ class StructureSetSchema(ma.ModelSchema):
         exclude = ('id', 'structures', 'default_settings', 'subsets', )
 
 
-class TestResultListActionSchema(ma.Schema):
+class TestResultListActionSchema(ma.SQLAlchemyAutoSchema):
     generate = fields.Nested(
         {'update': fields.Boolean(missing=False)},
         strict=True)
@@ -331,7 +328,7 @@ class TestResultListActionSchema(ma.Schema):
         strict = True
 
 
-class CodeListSchema(ma.ModelSchema):
+class CodeListSchema(ma.Schema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('coderesource', cid='<id>'),
         'collection': ma.AbsoluteURLFor('codelistresource'),
@@ -341,7 +338,7 @@ class CodeListSchema(ma.ModelSchema):
     name = fields.Str()
 
 
-class CodeCommandListSchema(ma.ModelSchema):
+class CodeCommandListSchema(ma.Schema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('codecommandresource', cid='<code_id>', mid='<machine_id>'),
         'collection': ma.AbsoluteURLFor('codecommandlistresource', cid='<code_id>'),
@@ -352,7 +349,7 @@ class CodeCommandListSchema(ma.ModelSchema):
     machine_shortname = fields.Str(attribute='machine.shortname')
 
 
-class CodeCommandSchema(ma.ModelSchema):
+class CodeCommandSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('codecommandresource', cid='<code_id>', mid='<machine_id>'),
         'collection': ma.AbsoluteURLFor('codecommandlistresource', cid='<code_id>'),
@@ -365,7 +362,7 @@ class CodeCommandSchema(ma.ModelSchema):
         strict = True
 
 
-class CodeSchema(ma.ModelSchema):
+class CodeSchema(ma.SQLAlchemyAutoSchema):
     _links = ma.Hyperlinks({
         'self': ma.AbsoluteURLFor('coderesource', cid='<id>'),
         'collection': ma.AbsoluteURLFor('codelistresource'),
@@ -375,11 +372,10 @@ class CodeSchema(ma.ModelSchema):
 
     class Meta:
         model = Code
-
         exclude = ('calculations', 'default_settings', 'task_runtime_settings', )
 
 
-class ComparisonSchema(ma.ModelSchema):
+class ComparisonSchema(ma.Schema):
     _links = ma.Hyperlinks({
         'collection': ma.AbsoluteURLFor('comparisonlistresource'),
         })
@@ -393,7 +389,7 @@ class DeltatestComparisonSchema(ComparisonSchema):
     values = fields.Dict(many=True)
 
 
-class TestListSchema(ma.ModelSchema):
+class TestListSchema(ma.Schema):
     _links = ma.Hyperlinks({
         'collection': ma.AbsoluteURLFor('testlistresource'),
         })

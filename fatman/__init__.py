@@ -11,6 +11,8 @@ from flask_httpauth import HTTPBasicAuth
 from flask_security.utils import verify_password as fs_verify_password
 from celery import Celery
 from blinker import Namespace  # Flask already implements signals using blinker
+from flask_marshmallow import Marshmallow
+
 
 app = Flask(__name__)
 app.config.from_object('fatman.default_settings')
@@ -38,6 +40,7 @@ calculation_finished = signals.signal('calculation-finished')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+ma = Marshmallow(app)
 
 resultfiles = UploadSet('results', extensions=ALL_EXTENSIONS)
 configure_uploads(app, (resultfiles,))

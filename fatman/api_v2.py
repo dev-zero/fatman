@@ -9,7 +9,7 @@ import itertools
 import codecs
 
 import flask
-from flask import make_response, request, send_file, url_for
+from flask import make_response, request, url_for, Response
 from flask_restful import Api, Resource
 from webargs import fields, missing, ValidationError
 from webargs.flaskparser import (
@@ -17,7 +17,6 @@ from webargs.flaskparser import (
     parser,
     abort,
     )
-from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException
 from sqlalchemy import and_, or_, cast, distinct, literal
 from sqlalchemy.orm import contains_eager, joinedload, aliased
@@ -171,7 +170,7 @@ class ArtifactDownloadResource(Resource):
 
 
 class BasisSetListResource(Resource):
-    @use_kwargs({'element': fields.String(), 'family': fields.Str(validate=must_exist_in_db(BasisSetFamily, 'name'))})
+    @use_kwargs({'element': fields.String(missing=None), 'family': fields.Str(validate=must_exist_in_db(BasisSetFamily, 'name'), missing=None)}, location='querystring')
     def get(self, element, family):
         basis_sets = BasisSet.query.options(joinedload('family', innerjoin=True))
 
@@ -196,7 +195,7 @@ class BasisSetListResource(Resource):
 
     @apiauth.login_required
     @use_kwargs(basisset_args)
-    @use_kwargs(file_args, locations=('files', ))
+    @use_kwargs(file_args, location='files')
     def post(self, element, family, basis):
         family = (BasisSetFamily.query
                   .filter_by(name=family)
@@ -279,7 +278,7 @@ class CalculationListResource(Resource):
         'hide_tags': fields.DelimitedList(fields.String, required=False, missing=DEFAULT_HIDE_TAGS),
         }
 
-    @use_kwargs(calculation_list_args, locations=('querystring',))
+    @use_kwargs(calculation_list_args, location='querystring')
     def get(self, page, per_page, **filter_args):
         schema = CalculationListSchema(many=True)
 
@@ -663,13 +662,13 @@ class Task2ListResource(Resource):
         'machine': fields.Str(missing=None),
         'status': fields.DelimitedList(
             fields.Str(validate=must_exist_in_db(TaskStatus, 'name'),
-                       missing=None)),
-        'page': fields.Integer(required=False, missing=1, validate=lambda n: n > 0),
-        'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
-        }, locations=('querystring',))
+                missing=None)),
+            'page': fields.Integer(required=False, missing=1, validate=lambda n: n > 0),
+            'per_page': fields.Integer(required=False, missing=20, validate=lambda n: n > 0 and n <= 200),
+            }, location='querystrinqueryg')
     @use_kwargs({
         'worker_machine': fields.Str(load_from='x-fatman-worker-machine', missing=None),
-        }, locations=('headers',))
+        }, location='headers')
     def get(self, page, per_page, worker_machine, cid=None, **filter_args):
         schema = Task2ListSchema(many=True)
         query = (Task2.query
@@ -985,7 +984,7 @@ class Task2UploadResource(Resource):
 
     @apiauth.login_required
     @use_kwargs(upload_args)
-    @use_kwargs(file_args, locations=('files', ))
+    @use_kwargs(file_args, location='files')
     def post(self, tid, name, data):
         task = (Task2.query
                 .options(joinedload('calculation'))
@@ -1005,11 +1004,11 @@ class Task2UploadResource(Resource):
 
 class StructureListResource_v2(Resource):
     filter_args = {
-        'include_replaced': fields.Boolean(required=False, default=False),
+        'include_replaced': fields.Boolean(required=False, missing=False),
         'limit': fields.Integer(required=False, missing=-1),
         }
 
-    @use_kwargs(filter_args, locations=('query',))
+    @use_kwargs(filter_args, location='querystring')
     def get(self, include_replaced, limit):
         query = (Structure.query
                  .join(Structure.sets)
@@ -1043,7 +1042,7 @@ class StructureListResource_v2(Resource):
 
     @apiauth.login_required
     @use_kwargs(structure_args)
-    @use_kwargs(file_args, locations=('files', ))
+    @use_kwargs(file_args, location='files')
     def post(self, name, sets,
              pbc, charges, cell, magmoms, gformat, geometry, cubic_cell, center,
              replace_existing):
@@ -1190,14 +1189,12 @@ class StructureDownloadResource(Resource):
                 asestruct.info['key_value_pairs']))
 
         stringbuf = StringIO()
-
         ase_io.write(stringbuf, asestruct, format=formatter)
 
-        return send_file(
-            BytesIO(stringbuf.getvalue().encode('utf-8')),
-            as_attachment=True,
-            attachment_filename="{}.{}".format(structure.name, fileending),
-            mimetype=selected_mimetype)
+        response = make_response(stringbuf.getvalue())
+        response.headers["Content-Disposition"] = "attachment; filename={}.{}".format(structure.name, fileending)
+        response.headers["Content-Type"] = selected_mimetype
+        return response
 
 
 class StructureSetListResource(Resource):
@@ -1344,7 +1341,7 @@ class TestResultListResource(Resource):
             }),
         }
 
-    @nested_parser.use_kwargs(filter_args, locations=('query',))
+    @nested_parser.use_kwargs(filter_args, location='querystring')
     def get(self, test, structure, basis_set_family, collection, data, hide_tags):
         schema_excluded_columns = ['data', ]
 
