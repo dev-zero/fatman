@@ -1,4 +1,4 @@
-# FATMAN - Flexible Accuracy Testing MANager
+# FLATMAN - FLexible Accuracy Testing MANager
 
 ## How to run
 
@@ -11,7 +11,7 @@ Then:
 git clone ...
 
 # Change the directory
-cd fatman/
+cd flatman/
 
 # Create a virtual environment and use it
 virtualenv venv
